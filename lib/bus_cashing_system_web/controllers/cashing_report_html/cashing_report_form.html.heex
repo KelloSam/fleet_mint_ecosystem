@@ -1,0 +1,15 @@
+<.simple_form :let={f} for={@changeset} action={@action}>
+  <.error :if={@changeset.action}>
+    Oops, something went wrong! Please check the errors below.
+  </.error>
+  <.input field={f[:days_worked]} type="number" label="Days worked" />
+  <.input field={f[:expected_cashing]} type="number" label="Expected cashing" step="any" />
+  <.input field={f[:received_cashing]} type="number" label="Received cashing" step="any" />
+  <.input field={f[:airtel_id]} type="text" label="Airtel" />
+  <.input field={f[:debt_balance]} type="number" label="Debt balance" step="any" />
+  <.input field={f[:expenditure]} type="number" label="Expenditure" step="any" />
+  <.input field={f[:description]} type="text" label="Description" />
+  <:actions>
+    <.button>Save Cashing report</.button>
+  </:actions>
+</.simple_form>

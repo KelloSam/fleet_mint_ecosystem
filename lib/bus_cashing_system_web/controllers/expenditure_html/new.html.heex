@@ -1,0 +1,7 @@
+<.expenditure_header title="New Expenditure">
+  <:subtitle>Create a new expenditure record.</:subtitle>
+</.expenditure_header>
+
+<.expenditure_form_component changeset={@changeset} action={~p"/expenditures"} />
+
+<.expenditure_back_button navigate={~p"/expenditures"}>Back to expenditures</.expenditure_back_button>

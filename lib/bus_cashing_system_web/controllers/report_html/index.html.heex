@@ -1,0 +1,23 @@
+<.header title="Listing Reports">
+  <:actions>
+    <.link href={~p"/reports/new"}>
+      <.button>New Report</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.table id="reports" rows={@reports} row_click={&JS.navigate(~p"/reports/#{&1}")} headers={["Start date", "End date", "Actions", ""]}>
+  <:col :let={report} label="Start date"><%= report.start_date %></:col>
+  <:col :let={report} label="End date"><%= report.end_date %></:col>
+  <:action :let={report}>
+    <div class="sr-only">
+      <.link navigate={~p"/reports/#{report}"}>Show</.link>
+    </div>
+    <.link navigate={~p"/reports/#{report}/edit"}>Edit</.link>
+  </:action>
+  <:action :let={report}>
+    <.link href={~p"/reports/#{report}"} method="delete" data-confirm="Are you sure?">
+      Delete
+    </.link>
+  </:action>
+</.table>

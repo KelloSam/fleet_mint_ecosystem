@@ -1,0 +1,28 @@
+<.header title="Listing Cashing reports">
+  <:actions>
+    <.link href={~p"/cashing_reports/new"}>
+      <.button>New Cashing report</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.table id="cashing_reports" rows={@cashing_reports} row_click={&JS.navigate(~p"/cashing_reports/#{&1}")}>
+  <:col :let={cashing_report} label="Days worked"><%= cashing_report.days_worked %></:col>
+  <:col :let={cashing_report} label="Expected cashing"><%= cashing_report.expected_cashing %></:col>
+  <:col :let={cashing_report} label="Received cashing"><%= cashing_report.received_cashing %></:col>
+  <:col :let={cashing_report} label="Airtel"><%= cashing_report.airtel_id %></:col>
+  <:col :let={cashing_report} label="Debt balance"><%= cashing_report.debt_balance %></:col>
+  <:col :let={cashing_report} label="Expenditure"><%= cashing_report.expenditure %></:col>
+  <:col :let={cashing_report} label="Description"><%= cashing_report.description %></:col>
+  <:action :let={cashing_report}>
+    <div class="sr-only">
+      <.link navigate={~p"/cashing_reports/#{cashing_report}"}>Show</.link>
+    </div>
+    <.link navigate={~p"/cashing_reports/#{cashing_report}/edit"}>Edit</.link>
+  </:action>
+  <:action :let={cashing_report}>
+    <.link href={~p"/cashing_reports/#{cashing_report}"} method="delete" data-confirm="Are you sure?">
+      Delete
+    </.link>
+  </:action>
+</.table>

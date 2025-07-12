@@ -1,0 +1,6 @@
+<.header title="Edit Cashing report">
+  <:subtitle>Use this form to manage cashing_report records in your database.</:subtitle>
+</.header>
+<.cashing_report_form changeset={@changeset} action={~p"/cashing_reports/#{@cashing_report}"} />
+
+<.back navigate={~p"/cashing_reports"}>Back to cashing_reports</.back>

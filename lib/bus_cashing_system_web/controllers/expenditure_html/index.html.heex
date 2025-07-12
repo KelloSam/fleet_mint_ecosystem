@@ -1,0 +1,30 @@
+<.header title="Listing Expenditures">
+  <:actions>
+    <.link href={~p"/expenditures/new"}>
+      <.button>New Expenditure</.button>
+    </.link>
+  </:actions>
+</.header>
+<.table id="expenditures" rows={@expenditures} row_click={&JS.navigate(~p"/expenditures/#{&1}")}>
+  <:col :let={expenditure} label="Amount"><%= format_amount(expenditure.amount) %></:col>
+  <:col :let={expenditure} label="Description"><%= expenditure.description %></:col>
+  <:col :let={expenditure} label="Date"><%= format_date(expenditure.date) %></:col>
+  <:col :let={expenditure} label="Cashing Report">
+    <%= if expenditure.cashing_report, do: "Report ##{expenditure.cashing_report.id}", else: "N/A" %>
+  </:col>
+  <:action :let={expenditure}>
+    <div class="sr-only">
+      <.link navigate={~p"/expenditures/#{expenditure}"}>Show</.link>
+    </div>
+  </:action>
+  <:action :let={expenditure}>
+    <.link navigate={~p"/expenditures/#{expenditure}/edit"} class="text-zinc-500 hover:text-zinc-700">
+      Edit
+    </.link>
+  </:action>
+  <:action :let={expenditure}>
+    <.link href={~p"/expenditures/#{expenditure}"} method="delete" data-confirm="Are you sure?" class="text-zinc-500 hover:text-zinc-700">
+      Delete
+    </.link>
+  </:action>
+</.table>
