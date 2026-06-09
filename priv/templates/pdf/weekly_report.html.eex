@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    @page { size: A4; margin: 15mm 15mm 20mm 15mm; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, Helvetica, sans-serif; font-size: 9pt; color: #1a1a1a; }
+    .header { border-bottom: 3px solid #1d4ed8; padding-bottom: 10px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: flex-end; }
+    .company-name { font-size: 18pt; font-weight: bold; color: #1d4ed8; }
+    .company-sub { font-size: 9pt; color: #555; }
+    .report-title { text-align: right; }
+    .report-title h2 { font-size: 14pt; font-weight: bold; }
+    .report-title .meta { font-size: 8pt; color: #666; margin-top: 2px; }
+    .period-band { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 4px; padding: 8px 14px; margin-bottom: 14px; display: flex; gap: 40px; font-size: 9pt; }
+    .period-band .item label { font-size: 7.5pt; color: #555; text-transform: uppercase; }
+    .period-band .item .val { font-weight: bold; color: #1d4ed8; }
+    .section-title { font-size: 10pt; font-weight: bold; color: #1d4ed8; margin: 14px 0 6px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #dbeafe; padding-bottom: 3px; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+    th { background: #1d4ed8; color: white; padding: 5px 8px; text-align: left; font-size: 8pt; font-weight: bold; }
+    td { padding: 5px 8px; border-bottom: 1px solid #e5e7eb; font-size: 8.5pt; }
+    tr:nth-child(even) td { background: #f8fafc; }
+    .amount { text-align: right; font-family: "Courier New", monospace; }
+    .negative { color: #dc2626; }
+    .positive { color: #16a34a; }
+    .totals-row td { background: #1e3a5f !important; color: white; font-weight: bold; }
+    .summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 12px; }
+    .stat-card { border: 1px solid #e5e7eb; border-radius: 4px; padding: 10px 12px; }
+    .stat-card label { font-size: 7.5pt; color: #555; text-transform: uppercase; display: block; }
+    .stat-card .val { font-size: 14pt; font-weight: bold; color: #1d4ed8; }
+    .stat-card .val.negative { color: #dc2626; }
+    .net-bar { background: #1d4ed8; color: white; border-radius: 4px; padding: 10px 16px; margin-top: 8px; display: flex; justify-content: space-between; align-items: center; }
+    .no-data { text-align: center; color: #9ca3af; padding: 20px; font-style: italic; }
+    .footer { position: fixed; bottom: 8mm; left: 15mm; right: 15mm; border-top: 1px solid #d1d5db; padding-top: 4px; display: flex; justify-content: space-between; font-size: 7pt; color: #888; }
+    .page-break { page-break-before: always; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="company-name">MADITHEL BUS SERVICES</div>
+    <div class="company-sub">Weekly Revenue Report</div>
+  </div>
+  <div class="report-title">
+    <h2>Weekly Cashing Report</h2>
+    <div class="meta">
+      Period: <strong><%= Calendar.strftime(report.start_date, "%d %b %Y") %> – <%= Calendar.strftime(report.end_date, "%d %b %Y") %></strong><br>
+      Generated: <%= Calendar.strftime(generated_at, "%d/%m/%Y %H:%M") %>
+    </div>
+  </div>
+</div>
+
+<div class="period-band">
+  <div class="item"><label>Period Start</label><div class="val"><%= Calendar.strftime(report.start_date, "%d %B %Y") %></div></div>
+  <div class="item"><label>Period End</label><div class="val"><%= Calendar.strftime(report.end_date, "%d %B %Y") %></div></div>
+  <div class="item"><label>Report ID</label><div class="val">#<%= report.id %></div></div>
+  <div class="item"><label>Cashing Records</label><div class="val"><%= length(report.cashing_reports) %></div></div>
+</div>
+
+<div class="section-title">Cashing Records</div>
+
+<% cashing = report.cashing_reports %>
+
+<% if Enum.empty?(cashing) do %>
+  <div class="no-data">No cashing records for this period.</div>
+<% else %>
+  <table>
+    <thead>
+      <tr>
+        <th>Bus</th>
+        <th>Conductor</th>
+        <th>Days</th>
+        <th>Airtel ID</th>
+        <th class="amount">Expected (ZMW)</th>
+        <th class="amount">Received (ZMW)</th>
+        <th class="amount">Expenditure (ZMW)</th>
+        <th class="amount">Debt Balance (ZMW)</th>
+        <th class="amount">Variance (ZMW)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% totals = Enum.reduce(cashing, %{exp: Decimal.new(0), rec: Decimal.new(0), exd: Decimal.new(0), debt: Decimal.new(0)}, fn cr, acc ->
+        %{
+          exp: Decimal.add(acc.exp, cr.expected_cashing || Decimal.new(0)),
+          rec: Decimal.add(acc.rec, cr.received_cashing || Decimal.new(0)),
+          exd: Decimal.add(acc.exd, cr.expenditure || Decimal.new(0)),
+          debt: Decimal.add(acc.debt, cr.debt_balance || Decimal.new(0))
+        }
+      end) %>
+      <% Enum.each(cashing, fn cr -> %>
+        <% variance = Decimal.sub(cr.received_cashing || Decimal.new(0), cr.expected_cashing || Decimal.new(0)) %>
+        <% v_class = if Decimal.negative?(variance), do: "negative", else: "positive" %>
+        <tr>
+          <td><%= if cr.bus, do: cr.bus.registration_number, else: "—" %></td>
+          <td><%= if cr.conductor, do: cr.conductor.full_name, else: "—" %></td>
+          <td><%= cr.days_worked || "—" %></td>
+          <td><%= cr.airtel_id || "—" %></td>
+          <td class="amount"><%= Decimal.to_string(cr.expected_cashing || Decimal.new(0)) %></td>
+          <td class="amount"><%= Decimal.to_string(cr.received_cashing || Decimal.new(0)) %></td>
+          <td class="amount"><%= Decimal.to_string(cr.expenditure || Decimal.new(0)) %></td>
+          <td class="amount"><%= Decimal.to_string(cr.debt_balance || Decimal.new(0)) %></td>
+          <td class="amount <%= v_class %>"><%= Decimal.to_string(variance) %></td>
+        </tr>
+      <% end) %>
+      <tr class="totals-row">
+        <td colspan="4">TOTALS</td>
+        <td class="amount"><%= Decimal.to_string(totals.exp) %></td>
+        <td class="amount"><%= Decimal.to_string(totals.rec) %></td>
+        <td class="amount"><%= Decimal.to_string(totals.exd) %></td>
+        <td class="amount"><%= Decimal.to_string(totals.debt) %></td>
+        <td class="amount"><%= Decimal.to_string(Decimal.sub(totals.rec, totals.exp)) %></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <% variance_total = Decimal.sub(totals.rec, totals.exp) %>
+  <% net_revenue = Decimal.sub(totals.rec, totals.exd) %>
+
+  <div class="summary-grid">
+    <div class="stat-card"><label>Expected Cash</label><div class="val">ZMW <%= Decimal.to_string(totals.exp) %></div></div>
+    <div class="stat-card"><label>Received Cash</label><div class="val">ZMW <%= Decimal.to_string(totals.rec) %></div></div>
+    <div class="stat-card"><label>Total Expenditure</label><div class="val">ZMW <%= Decimal.to_string(totals.exd) %></div></div>
+    <div class="stat-card"><label>Total Debt Balance</label><div class="val <%= if Decimal.positive?(totals.debt), do: "negative", else: "" %>">ZMW <%= Decimal.to_string(totals.debt) %></div></div>
+    <div class="stat-card"><label>Cash Variance</label><div class="val <%= if Decimal.negative?(variance_total), do: "negative", else: "" %>">ZMW <%= Decimal.to_string(variance_total) %></div></div>
+    <div class="stat-card"><label>Records</label><div class="val"><%= length(cashing) %></div></div>
+  </div>
+
+  <div class="net-bar">
+    <span style="font-weight:bold;font-size:10pt">NET REVENUE (Received − Expenditure)</span>
+    <span style="font-size:16pt;font-weight:bold">ZMW <%= Decimal.to_string(net_revenue) %></span>
+  </div>
+<% end %>
+
+<div class="footer">
+  <span>Miway Logistics Services — Confidential</span>
+  <span>Weekly Report #<%= report.id %> | <%= Calendar.strftime(report.start_date, "%d %b") %> – <%= Calendar.strftime(report.end_date, "%d %b %Y") %></span>
+  <span>Generated: <%= Calendar.strftime(generated_at, "%d/%m/%Y %H:%M") %></span>
+</div>
+
+</body>
+</html>

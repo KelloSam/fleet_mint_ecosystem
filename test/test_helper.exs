@@ -1,2 +1,2 @@
 ExUnit.start()
-Ecto.Adapters.SQL.Sandbox.mode(BusCashingSystem.Repo, :manual)
+Ecto.Adapters.SQL.Sandbox.mode(FleetMint.Repo, :manual)

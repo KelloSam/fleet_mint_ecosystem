@@ -1,4 +1,4 @@
-defmodule BusCashingSystem.Repo.Migrations.AddIndexesAndConstraints do
+defmodule FleetMint.Repo.Migrations.AddIndexesAndConstraints do
   use Ecto.Migration
 
   def change do

@@ -1,4 +1,4 @@
-config :bus_cashing_system, BusCashingSystemWeb.Endpoint,
+config :fleet_mint, FleetMintWeb.Endpoint,
   url: [host: "example.com", port: 443],
   https: [
     port: 443,

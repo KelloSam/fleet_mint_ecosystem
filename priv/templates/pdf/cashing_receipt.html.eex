@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    @page { size: A5; margin: 12mm; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, Helvetica, sans-serif; font-size: 9pt; color: #1a1a1a; max-width: 148mm; }
+    .header { text-align: center; border-bottom: 2px solid #1d4ed8; padding-bottom: 8px; margin-bottom: 12px; }
+    .company-name { font-size: 16pt; font-weight: bold; color: #1d4ed8; }
+    .receipt-title { font-size: 11pt; font-weight: bold; margin-top: 4px; }
+    .receipt-id { font-size: 8pt; color: #666; }
+    .meta-row { display: flex; justify-content: space-between; background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 4px; padding: 8px 10px; margin-bottom: 12px; }
+    .meta-item label { font-size: 7pt; color: #777; text-transform: uppercase; display: block; }
+    .meta-item .val { font-weight: bold; font-size: 9pt; }
+    .section { margin-bottom: 10px; }
+    .section-label { font-size: 8pt; font-weight: bold; text-transform: uppercase; color: #1d4ed8; border-bottom: 1px solid #dbeafe; margin-bottom: 5px; padding-bottom: 2px; }
+    .row { display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px dotted #e5e7eb; font-size: 8.5pt; }
+    .row:last-child { border-bottom: none; }
+    .row .label { color: #555; }
+    .row .value { font-weight: bold; }
+    .amount-box { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 4px; padding: 8px 12px; margin: 10px 0; }
+    .amount-row { display: flex; justify-content: space-between; padding: 3px 0; font-size: 9pt; }
+    .amount-row .lbl { color: #444; }
+    .amount-row .amt { font-family: "Courier New", monospace; font-weight: bold; }
+    .divider { border: none; border-top: 1px solid #d1d5db; margin: 8px 0; }
+    .net-bar { background: #1d4ed8; color: white; border-radius: 4px; padding: 8px 12px; display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 12px; }
+    .net-bar .net-label { font-size: 9pt; }
+    .net-bar .net-val { font-size: 13pt; }
+    .expenditure-table { width: 100%; border-collapse: collapse; margin-top: 4px; }
+    .expenditure-table th { background: #374151; color: white; padding: 4px 6px; font-size: 7.5pt; text-align: left; }
+    .expenditure-table td { padding: 3px 6px; border-bottom: 1px solid #e5e7eb; font-size: 8pt; }
+    .text-right { text-align: right; }
+    .footer { text-align: center; font-size: 7pt; color: #9ca3af; border-top: 1px solid #e5e7eb; padding-top: 6px; margin-top: 12px; }
+    .variance-positive { color: #16a34a; }
+    .variance-negative { color: #dc2626; }
+    .description-box { background: #fffbeb; border: 1px solid #fde68a; border-radius: 4px; padding: 6px 10px; font-size: 8pt; margin-bottom: 10px; color: #78350f; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="company-name">MADITHEL BUS SERVICES</div>
+  <div class="receipt-title">Cash Handover Receipt</div>
+  <div class="receipt-id">Receipt #<%= cr.id %> | Generated: <%= Calendar.strftime(generated_at, "%d/%m/%Y %H:%M") %></div>
+</div>
+
+<div class="meta-row">
+  <div class="meta-item">
+    <label>Bus</label>
+    <div class="val"><%= if cr.bus, do: cr.bus.registration_number, else: "N/A" %></div>
+  </div>
+  <div class="meta-item">
+    <label>Conductor</label>
+    <div class="val"><%= if cr.conductor, do: cr.conductor.full_name, else: "N/A" %></div>
+  </div>
+  <div class="meta-item">
+    <label>Airtel ID</label>
+    <div class="val"><%= if cr.airtel_id && cr.airtel_id != "", do: cr.airtel_id, else: "—" %></div>
+  </div>
+  <div class="meta-item">
+    <label>Days Worked</label>
+    <div class="val"><%= cr.days_worked || "—" %></div>
+  </div>
+  <div class="meta-item">
+    <label>Report Date</label>
+    <div class="val"><%= if cr.report_date, do: Calendar.strftime(cr.report_date, "%d/%m/%Y"), else: Calendar.strftime(NaiveDateTime.to_date(cr.inserted_at), "%d/%m/%Y") %></div>
+  </div>
+</div>
+
+<% variance = Decimal.sub(cr.received_cashing || Decimal.new(0), cr.expected_cashing || Decimal.new(0)) %>
+
+<div class="amount-box">
+  <div class="amount-row">
+    <span class="lbl">Expected Cash</span>
+    <span class="amt">ZMW <%= Decimal.to_string(cr.expected_cashing || Decimal.new(0)) %></span>
+  </div>
+  <div class="amount-row">
+    <span class="lbl">Received Cash</span>
+    <span class="amt">ZMW <%= Decimal.to_string(cr.received_cashing || Decimal.new(0)) %></span>
+  </div>
+  <div class="amount-row">
+    <span class="lbl">Expenditure</span>
+    <span class="amt">ZMW <%= Decimal.to_string(cr.expenditure || Decimal.new(0)) %></span>
+  </div>
+  <div class="amount-row">
+    <span class="lbl">Debt Balance</span>
+    <span class="amt">ZMW <%= Decimal.to_string(cr.debt_balance || Decimal.new(0)) %></span>
+  </div>
+  <hr class="divider">
+  <div class="amount-row">
+    <span class="lbl" style="font-weight:bold">Cash Variance</span>
+    <span class="amt <%= if Decimal.negative?(variance), do: "variance-negative", else: "variance-positive" %>">
+      ZMW <%= Decimal.to_string(variance) %>
+    </span>
+  </div>
+</div>
+
+<% net = Decimal.sub(cr.received_cashing || Decimal.new(0), cr.expenditure || Decimal.new(0)) %>
+<div class="net-bar">
+  <span class="net-label">NET REVENUE</span>
+  <span class="net-val">ZMW <%= Decimal.to_string(net) %></span>
+</div>
+
+<% if cr.description && cr.description != "" do %>
+  <div class="description-box"><strong>Note:</strong> <%= cr.description %></div>
+<% end %>
+
+<% if cr.expenditures != [] do %>
+  <div class="section">
+    <div class="section-label">Expenditure Breakdown (<%= length(cr.expenditures) %> items)</div>
+    <table class="expenditure-table">
+      <thead>
+        <tr>
+          <th>Description</th>
+          <th>Date</th>
+          <th class="text-right">Amount (ZMW)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% Enum.each(cr.expenditures, fn exp -> %>
+          <tr>
+            <td><%= exp.description %></td>
+            <td><%= if exp.date, do: Calendar.strftime(exp.date, "%d/%m/%Y"), else: "—" %></td>
+            <td class="text-right"><%= Decimal.to_string(exp.amount) %></td>
+          </tr>
+        <% end) %>
+        <tr style="background:#f3f4f6;font-weight:bold">
+          <td colspan="2">Total Expenditures</td>
+          <td class="text-right">ZMW <%= Decimal.to_string(Enum.reduce(cr.expenditures, Decimal.new(0), &Decimal.add(&2, &1.amount))) %></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+<% end %>
+
+<div class="footer">
+  Miway Logistics Services &mdash; Cash Handover Receipt #<%= cr.id %><br>
+  This document is system-generated. Please retain for records.
+</div>
+
+</body>
+</html>

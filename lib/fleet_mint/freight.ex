@@ -1,0 +1,161 @@
+defmodule FleetMint.Freight do
+  import Ecto.Query
+  alias FleetMint.Repo
+  alias FleetMint.Freight.{Client, Order, Trip, TripMilestone, Invoice}
+
+  # ── Clients ───────────────────────────────────────────────────────────────
+
+  def list_clients(opts \\ []) do
+    Client
+    |> maybe_filter_status(opts[:status])
+    |> order_by([c], c.company_name)
+    |> Repo.all()
+  end
+
+  def get_client!(id), do: Repo.get!(Client, id)
+  def get_client_with_orders!(id), do: Repo.get!(Client, id) |> Repo.preload(orders: [:assigned_trip])
+
+  def create_client(attrs) do
+    %Client{} |> Client.changeset(attrs) |> Repo.insert()
+  end
+
+  def update_client(%Client{} = client, attrs) do
+    client |> Client.changeset(attrs) |> Repo.update()
+  end
+
+  def delete_client(%Client{} = client), do: Repo.delete(client)
+  def change_client(%Client{} = client, attrs \\ %{}), do: Client.changeset(client, attrs)
+
+  # ── Orders ────────────────────────────────────────────────────────────────
+
+  def list_orders(opts \\ []) do
+    Order
+    |> maybe_filter_status(opts[:status])
+    |> maybe_filter_client(opts[:client_id])
+    |> preload([:client, :assigned_trip, :created_by])
+    |> order_by([o], [desc: o.inserted_at])
+    |> Repo.all()
+  end
+
+  def get_order!(id), do: Repo.get!(Order, id) |> Repo.preload([:client, :assigned_trip])
+  def get_order_by_reference!(ref), do: Repo.get_by!(Order, order_reference: ref)
+
+  def create_order(attrs, user_id \\ nil) do
+    attrs = if user_id, do: Map.put(attrs, "created_by_id", user_id), else: attrs
+    %Order{} |> Order.changeset(attrs) |> Repo.insert()
+  end
+
+  def update_order(%Order{} = order, attrs) do
+    order |> Order.changeset(attrs) |> Repo.update()
+  end
+
+  def assign_order_to_trip(%Order{} = order, trip_id) do
+    order |> Order.changeset(%{assigned_trip_id: trip_id, status: "assigned"}) |> Repo.update()
+  end
+
+  def delete_order(%Order{} = order), do: Repo.delete(order)
+  def change_order(%Order{} = order, attrs \\ %{}), do: Order.changeset(order, attrs)
+
+  def pending_orders_count do
+    Repo.aggregate(from(o in Order, where: o.status == "pending"), :count)
+  end
+
+  # ── Trips ─────────────────────────────────────────────────────────────────
+
+  def list_trips(opts \\ []) do
+    Trip
+    |> maybe_filter_status(opts[:status])
+    |> preload([:vehicle, :driver, :co_driver, orders: [:client]])
+    |> order_by([t], [desc: t.planned_departure])
+    |> Repo.all()
+  end
+
+  def get_trip!(id), do: Repo.get!(Trip, id) |> Repo.preload([:vehicle, :driver, :co_driver, :milestones, orders: [:client]])
+  def get_trip_by_reference!(ref), do: Repo.get_by!(Trip, trip_reference: ref) |> Repo.preload([:vehicle, :driver, :milestones, orders: [:client]])
+
+  def create_trip(attrs, user_id \\ nil) do
+    attrs = if user_id, do: Map.put(attrs, "created_by_id", user_id), else: attrs
+    %Trip{} |> Trip.changeset(attrs) |> Repo.insert()
+  end
+
+  def update_trip(%Trip{} = trip, attrs) do
+    trip |> Trip.changeset(attrs) |> Repo.update()
+  end
+
+  def update_trip_status(%Trip{} = trip, status) do
+    extra = case status do
+      "in_transit" -> %{actual_departure: NaiveDateTime.utc_now()}
+      "delivered" -> %{actual_arrival: NaiveDateTime.utc_now()}
+      _ -> %{}
+    end
+    trip |> Trip.changeset(Map.merge(%{status: status}, extra)) |> Repo.update()
+  end
+
+  def delete_trip(%Trip{} = trip), do: Repo.delete(trip)
+  def change_trip(%Trip{} = trip, attrs \\ %{}), do: Trip.changeset(trip, attrs)
+
+  def active_trips_count do
+    Repo.aggregate(from(t in Trip, where: t.status in ["loading", "in_transit"]), :count)
+  end
+
+  # ── Trip Milestones ───────────────────────────────────────────────────────
+
+  def add_milestone(%Trip{} = trip, attrs) do
+    attrs = Map.merge(attrs, %{"trip_id" => trip.id, "event_time" => attrs["event_time"] || NaiveDateTime.utc_now()})
+    %TripMilestone{} |> TripMilestone.changeset(attrs) |> Repo.insert()
+  end
+
+  def list_milestones(trip_id) do
+    TripMilestone
+    |> where([m], m.trip_id == ^trip_id)
+    |> order_by([m], m.event_time)
+    |> Repo.all()
+  end
+
+  # ── Invoices ──────────────────────────────────────────────────────────────
+
+  def list_invoices(opts \\ []) do
+    Invoice
+    |> maybe_filter_status(opts[:status])
+    |> maybe_filter_client(opts[:client_id])
+    |> preload([:client, :trip])
+    |> order_by([i], [desc: i.invoice_date])
+    |> Repo.all()
+  end
+
+  def get_invoice!(id), do: Repo.get!(Invoice, id) |> Repo.preload([:client, :trip])
+
+  def create_invoice(attrs, user_id \\ nil) do
+    attrs = if user_id, do: Map.put(attrs, "created_by_id", user_id), else: attrs
+    %Invoice{} |> Invoice.changeset(attrs) |> Repo.insert()
+  end
+
+  def update_invoice(%Invoice{} = invoice, attrs) do
+    invoice |> Invoice.changeset(attrs) |> Repo.update()
+  end
+
+  def mark_invoice_paid(%Invoice{} = invoice, payment_ref) do
+    invoice
+    |> Invoice.changeset(%{status: "paid", payment_date: Date.utc_today(), payment_reference: payment_ref})
+    |> Repo.update()
+  end
+
+  def change_invoice(%Invoice{} = invoice, attrs \\ %{}), do: Invoice.changeset(invoice, attrs)
+
+  def delete_invoice(%Invoice{} = invoice), do: Repo.delete(invoice)
+
+  def outstanding_revenue do
+    from(i in Invoice,
+      where: i.status in ["issued", "overdue"],
+      select: sum(i.total_amount)
+    ) |> Repo.one() || Decimal.new(0)
+  end
+
+  # ── Private ───────────────────────────────────────────────────────────────
+
+  defp maybe_filter_status(query, nil), do: query
+  defp maybe_filter_status(query, status), do: where(query, [x], x.status == ^status)
+
+  defp maybe_filter_client(query, nil), do: query
+  defp maybe_filter_client(query, id), do: where(query, [x], x.client_id == ^id)
+end

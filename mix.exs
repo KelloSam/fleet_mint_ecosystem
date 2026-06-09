@@ -1,9 +1,9 @@
-defmodule BusCashingSystem.MixProject do
+defmodule FleetMint.MixProject do
   use Mix.Project
 
   def project do
     [
-      app: :bus_cashing_system,
+      app: :fleet_mint,
       version: "0.1.0",
       elixir: "~> 1.14",
       elixirc_paths: elixirc_paths(Mix.env()),
@@ -18,7 +18,7 @@ defmodule BusCashingSystem.MixProject do
   # Type `mix help compile.app` for more information.
   def application do
     [
-      mod: {BusCashingSystem.Application, []},
+      mod: {FleetMint.Application, []},
       extra_applications: [:logger, :runtime_tools]
     ]
   end
@@ -53,7 +53,10 @@ defmodule BusCashingSystem.MixProject do
       {:dns_cluster, "~> 0.1.1"},
       {:bandit, "~> 1.5"},
       {:bcrypt_elixir, "~> 3.0"},
-      {:guardian, "~> 2.3"}
+      {:guardian, "~> 2.3"},
+      {:chromic_pdf, "~> 1.17"},
+      {:eqrcode, "~> 0.2"}
+
     ]
   end
 
@@ -71,10 +74,10 @@ defmodule BusCashingSystem.MixProject do
       "ecto.reset": ["ecto.drop", "ecto.setup"],
       test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"],
       "assets.setup": ["tailwind.install --if-missing", "esbuild.install --if-missing"],
-      "assets.build": ["tailwind bus_cashing_system", "esbuild bus_cashing_system"],
+      "assets.build": ["tailwind fleet_mint", "esbuild fleet_mint"],
       "assets.deploy": [
-        "tailwind bus_cashing_system --minify",
-        "esbuild bus_cashing_system --minify",
+        "tailwind fleet_mint --minify",
+        "esbuild fleet_mint --minify",
         "phx.digest"
       ]
     ]

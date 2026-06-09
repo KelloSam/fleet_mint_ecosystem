@@ -1,0 +1,70 @@
+<.simple_form :let={f} for={@changeset} action={@action}>
+  <.error :if={@changeset.action}>
+    Oops, something went wrong! Please check the errors below.
+  </.error>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div class="sm:col-span-2">
+      <.input
+        field={f[:name]}
+        type="text"
+        label="Route Name"
+        placeholder="e.g. City Centre – Airport Express"
+      />
+    </div>
+    <.input
+      field={f[:start_location]}
+      type="text"
+      label="Start Location"
+      placeholder="e.g. Lusaka City Centre"
+    />
+    <.input
+      field={f[:end_location]}
+      type="text"
+      label="End Location"
+      placeholder="e.g. Kenneth Kaunda International"
+    />
+    <.input
+      field={f[:distance]}
+      type="number"
+      label="Distance (km)"
+      step="0.1"
+      min="0.1"
+      placeholder="e.g. 25.5"
+    />
+    <.input
+      field={f[:duration]}
+      type="number"
+      label="Duration (minutes)"
+      min="1"
+      placeholder="e.g. 45"
+    />
+    <.input
+      field={f[:fare]}
+      type="number"
+      label="Fare (ZMW)"
+      step="0.01"
+      min="0.01"
+      placeholder="e.g. 25.00"
+    />
+    <.input
+      field={f[:status]}
+      type="select"
+      label="Status"
+      options={status_options()}
+    />
+  </div>
+
+  <.input
+    field={f[:description]}
+    type="textarea"
+    label="Description (optional)"
+    placeholder="Any stops, notes or route details..."
+  />
+
+  <:actions>
+    <.button class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg">
+      Save Route
+    </.button>
+  </:actions>
+</.simple_form>

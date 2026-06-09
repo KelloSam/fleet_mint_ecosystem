@@ -1,4 +1,4 @@
-defmodule BusCashingSystem.Repo.Migrations.CreateWeeklyReports do
+defmodule FleetMint.Repo.Migrations.CreateWeeklyReports do
   use Ecto.Migration
 
   def change do

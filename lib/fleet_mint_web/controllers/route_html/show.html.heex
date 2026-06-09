@@ -1,0 +1,60 @@
+<div class="mb-6 flex items-start justify-between">
+  <div>
+    <.link navigate={~p"/routes"} class="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1">
+      <.icon name="hero-arrow-left-solid" class="h-3 w-3" /> Routes
+    </.link>
+    <h1 class="text-2xl font-bold text-gray-800 mt-2"><%= @route.name %></h1>
+    <div class="mt-1"><.status_badge status={@route.status} /></div>
+  </div>
+  <div class="flex gap-3">
+    <.link navigate={~p"/routes/#{@route}/edit"}>
+      <.button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm">
+        Edit Route
+      </.button>
+    </.link>
+    <.link href={~p"/routes/#{@route}"} method="delete" data-confirm={"Delete route \"#{@route.name}\"?"}>
+      <.button class="bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-4 py-2 rounded-lg text-sm">
+        Delete
+      </.button>
+    </.link>
+  </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+  <div class="bg-white rounded-lg shadow p-6">
+    <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Route Details</h2>
+    <dl class="divide-y divide-gray-100">
+      <div class="py-3 flex justify-between text-sm">
+        <dt class="text-gray-500 font-medium">From</dt>
+        <dd class="text-gray-900 font-semibold"><%= @route.start_location || "—" %></dd>
+      </div>
+      <div class="py-3 flex justify-between text-sm">
+        <dt class="text-gray-500 font-medium">To</dt>
+        <dd class="text-gray-900 font-semibold"><%= @route.end_location || "—" %></dd>
+      </div>
+      <div class="py-3 flex justify-between text-sm">
+        <dt class="text-gray-500 font-medium">Distance</dt>
+        <dd class="text-gray-900"><%= format_distance(@route.distance) %></dd>
+      </div>
+      <div class="py-3 flex justify-between text-sm">
+        <dt class="text-gray-500 font-medium">Duration</dt>
+        <dd class="text-gray-900"><%= format_duration(@route.duration) %></dd>
+      </div>
+      <div class="py-3 flex justify-between text-sm">
+        <dt class="text-gray-500 font-medium">Fare</dt>
+        <dd class="text-gray-900 font-bold text-blue-700"><%= format_fare(@route.fare) %></dd>
+      </div>
+      <div class="py-3 flex justify-between text-sm">
+        <dt class="text-gray-500 font-medium">Status</dt>
+        <dd><.status_badge status={@route.status} /></dd>
+      </div>
+    </dl>
+  </div>
+
+  <%= if @route.description do %>
+    <div class="bg-white rounded-lg shadow p-6">
+      <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Notes</h2>
+      <p class="text-sm text-gray-700 leading-relaxed"><%= @route.description %></p>
+    </div>
+  <% end %>
+</div>

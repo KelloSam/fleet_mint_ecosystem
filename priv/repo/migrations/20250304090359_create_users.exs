@@ -1,4 +1,4 @@
-defmodule BusCashingSystem.Repo.Migrations.CreateUsers do
+defmodule FleetMint.Repo.Migrations.CreateUsers do
   use Ecto.Migration
 
   def change do

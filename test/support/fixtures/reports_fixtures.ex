@@ -1,7 +1,7 @@
-defmodule BusCashingSystem.ReportsFixtures do
+defmodule FleetMint.ReportsFixtures do
   @moduledoc """
   This module defines test helpers for creating
-  entities via the `BusCashingSystem.Reports` context.
+  entities via the `FleetMint.Reports` context.
   """
 
   @doc """
@@ -14,7 +14,7 @@ defmodule BusCashingSystem.ReportsFixtures do
         end_date: ~D[2025-03-03],
         start_date: ~D[2025-03-03]
       })
-      |> BusCashingSystem.Reports.create_report()
+      |> FleetMint.Reports.create_report()
 
     report
   end

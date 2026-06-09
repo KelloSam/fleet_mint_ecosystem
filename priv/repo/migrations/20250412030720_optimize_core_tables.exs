@@ -1,4 +1,4 @@
-defmodule BusCashingSystem.Repo.Migrations.OptimizeCoreTables do
+defmodule FleetMint.Repo.Migrations.OptimizeCoreTables do
   use Ecto.Migration
 
   def up do

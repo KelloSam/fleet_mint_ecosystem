@@ -1,4 +1,4 @@
-defmodule BusCashingSystem.Repo.Migrations.AddDateToExpendituresAndUpdateForeignKey do
+defmodule FleetMint.Repo.Migrations.AddDateToExpendituresAndUpdateForeignKey do
   use Ecto.Migration
 
   def change do

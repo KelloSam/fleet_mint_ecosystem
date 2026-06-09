@@ -1,7 +1,7 @@
-defmodule BusCashingSystem.FinanceFixtures do
+defmodule FleetMint.FinanceFixtures do
   @moduledoc """
   This module defines test helpers for creating
-  entities via the `BusCashingSystem.Finance` context.
+  entities via the `FleetMint.Finance` context.
   """
 
   @doc """
@@ -14,7 +14,7 @@ defmodule BusCashingSystem.FinanceFixtures do
         start_date: ~D[2025-03-03],
         end_date: ~D[2025-03-03]
       })
-      |> BusCashingSystem.Finance.create_report()
+      |> FleetMint.Finance.create_report()
 
     report
   end
@@ -38,7 +38,7 @@ defmodule BusCashingSystem.FinanceFixtures do
         received_cashing: "120.5",
         report_id: report.id
       })
-      |> BusCashingSystem.Finance.create_cashing_report()
+      |> FleetMint.Finance.create_cashing_report()
 
     cashing_report
   end
@@ -58,7 +58,7 @@ defmodule BusCashingSystem.FinanceFixtures do
         cashing_report_id: cashing_report.id,
         date: DateTime.utc_now()
       })
-      |> BusCashingSystem.Finance.create_expenditure()
+      |> FleetMint.Finance.create_expenditure()
 
     expenditure
   end

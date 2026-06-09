@@ -1,0 +1,54 @@
+<.simple_form :let={f} for={@changeset} action={@action}>
+  <.error :if={@changeset.action}>
+    Oops, something went wrong! Please check the errors below.
+  </.error>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <.input
+      field={f[:registration_number]}
+      type="text"
+      label="Registration Number"
+      placeholder="e.g. ABX1234"
+    />
+    <.input
+      field={f[:model]}
+      type="text"
+      label="Model"
+      placeholder="e.g. Toyota Coaster"
+    />
+    <.input
+      field={f[:year]}
+      type="number"
+      label="Year"
+      min="2000"
+      max={current_year() + 1}
+      placeholder={current_year()}
+    />
+    <.input
+      field={f[:capacity]}
+      type="number"
+      label="Passenger Capacity"
+      min="1"
+      placeholder="e.g. 30"
+    />
+    <.input
+      field={f[:status]}
+      type="select"
+      label="Status"
+      options={status_options()}
+    />
+  </div>
+
+  <.input
+    field={f[:description]}
+    type="textarea"
+    label="Description (optional)"
+    placeholder="Any additional notes about this bus..."
+  />
+
+  <:actions>
+    <.button class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg">
+      Save Bus
+    </.button>
+  </:actions>
+</.simple_form>

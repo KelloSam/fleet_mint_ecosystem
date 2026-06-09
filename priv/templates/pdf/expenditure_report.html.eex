@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    @page { size: A4; margin: 15mm 15mm 20mm 15mm; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, Helvetica, sans-serif; font-size: 9pt; color: #1a1a1a; }
+    .header { border-bottom: 3px solid #7c3aed; padding-bottom: 10px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: flex-end; }
+    .company-name { font-size: 18pt; font-weight: bold; color: #7c3aed; }
+    .company-sub { font-size: 9pt; color: #555; }
+    .report-title { text-align: right; }
+    .report-title h2 { font-size: 14pt; font-weight: bold; }
+    .report-title .meta { font-size: 8pt; color: #666; margin-top: 2px; }
+    .period-band { background: #faf5ff; border: 1px solid #ddd6fe; border-radius: 4px; padding: 8px 14px; margin-bottom: 14px; display: flex; gap: 40px; font-size: 9pt; }
+    .period-band .item label { font-size: 7.5pt; color: #555; text-transform: uppercase; }
+    .period-band .item .val { font-weight: bold; color: #7c3aed; }
+    .section-title { font-size: 10pt; font-weight: bold; color: #7c3aed; margin: 14px 0 6px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #ddd6fe; padding-bottom: 3px; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
+    th { background: #7c3aed; color: white; padding: 5px 8px; text-align: left; font-size: 8pt; font-weight: bold; }
+    td { padding: 5px 8px; border-bottom: 1px solid #e5e7eb; font-size: 8.5pt; }
+    tr:nth-child(even) td { background: #fafafa; }
+    .amount { text-align: right; font-family: "Courier New", monospace; }
+    .day-header td { background: #ede9fe !important; font-weight: bold; color: #5b21b6; font-size: 8pt; }
+    .day-total td { background: #f3f0ff !important; font-weight: bold; }
+    .grand-total td { background: #5b21b6 !important; color: white; font-weight: bold; }
+    .summary-box { background: #faf5ff; border: 1px solid #ddd6fe; border-radius: 4px; padding: 12px; margin-top: 12px; }
+    .summary-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+    .stat label { font-size: 7.5pt; color: #777; text-transform: uppercase; display: block; }
+    .stat .val { font-size: 13pt; font-weight: bold; color: #7c3aed; }
+    .footer { position: fixed; bottom: 8mm; left: 15mm; right: 15mm; border-top: 1px solid #d1d5db; padding-top: 4px; display: flex; justify-content: space-between; font-size: 7pt; color: #888; }
+    .no-data { text-align: center; color: #9ca3af; padding: 20px; font-style: italic; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="company-name">MADITHEL BUS SERVICES</div>
+    <div class="company-sub">Expenditure Report</div>
+  </div>
+  <div class="report-title">
+    <h2>Expenditure Report</h2>
+    <div class="meta">
+      Period: <strong><%= Calendar.strftime(start_date, "%d %b %Y") %> – <%= Calendar.strftime(end_date, "%d %b %Y") %></strong><br>
+      Generated: <%= Calendar.strftime(generated_at, "%d/%m/%Y %H:%M") %>
+    </div>
+  </div>
+</div>
+
+<div class="period-band">
+  <div class="item"><label>From</label><div class="val"><%= Calendar.strftime(start_date, "%d %B %Y") %></div></div>
+  <div class="item"><label>To</label><div class="val"><%= Calendar.strftime(end_date, "%d %B %Y") %></div></div>
+  <div class="item"><label>Total Items</label><div class="val"><%= length(data.expenditures) %></div></div>
+  <div class="item"><label>Total Amount</label><div class="val">ZMW <%= Decimal.to_string(data.total) %></div></div>
+</div>
+
+<% if Enum.empty?(data.expenditures) do %>
+  <div class="no-data">No expenditures recorded for this period.</div>
+<% else %>
+  <div class="section-title">Daily Breakdown</div>
+  <table>
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Description</th>
+        <th>Cashing Report</th>
+        <th class="amount">Amount (ZMW)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% Enum.each(data.by_date, fn day -> %>
+        <tr class="day-header">
+          <td colspan="3"><%= Calendar.strftime(day.date, "%A, %d %B %Y") %></td>
+          <td class="amount"><%= length(day.items) %> item(s)</td>
+        </tr>
+        <% Enum.each(day.items, fn exp -> %>
+          <tr>
+            <td></td>
+            <td><%= exp.description %></td>
+            <td><%= if exp.cashing_report, do: "Report ##{exp.cashing_report.id}", else: "—" %></td>
+            <td class="amount"><%= Decimal.to_string(exp.amount) %></td>
+          </tr>
+        <% end) %>
+        <tr class="day-total">
+          <td colspan="3" style="text-align:right;padding-right:12px">Day Total:</td>
+          <td class="amount">ZMW <%= Decimal.to_string(day.total) %></td>
+        </tr>
+      <% end) %>
+      <tr class="grand-total">
+        <td colspan="3">GRAND TOTAL</td>
+        <td class="amount">ZMW <%= Decimal.to_string(data.total) %></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="summary-box">
+    <div class="summary-grid">
+      <div class="stat"><label>Total Expenditure</label><div class="val">ZMW <%= Decimal.to_string(data.total) %></div></div>
+      <div class="stat"><label>Total Items</label><div class="val"><%= length(data.expenditures) %></div></div>
+      <div class="stat"><label>Days with Expenses</label><div class="val"><%= length(data.by_date) %></div></div>
+    </div>
+  </div>
+<% end %>
+
+<div class="footer">
+  <span>Miway Logistics Services — Confidential</span>
+  <span>Expenditure Report: <%= Calendar.strftime(start_date, "%d %b") %> – <%= Calendar.strftime(end_date, "%d %b %Y") %></span>
+  <span>Generated: <%= Calendar.strftime(generated_at, "%d/%m/%Y %H:%M") %></span>
+</div>
+
+</body>
+</html>
