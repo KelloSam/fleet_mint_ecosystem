@@ -28,9 +28,24 @@ defmodule FleetMintWeb.Router do
     get "/register", AuthController, :register
     post "/register", AuthController, :create
     delete "/logout", AuthController, :logout
-    
+
     # Home page accessible without login
     get "/", PageController, :home
+
+    # Public client booking portal
+    get  "/book",                          PublicBookingController, :index
+    get  "/book/ticket/:reference",        PublicBookingController, :ticket
+    get  "/book/:slug",                    PublicBookingController, :show
+    get  "/book/:slug/:schedule_id",       PublicBookingController, :book
+    post "/book/:slug/:schedule_id",       PublicBookingController, :create
+
+    # Public bus / parcel tracking
+    get  "/track",                         TrackingController, :index
+
+    # Public passenger feedback (complaint + suggestion box)
+    get  "/feedback/new",                  ComplaintController, :new
+    post "/feedback",                      ComplaintController, :create
+    get  "/feedback/thank_you",            ComplaintController, :thank_you
   end
   
   # Protected routes - authentication required
@@ -44,14 +59,21 @@ defmodule FleetMintWeb.Router do
     resources "/reports", ReportController
     resources "/cashing_reports", CashingReportController
     resources "/expenditures", ExpenditureController
+    resources "/operators", OperatorController
     resources "/buses", BusController
     resources "/routes", RouteController
 
     # Unified vehicle fleet (buses + trucks)
     resources "/vehicles", VehicleController
+    resources "/maintenances", VehicleMaintenanceController
+    resources "/fuel_logs", FuelLogController
+    resources "/minibus_trips", MinibusTripController
+    resources "/drivers", DriverController
+    resources "/operation_logs", OperationLogController
 
     # Transit (passenger)
     resources "/schedules", ScheduleController
+    post "/schedules/:id/checkpoint", ScheduleController, :post_checkpoint
     resources "/bookings", BookingController
     resources "/tickets", TicketController, only: [:index, :show]
     get "/tickets/:id/validate", TicketController, :validate
@@ -66,6 +88,13 @@ defmodule FleetMintWeb.Router do
       end
       resources "/invoices", FreightInvoiceController
     end
+
+    # Internal JSON API (authenticated)
+    get "/api/notifications", ApiController, :notifications
+    get "/api/seats", ApiController, :available_seats
+
+    # Complaints & suggestions management (staff view)
+    resources "/complaints", ComplaintController, only: [:index, :show, :update, :delete]
 
     # Admin reports hub
     get "/admin/reports", PdfReportController, :index

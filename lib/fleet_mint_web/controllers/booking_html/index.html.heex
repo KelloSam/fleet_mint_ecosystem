@@ -1,6 +1,107 @@
 <div class="max-w-7xl mx-auto">
   <div class="flex items-center justify-between mb-6">
-    <h1 class="text-2xl font-bold text-gray-900">Coming Soon</h1>
+    <div>
+      <h1 class="text-2xl font-bold text-gray-800">Bookings</h1>
+      <p class="text-sm text-gray-500 mt-0.5">All passenger bookings and QR tickets</p>
+    </div>
+    <.link navigate={~p"/bookings/new"} class="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium px-4 py-2 rounded-lg">
+      <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+      </svg>
+      New Booking
+    </.link>
   </div>
-  <p class="text-gray-500">This module is under construction.</p>
+
+  <%# Filters %>
+  <form class="flex gap-3 mb-5 bg-white rounded-lg shadow p-4 items-end" method="get" action={~p"/bookings"}>
+    <div>
+      <label class="block text-xs font-medium text-gray-600 mb-1">Date</label>
+      <input type="date" name="date" class="rounded-md border-gray-300 shadow-sm text-sm py-1.5 px-3 border" />
+    </div>
+    <div>
+      <label class="block text-xs font-medium text-gray-600 mb-1">Status</label>
+      <select name="status" class="rounded-md border-gray-300 shadow-sm text-sm py-1.5 px-3 border">
+        <option value="">All</option>
+        <option value="confirmed">Confirmed</option>
+        <option value="checked_in">Checked In</option>
+        <option value="cancelled">Cancelled</option>
+        <option value="no_show">No Show</option>
+      </select>
+    </div>
+    <button type="submit" class="px-4 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">Filter</button>
+  </form>
+
+  <%= if @bookings == [] do %>
+    <div class="bg-white rounded-lg shadow p-12 text-center text-gray-400">
+      <p class="font-medium">No bookings found</p>
+      <p class="text-sm mt-1"><.link navigate={~p"/bookings/new"} class="text-emerald-600 hover:underline">Create the first booking</.link></p>
+    </div>
+  <% else %>
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Reference</th>
+            <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Passenger</th>
+            <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Route</th>
+            <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Date</th>
+            <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Seat</th>
+            <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Luggage</th>
+            <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Status</th>
+            <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Fare</th>
+            <th class="px-5 py-3"></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          <%= for b <- @bookings do %>
+            <tr class="hover:bg-gray-50">
+              <td class="px-5 py-3 text-sm font-mono font-semibold text-gray-800"><%= b.booking_reference %></td>
+              <td class="px-5 py-3 text-sm text-gray-700">
+                <%= b.passenger_name %>
+                <%= if b.passenger_phone do %>
+                  <br><span class="text-xs text-gray-400"><%= b.passenger_phone %></span>
+                <% end %>
+              </td>
+              <td class="px-5 py-3 text-sm text-gray-700">
+                <%= if b.schedule && b.schedule.route, do: b.schedule.route.name, else: "—" %>
+              </td>
+              <td class="px-5 py-3 text-sm text-gray-700">
+                <%= Calendar.strftime(b.travel_date, "%d %b %Y") %>
+              </td>
+              <td class="px-5 py-3 text-sm text-center font-semibold text-gray-700">
+                <%= b.seat_number || "—" %>
+              </td>
+              <td class="px-5 py-3 text-sm text-center">
+                <%= if b.has_luggage do %>
+                  <span title={b.luggage_description || "Has luggage"} class="text-lg cursor-help">🧳</span>
+                <% else %>
+                  <span class="text-gray-300">—</span>
+                <% end %>
+              </td>
+              <td class="px-5 py-3">
+                <span class={["inline-flex px-2 py-0.5 rounded-full text-xs font-semibold",
+                  case b.status do
+                    "confirmed"  -> "bg-green-100 text-green-800"
+                    "checked_in" -> "bg-blue-100 text-blue-800"
+                    "cancelled"  -> "bg-red-100 text-red-800"
+                    "no_show"    -> "bg-gray-100 text-gray-600"
+                    _            -> "bg-gray-100 text-gray-600"
+                  end]}>
+                  <%= String.replace(b.status, "_", " ") |> String.capitalize() %>
+                </span>
+              </td>
+              <td class="px-5 py-3 text-sm text-right font-mono text-gray-700">
+                ZMW <%= b.fare_paid %>
+              </td>
+              <td class="px-5 py-3 text-right">
+                <.link navigate={~p"/bookings/#{b}"} class="text-sm text-blue-600 hover:text-blue-800 font-medium">
+                  View
+                </.link>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% end %>
 </div>

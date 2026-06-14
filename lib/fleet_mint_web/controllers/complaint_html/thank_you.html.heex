@@ -1,0 +1,21 @@
+<div class="max-w-md mx-auto py-16 px-4 text-center">
+  <div class="inline-flex items-center justify-center h-20 w-20 rounded-full bg-emerald-100 mb-6">
+    <svg class="h-10 w-10 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+    </svg>
+  </div>
+  <h1 class="text-2xl font-bold text-gray-800 mb-3">Thank You!</h1>
+  <p class="text-gray-500 mb-2">Your feedback has been received and will be reviewed by our management team.</p>
+  <p class="text-sm text-gray-400 mb-8">We aim to respond within 24–48 hours if you provided your phone number.</p>
+
+  <div class="flex flex-col sm:flex-row gap-3 justify-center">
+    <a href={~p"/feedback/new?type=complaint"}
+       class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50">
+      Submit Another
+    </a>
+    <a href={~p"/"}
+       class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700">
+      Back to Home
+    </a>
+  </div>
+</div>

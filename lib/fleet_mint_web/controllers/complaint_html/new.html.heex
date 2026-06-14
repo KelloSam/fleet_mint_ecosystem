@@ -1,0 +1,183 @@
+<div class="max-w-2xl mx-auto py-8 px-4">
+
+  <%# Header with tab switcher %>
+  <div class="text-center mb-8">
+    <div class="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-blue-100 mb-3">
+      <svg class="h-7 w-7 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+      </svg>
+    </div>
+    <h1 class="text-2xl font-bold text-gray-800">Passenger Feedback</h1>
+    <p class="text-sm text-gray-500 mt-1">Your voice helps us improve our services</p>
+  </div>
+
+  <%# Type toggle %>
+  <div class="flex rounded-xl overflow-hidden border border-gray-200 mb-6 shadow-sm">
+    <a href={~p"/feedback/new?type=complaint"}
+       class={["flex-1 text-center py-3 text-sm font-semibold transition-colors",
+         if(@changeset.data.type == "complaint" || @changeset.changes[:type] == "complaint",
+           do: "bg-red-600 text-white",
+           else: "bg-white text-gray-600 hover:bg-gray-50")]}>
+      Lodge a Complaint
+    </a>
+    <a href={~p"/feedback/new?type=suggestion"}
+       class={["flex-1 text-center py-3 text-sm font-semibold transition-colors",
+         if(@changeset.data.type == "suggestion" || @changeset.changes[:type] == "suggestion",
+           do: "bg-emerald-600 text-white",
+           else: "bg-white text-gray-600 hover:bg-gray-50")]}>
+      Make a Suggestion
+    </a>
+  </div>
+
+  <form action={~p"/feedback"} method="post" class="space-y-5">
+    <input type="hidden" name="_csrf_token" value={Plug.CSRFProtection.get_csrf_token()} />
+    <input type="hidden" name="complaint[type]"
+           value={get_field(@changeset, :type) || "complaint"} />
+
+    <%# Complaint category (only show for complaints) %>
+    <%= if get_field(@changeset, :type) != "suggestion" do %>
+      <div class="bg-white rounded-xl shadow p-5">
+        <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">
+          What is your complaint about?
+        </h2>
+        <div class="grid grid-cols-2 gap-3">
+          <%= for {label, val, icon} <- [
+            {"Driver Behaviour", "driver", "🚗"},
+            {"Bus Conductor", "conductor", "🎫"},
+            {"Bus Service / Comfort", "bus_service", "🚌"},
+            {"Punctuality / Timing", "punctuality", "⏰"},
+            {"Other", "other", "📋"}
+          ] do %>
+            <label class="relative flex items-center gap-3 p-3 rounded-lg border-2 border-gray-200 cursor-pointer has-[:checked]:border-red-500 has-[:checked]:bg-red-50 hover:border-gray-300 transition-colors col-span-1">
+              <input type="radio" name="complaint[category]" value={val}
+                     class="sr-only"
+                     checked={get_field(@changeset, :category) == val || (get_field(@changeset, :category) == nil && val == "bus_service")} />
+              <span class="text-xl"><%= icon %></span>
+              <span class="text-sm font-medium text-gray-700"><%= label %></span>
+            </label>
+          <% end %>
+        </div>
+      </div>
+    <% else %>
+      <input type="hidden" name="complaint[category]" value="other" />
+    <% end %>
+
+    <%# Who is the complaint about (optional) %>
+    <%= if get_field(@changeset, :type) != "suggestion" do %>
+      <div class="bg-white rounded-xl shadow p-5">
+        <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">
+          Staff Member Involved <span class="text-gray-400 font-normal normal-case">(optional)</span>
+        </h2>
+        <input type="text" name="complaint[staff_member_name]"
+               value={get_field(@changeset, :staff_member_name)}
+               class="block w-full rounded-lg border border-gray-300 shadow-sm text-sm py-2.5 px-3 focus:border-red-400 focus:ring-red-400"
+               placeholder="e.g. Driver John, Conductor on Route 5..." />
+        <p class="text-xs text-gray-400 mt-1.5">Leave blank if you don't know their name</p>
+      </div>
+    <% end %>
+
+    <%# Suggestion subject (only for suggestions) %>
+    <%= if get_field(@changeset, :type) == "suggestion" do %>
+      <div class="bg-white rounded-xl shadow p-5">
+        <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">
+          Suggestion Topic
+        </h2>
+        <input type="text" name="complaint[subject]"
+               value={get_field(@changeset, :subject)}
+               class="block w-full rounded-lg border border-gray-300 shadow-sm text-sm py-2.5 px-3 focus:border-emerald-400 focus:ring-emerald-400"
+               placeholder="e.g. Improve bus stop signage, Add more morning schedules..." />
+      </div>
+    <% end %>
+
+    <%# Description %>
+    <div class="bg-white rounded-xl shadow p-5">
+      <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">
+        <%= if get_field(@changeset, :type) == "suggestion", do: "Your Suggestion", else: "Describe the Incident" %>
+      </h2>
+      <%= if @changeset.errors[:description] do %>
+        <p class="text-xs text-red-600 mb-2"><%= elem(hd(@changeset.errors[:description]), 0) %></p>
+      <% end %>
+      <textarea name="complaint[description]" rows="5"
+                class={["block w-full rounded-lg border shadow-sm text-sm py-2.5 px-3 focus:ring-1",
+                  if(get_field(@changeset, :type) == "suggestion",
+                    do: "border-gray-300 focus:border-emerald-400 focus:ring-emerald-400",
+                    else: "border-gray-300 focus:border-red-400 focus:ring-red-400"),
+                  if(@changeset.errors[:description], do: "border-red-400", else: "")]}
+                placeholder={if get_field(@changeset, :type) == "suggestion",
+                  do: "Describe your suggestion in detail...",
+                  else: "Please describe what happened, when, and where..."}
+                required><%= get_field(@changeset, :description) %></textarea>
+      <p class="text-xs text-gray-400 mt-1.5">Minimum 10 characters</p>
+    </div>
+
+    <%# Booking reference %>
+    <div class="bg-white rounded-xl shadow p-5">
+      <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">
+        Booking Reference <span class="text-gray-400 font-normal normal-case">(optional)</span>
+      </h2>
+      <input type="text" name="complaint[booking_reference]"
+             value={get_field(@changeset, :booking_reference) || @prefill_ref}
+             class="block w-full rounded-lg border border-gray-300 shadow-sm text-sm py-2.5 px-3 focus:border-blue-400 focus:ring-blue-400 font-mono"
+             placeholder="e.g. BK-0012345" />
+      <p class="text-xs text-gray-400 mt-1.5">Found on your ticket, e.g. BK-0012345</p>
+    </div>
+
+    <%# Passenger contact %>
+    <div class="bg-white rounded-xl shadow p-5">
+      <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">
+        Your Details
+      </h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="md:col-span-2">
+          <label class="block text-sm font-medium text-gray-700 mb-1">
+            Full Name <span class="text-red-500">*</span>
+          </label>
+          <%= if @changeset.errors[:passenger_name] do %>
+            <p class="text-xs text-red-600 mb-1"><%= elem(hd(@changeset.errors[:passenger_name]), 0) %></p>
+          <% end %>
+          <input type="text" name="complaint[passenger_name]"
+                 value={get_field(@changeset, :passenger_name)}
+                 class="block w-full rounded-lg border border-gray-300 shadow-sm text-sm py-2.5 px-3 focus:border-blue-400 focus:ring-blue-400"
+                 placeholder="Your full name" required />
+        </div>
+        <div class="md:col-span-2">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Phone Number <span class="text-gray-400 font-normal">(optional but helps us follow up)</span></label>
+          <input type="tel" name="complaint[passenger_phone]"
+                 value={get_field(@changeset, :passenger_phone)}
+                 class="block w-full rounded-lg border border-gray-300 shadow-sm text-sm py-2.5 px-3 focus:border-blue-400 focus:ring-blue-400"
+                 placeholder="+260 97x xxx xxx" />
+        </div>
+      </div>
+    </div>
+
+    <button type="submit"
+            class={["w-full py-3 rounded-xl text-white text-sm font-semibold shadow transition-colors",
+              if(get_field(@changeset, :type) == "suggestion",
+                do: "bg-emerald-600 hover:bg-emerald-700",
+                else: "bg-red-600 hover:bg-red-700")]}>
+      <%= if get_field(@changeset, :type) == "suggestion", do: "Submit Suggestion", else: "Submit Complaint" %>
+    </button>
+
+    <p class="text-center text-xs text-gray-400">
+      All submissions are confidential and reviewed by management.
+    </p>
+  </form>
+</div>
+
+<script>
+  // Keep category radio styled on page load
+  document.querySelectorAll('input[type="radio"]').forEach(function(radio) {
+    if (radio.checked) {
+      radio.closest('label').classList.add('border-red-500', 'bg-red-50');
+    }
+    radio.addEventListener('change', function() {
+      document.querySelectorAll('input[name="complaint[category]"]').forEach(function(r) {
+        r.closest('label').classList.remove('border-red-500', 'bg-red-50');
+      });
+      if (this.checked) {
+        this.closest('label').classList.add('border-red-500', 'bg-red-50');
+      }
+    });
+  });
+</script>

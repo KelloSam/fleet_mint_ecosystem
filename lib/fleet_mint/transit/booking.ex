@@ -14,6 +14,9 @@ defmodule FleetMint.Transit.Booking do
     field :payment_method, :string, default: "cash"
     field :payment_reference, :string
     field :notes, :string
+    field :pickup_station, :string
+    field :has_luggage, :boolean, default: false
+    field :luggage_description, :string
 
     belongs_to :schedule, FleetMint.Transit.Schedule
     belongs_to :booked_by, FleetMint.Accounts.User
@@ -29,7 +32,8 @@ defmodule FleetMint.Transit.Booking do
     booking
     |> cast(attrs, [:passenger_name, :passenger_phone, :passenger_email, :seat_number,
                     :travel_date, :status, :fare_paid, :payment_method, :payment_reference,
-                    :notes, :schedule_id, :booked_by_id])
+                    :notes, :pickup_station, :has_luggage, :luggage_description,
+                    :schedule_id, :booked_by_id])
     |> validate_required([:passenger_name, :travel_date, :fare_paid, :schedule_id])
     |> validate_number(:fare_paid, greater_than_or_equal_to: 0)
     |> validate_inclusion(:status, @statuses)

@@ -1,0 +1,133 @@
+<div class="max-w-2xl mx-auto">
+  <div class="mb-6">
+    <.link navigate={~p"/complaints"} class="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1">
+      <.icon name="hero-arrow-left-solid" class="h-3 w-3" /> Complaints & Suggestions
+    </.link>
+    <div class="flex items-start justify-between mt-3">
+      <div>
+        <span class={["inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-semibold",
+          if(@complaint.type == "complaint", do: "bg-red-100 text-red-800", else: "bg-emerald-100 text-emerald-800")]}>
+          <%= if @complaint.type == "complaint", do: "⚠ Complaint", else: "💡 Suggestion" %>
+        </span>
+        <%= if @complaint.type == "complaint" do %>
+          <p class="text-xs text-gray-400 mt-1 ml-1 capitalize"><%= String.replace(@complaint.category, "_", " ") %></p>
+        <% end %>
+      </div>
+      <span class={["inline-flex px-3 py-1 rounded-full text-sm font-semibold",
+        case @complaint.status do
+          "pending"   -> "bg-amber-100 text-amber-800"
+          "reviewed"  -> "bg-blue-100 text-blue-800"
+          "resolved"  -> "bg-green-100 text-green-800"
+          "dismissed" -> "bg-gray-100 text-gray-500"
+          _           -> "bg-gray-100 text-gray-500"
+        end]}>
+        <%= String.capitalize(@complaint.status) %>
+      </span>
+    </div>
+  </div>
+
+  <%# Main content %>
+  <div class="bg-white rounded-xl shadow p-6 mb-5">
+    <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Details</h2>
+
+    <%= if @complaint.subject && @complaint.subject != "" do %>
+      <div class="mb-4">
+        <p class="text-xs text-gray-500 mb-0.5">Subject</p>
+        <p class="font-semibold text-gray-800"><%= @complaint.subject %></p>
+      </div>
+    <% end %>
+
+    <%= if @complaint.staff_member_name && @complaint.staff_member_name != "" do %>
+      <div class="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+        <p class="text-xs text-red-600 font-semibold mb-0.5">STAFF MEMBER NAMED</p>
+        <p class="font-semibold text-red-800"><%= @complaint.staff_member_name %></p>
+      </div>
+    <% end %>
+
+    <div class="mb-4">
+      <p class="text-xs text-gray-500 mb-1">Description</p>
+      <p class="text-gray-800 leading-relaxed whitespace-pre-wrap"><%= @complaint.description %></p>
+    </div>
+
+    <div class="grid grid-cols-2 gap-4 pt-4 border-t border-gray-100 text-sm">
+      <div>
+        <p class="text-xs text-gray-400">Submitted</p>
+        <p class="font-medium"><%= Calendar.strftime(@complaint.inserted_at, "%d %B %Y at %H:%M") %></p>
+      </div>
+      <%= if @complaint.booking_reference && @complaint.booking_reference != "" do %>
+        <div>
+          <p class="text-xs text-gray-400">Booking Reference</p>
+          <p class="font-mono font-semibold text-blue-700"><%= @complaint.booking_reference %></p>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <%# Passenger info %>
+  <div class="bg-white rounded-xl shadow p-6 mb-5">
+    <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Passenger</h2>
+    <dl class="divide-y divide-gray-100 text-sm">
+      <div class="py-2 flex justify-between">
+        <dt class="text-gray-500">Name</dt>
+        <dd class="font-medium"><%= @complaint.passenger_name %></dd>
+      </div>
+      <div class="py-2 flex justify-between">
+        <dt class="text-gray-500">Phone</dt>
+        <dd class="font-medium">
+          <%= if @complaint.passenger_phone do %>
+            <a href={"tel:#{@complaint.passenger_phone}"} class="text-blue-600 hover:underline">
+              <%= @complaint.passenger_phone %>
+            </a>
+          <% else %>
+            <span class="text-gray-400">Not provided</span>
+          <% end %>
+        </dd>
+      </div>
+    </dl>
+  </div>
+
+  <%# Staff action panel %>
+  <div class="bg-white rounded-xl shadow p-6 mb-5">
+    <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Management Response</h2>
+    <form action={~p"/complaints/#{@complaint}"} method="post">
+      <input type="hidden" name="_method" value="put" />
+      <input type="hidden" name="_csrf_token" value={Plug.CSRFProtection.get_csrf_token()} />
+
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-gray-700 mb-1">Update Status</label>
+        <select name="complaint[status]"
+                class="block w-full rounded-lg border border-gray-300 shadow-sm text-sm py-2 px-3 focus:border-blue-400 focus:ring-blue-400">
+          <option value="pending"   selected={@complaint.status == "pending"}>Pending — not yet reviewed</option>
+          <option value="reviewed"  selected={@complaint.status == "reviewed"}>Reviewed — under investigation</option>
+          <option value="resolved"  selected={@complaint.status == "resolved"}>Resolved — action taken</option>
+          <option value="dismissed" selected={@complaint.status == "dismissed"}>Dismissed — not actionable</option>
+        </select>
+      </div>
+
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-gray-700 mb-1">Resolution / Notes</label>
+        <textarea name="complaint[resolution_notes]" rows="4"
+                  class="block w-full rounded-lg border border-gray-300 shadow-sm text-sm py-2 px-3 focus:border-blue-400 focus:ring-blue-400"
+                  placeholder="Describe what action was taken or why it was dismissed..."><%= @complaint.resolution_notes %></textarea>
+      </div>
+
+      <%= if @complaint.reviewed_by do %>
+        <p class="text-xs text-gray-400 mb-3">
+          Last updated by <span class="font-medium"><%= @complaint.reviewed_by.full_name %></span>
+        </p>
+      <% end %>
+
+      <div class="flex gap-3">
+        <button type="submit"
+                class="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
+          Save Update
+        </button>
+        <.link href={~p"/complaints/#{@complaint}"} method="delete"
+               data-confirm="Delete this record permanently?"
+               class="px-4 py-2 border border-red-200 text-red-600 text-sm font-medium rounded-lg hover:bg-red-50">
+          Delete
+        </.link>
+      </div>
+    </form>
+  </div>
+</div>
