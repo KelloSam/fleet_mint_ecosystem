@@ -36,7 +36,7 @@
 
 <div class="header">
   <div>
-    <div class="company-name">MADITHEL BUS SERVICES</div>
+    <div class="company-name">MIWAY TECHNOLOGY LTD</div>
     <div class="company-sub">Expenditure Report</div>
   </div>
   <div class="report-title">
@@ -104,7 +104,7 @@
 <% end %>
 
 <div class="footer">
-  <span>Miway Logistics Services — Confidential</span>
+  <span>Miway Technology Ltd — Confidential</span>
   <span>Expenditure Report: <%= Calendar.strftime(start_date, "%d %b") %> – <%= Calendar.strftime(end_date, "%d %b %Y") %></span>
   <span>Generated: <%= Calendar.strftime(generated_at, "%d/%m/%Y %H:%M") %></span>
 </div>

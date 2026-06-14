@@ -41,7 +41,7 @@
 
 <div class="header">
   <div>
-    <div class="company-name">MADITHEL BUS SERVICES</div>
+    <div class="company-name">MIWAY TECHNOLOGY LTD</div>
     <div class="company-sub">Daily Revenue &amp; Cash Report</div>
   </div>
   <div class="report-title">
@@ -84,7 +84,7 @@
           }
         }
       end) %>
-      <% Enum.each(rows, fn {{cr, variance}, idx} -> %><% _ = idx %>
+      <% Enum.each(rows, fn {cr, variance} -> %>
         <% v_class = cond do
           Decimal.negative?(variance) -> "negative"
           Decimal.positive?(variance) -> "positive"
@@ -158,7 +158,7 @@
 <% end %>
 
 <div class="footer">
-  <span>Miway Logistics Services — Confidential</span>
+  <span>Miway Technology Ltd — Confidential</span>
   <span>Daily Report: <%= Calendar.strftime(date, "%d %B %Y") %></span>
   <span>Generated: <%= Calendar.strftime(generated_at, "%d/%m/%Y %H:%M") %></span>
 </div>

@@ -40,7 +40,7 @@
 <body>
 
 <div class="header">
-  <div class="company-name">MADITHEL BUS SERVICES</div>
+  <div class="company-name">MIWAY TECHNOLOGY LTD</div>
   <div class="receipt-title">Cash Handover Receipt</div>
   <div class="receipt-id">Receipt #<%= cr.id %> | Generated: <%= Calendar.strftime(generated_at, "%d/%m/%Y %H:%M") %></div>
 </div>
@@ -135,7 +135,7 @@
 <% end %>
 
 <div class="footer">
-  Miway Logistics Services &mdash; Cash Handover Receipt #<%= cr.id %><br>
+  Miway Technology Ltd &mdash; Cash Handover Receipt #<%= cr.id %><br>
   This document is system-generated. Please retain for records.
 </div>
 

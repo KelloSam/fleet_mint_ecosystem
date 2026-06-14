@@ -39,7 +39,7 @@
 
 <div class="header">
   <div>
-    <div class="company-name">MADITHEL BUS SERVICES</div>
+    <div class="company-name">MIWAY TECHNOLOGY LTD</div>
     <div class="company-sub">Weekly Revenue Report</div>
   </div>
   <div class="report-title">
@@ -133,7 +133,7 @@
 <% end %>
 
 <div class="footer">
-  <span>Miway Logistics Services — Confidential</span>
+  <span>Miway Technology Ltd — Confidential</span>
   <span>Weekly Report #<%= report.id %> | <%= Calendar.strftime(report.start_date, "%d %b") %> – <%= Calendar.strftime(report.end_date, "%d %b %Y") %></span>
   <span>Generated: <%= Calendar.strftime(generated_at, "%d/%m/%Y %H:%M") %></span>
 </div>
