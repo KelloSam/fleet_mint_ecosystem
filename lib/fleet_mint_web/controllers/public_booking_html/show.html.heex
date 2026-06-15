@@ -1,0 +1,313 @@
+<%# Company header band %>
+<div class="px-4 py-5" style={"background: #{@operator.color || "#1d4ed8"};"}>
+  <a href={~p"/book"} class="flex items-center gap-1 text-white/80 text-sm mb-3 hover:text-white">
+    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+    </svg>
+    All Companies
+  </a>
+
+  <div class="flex items-center gap-3">
+    <div class="h-14 w-14 rounded-2xl bg-white/20 flex items-center justify-center text-white font-extrabold text-2xl flex-shrink-0">
+      <%= @operator.name |> String.first() |> String.upcase() %>
+    </div>
+    <div>
+      <h1 class="text-xl font-extrabold text-white leading-tight"><%= @operator.name %></h1>
+      <%= if @operator.tagline do %>
+        <p class="text-xs text-white/70 mt-0.5"><%= @operator.tagline %></p>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="flex flex-wrap gap-2 mt-3">
+    <%= if @operator.contact_phone do %>
+      <a href={"tel:#{@operator.contact_phone}"}
+         class="inline-flex items-center gap-1.5 bg-white/15 hover:bg-white/25 rounded-lg px-3 py-1.5 text-xs text-white transition-colors">
+        <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+        </svg>
+        Call: <%= @operator.contact_phone %>
+      </a>
+    <% end %>
+    <%= if @operator.contact_email do %>
+      <a href={"mailto:#{@operator.contact_email}"}
+         class="inline-flex items-center gap-1.5 bg-white/15 hover:bg-white/25 rounded-lg px-3 py-1.5 text-xs text-white transition-colors">
+        <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+        </svg>
+        Email
+      </a>
+    <% end %>
+  </div>
+</div>
+
+<div class="px-4 pt-4 pb-8">
+
+  <%= if @schedules == [] do %>
+    <div class="text-center py-16">
+      <div class="h-16 w-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+        <svg class="h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+            d="M8 7h8M8 11h5m-9 8h14a2 2 0 002-2V7a2 2 0 00-2-2H6a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+        </svg>
+      </div>
+      <p class="text-gray-600 font-semibold">No routes listed yet</p>
+      <p class="text-gray-400 text-sm mt-1">
+        Routes for <%= @operator.name %> will appear here once configured.
+      </p>
+      <%= if @operator.contact_phone do %>
+        <a href={"tel:#{@operator.contact_phone}"}
+           class="inline-block mt-4 px-5 py-2 rounded-xl text-white text-sm font-semibold"
+           style={"background: #{@operator.color || "#1d4ed8"};"}>
+          Call to enquire
+        </a>
+      <% end %>
+    </div>
+  <% else %>
+    <%
+      intl_keywords = ["south africa", "zimbabwe", "botswana", "namibia", "mozambique", "tanzania", "malawi", "congo", "angola"]
+      is_intl = fn s ->
+        dest = if s.route, do: String.downcase(s.route.end_location || ""), else: ""
+        Enum.any?(intl_keywords, &String.contains?(dest, &1))
+      end
+      {intl, domestic} = Enum.split_with(@schedules, is_intl)
+
+      day_labels = %{"mon" => "M", "tue" => "T", "wed" => "W", "thu" => "T", "fri" => "F", "sat" => "S", "sun" => "S"}
+      day_full = %{"mon" => "Mon", "tue" => "Tue", "wed" => "Wed", "thu" => "Thu", "fri" => "Fri", "sat" => "Sat", "sun" => "Sun"}
+      all_days = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
+    %>
+
+    <%# ── DOMESTIC ─────────────────────────────────────────────────────────── %>
+    <%= if domestic != [] do %>
+      <div class="flex items-center gap-2 mb-3">
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Domestic Routes</p>
+        <span class="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 font-medium"><%= length(domestic) %></span>
+      </div>
+
+      <div class="space-y-4 mb-6">
+        <%= for s <- domestic do %>
+          <div class="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100">
+
+            <%# Route header %>
+            <div class="px-4 pt-4 pb-3 border-b border-gray-50">
+              <div class="flex items-start justify-between gap-2">
+                <div class="flex-1">
+                  <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Route</p>
+                  <h3 class="font-extrabold text-gray-900 text-base leading-tight">
+                    <%= if s.route do %>
+                      <%= s.route.start_location %>
+                      <span class="text-gray-400 font-normal mx-1">→</span>
+                      <%= s.route.end_location %>
+                    <% else %>
+                      Route not set
+                    <% end %>
+                  </h3>
+                  <%= if s.route && s.route.distance do %>
+                    <p class="text-xs text-gray-400 mt-0.5"><%= s.route.distance %> km</p>
+                  <% end %>
+                </div>
+                <div class="text-right flex-shrink-0">
+                  <p class="text-xs text-gray-400">Fare</p>
+                  <p class="text-lg font-extrabold" style={"color: #{@operator.color || "#1d4ed8"};"}>
+                    ZMW <%= s.fare %>
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <%# Times & seats grid %>
+            <div class="grid grid-cols-3 divide-x divide-gray-100 border-b border-gray-100">
+              <div class="px-3 py-3 text-center">
+                <p class="text-xs text-gray-400 mb-0.5">Departs</p>
+                <p class="font-bold text-gray-800"><%= s.departure_time |> Time.to_string() |> String.slice(0, 5) %></p>
+              </div>
+              <div class="px-3 py-3 text-center">
+                <p class="text-xs text-gray-400 mb-0.5">Arrives</p>
+                <p class="font-bold text-gray-800">
+                  <%= if s.estimated_arrival_time do %>
+                    <%= s.estimated_arrival_time |> Time.to_string() |> String.slice(0, 5) %>
+                  <% else %>
+                    <%= if s.route && s.route.duration do %>
+                      ~<%= div(s.route.duration, 60) %>h<%= if rem(s.route.duration, 60) > 0, do: " #{rem(s.route.duration, 60)}m" %>
+                    <% else %>
+                      —
+                    <% end %>
+                  <% end %>
+                </p>
+              </div>
+              <div class="px-3 py-3 text-center">
+                <p class="text-xs text-gray-400 mb-0.5">Seats</p>
+                <p class={["font-bold", if(s.available_seats > 5, do: "text-emerald-600", else: "text-orange-500")]}>
+                  <%= cond do %>
+                    <% s.available_seats == 0 -> %> Full
+                    <% s.available_seats <= 5 -> %> <%= s.available_seats %> left!
+                    <% true -> %> <%= s.available_seats %>
+                  <% end %>
+                </p>
+              </div>
+            </div>
+
+            <%# Days of operation %>
+            <%= if s.days_of_week && s.days_of_week != [] do %>
+              <div class="px-4 py-3 flex items-center gap-2 border-b border-gray-100">
+                <p class="text-xs text-gray-400 mr-1">Runs:</p>
+                <%= for d <- all_days do %>
+                  <span class={[
+                    "h-7 w-7 rounded-full flex items-center justify-center text-xs font-bold",
+                    if(d in s.days_of_week,
+                      do: "text-white",
+                      else: "bg-gray-100 text-gray-300"
+                    )
+                  ]} style={if d in s.days_of_week, do: "background: #{@operator.color || "#1d4ed8"};", else: ""}>
+                    <%= day_labels[d] %>
+                  </span>
+                <% end %>
+              </div>
+            <% end %>
+
+            <%# Vehicle info + book button %>
+            <div class="px-4 py-3 flex items-center justify-between gap-3">
+              <div class="min-w-0">
+                <%= if s.vehicle do %>
+                  <p class="text-xs text-gray-400 truncate">
+                    Bus: <%= s.vehicle.registration_number %>
+                    <%= if s.vehicle.bus_profile && s.vehicle.bus_profile.seat_capacity do %>
+                      · <%= s.vehicle.bus_profile.seat_capacity %> seat bus
+                    <% end %>
+                  </p>
+                <% end %>
+              </div>
+              <%= if s.available_seats > 0 do %>
+                <a href={~p"/book/#{@operator.slug}/#{s.id}"}
+                   class="flex-shrink-0 inline-flex items-center gap-1.5 text-white font-semibold text-sm px-4 py-2 rounded-xl transition-colors"
+                   style={"background: #{@operator.color || "#1d4ed8"};"}>
+                  Select Seat
+                  <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                  </svg>
+                </a>
+              <% else %>
+                <span class="flex-shrink-0 inline-flex items-center text-sm px-4 py-2 rounded-xl bg-gray-100 text-gray-400 font-medium">
+                  Fully Booked
+                </span>
+              <% end %>
+            </div>
+
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+
+    <%# ── INTERNATIONAL ────────────────────────────────────────────────────── %>
+    <%= if intl != [] do %>
+      <div class="flex items-center gap-2 mb-3 mt-2">
+        <p class="text-xs font-semibold text-blue-600 uppercase tracking-wider">International / Cross-border</p>
+        <span class="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-600 font-medium"><%= length(intl) %></span>
+        <span class="text-base">🌍</span>
+      </div>
+
+      <div class="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 mb-4 text-xs text-blue-700">
+        <strong>Passport & visa required</strong> for cross-border travel. Ensure you have valid travel documents before booking.
+      </div>
+
+      <div class="space-y-4">
+        <%= for s <- intl do %>
+          <div class="bg-white rounded-2xl shadow-sm overflow-hidden border border-blue-100">
+
+            <div class="px-4 pt-4 pb-3 border-b border-blue-50">
+              <div class="flex items-start justify-between gap-2">
+                <div class="flex-1">
+                  <div class="flex items-center gap-1.5 mb-1">
+                    <p class="text-xs font-semibold text-blue-500 uppercase tracking-wider">International Route</p>
+                    <span class="text-xs">🌍</span>
+                  </div>
+                  <h3 class="font-extrabold text-gray-900 text-base leading-tight">
+                    <%= if s.route do %>
+                      <%= s.route.start_location %>
+                      <span class="text-gray-400 font-normal mx-1">→</span>
+                      <%= s.route.end_location %>
+                    <% else %>
+                      Route not set
+                    <% end %>
+                  </h3>
+                  <%= if s.route && s.route.distance do %>
+                    <p class="text-xs text-gray-400 mt-0.5"><%= s.route.distance %> km</p>
+                  <% end %>
+                </div>
+                <div class="text-right flex-shrink-0">
+                  <p class="text-xs text-gray-400">Fare</p>
+                  <p class="text-lg font-extrabold text-blue-700">ZMW <%= s.fare %></p>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-3 divide-x divide-gray-100 border-b border-gray-100">
+              <div class="px-3 py-3 text-center">
+                <p class="text-xs text-gray-400 mb-0.5">Departs</p>
+                <p class="font-bold text-gray-800"><%= s.departure_time |> Time.to_string() |> String.slice(0, 5) %></p>
+              </div>
+              <div class="px-3 py-3 text-center">
+                <p class="text-xs text-gray-400 mb-0.5">Est. Arrival</p>
+                <p class="font-bold text-gray-800">
+                  <%= if s.estimated_arrival_time do %>
+                    <%= s.estimated_arrival_time |> Time.to_string() |> String.slice(0, 5) %>
+                    <span class="text-xs text-gray-400 font-normal">+1d</span>
+                  <% else %>
+                    <%= if s.route && s.route.duration do %>
+                      ~<%= div(s.route.duration, 60) %>h
+                    <% else %>
+                      Overnight
+                    <% end %>
+                  <% end %>
+                </p>
+              </div>
+              <div class="px-3 py-3 text-center">
+                <p class="text-xs text-gray-400 mb-0.5">Seats</p>
+                <p class={["font-bold", if(s.available_seats > 5, do: "text-emerald-600", else: "text-orange-500")]}>
+                  <%= if s.available_seats == 0, do: "Full", else: s.available_seats %>
+                </p>
+              </div>
+            </div>
+
+            <%= if s.days_of_week && s.days_of_week != [] do %>
+              <div class="px-4 py-3 flex items-center gap-2 border-b border-gray-100">
+                <p class="text-xs text-gray-400 mr-1">Runs:</p>
+                <%= for d <- all_days do %>
+                  <span class={[
+                    "h-7 w-7 rounded-full flex items-center justify-center text-xs font-bold",
+                    if(d in s.days_of_week, do: "bg-blue-600 text-white", else: "bg-gray-100 text-gray-300")
+                  ]}>
+                    <%= day_labels[d] %>
+                  </span>
+                <% end %>
+              </div>
+            <% end %>
+
+            <div class="px-4 py-3 flex items-center justify-between gap-3">
+              <div class="min-w-0">
+                <p class="text-xs text-gray-400">Valid passport & border docs required</p>
+              </div>
+              <%= if s.available_seats > 0 do %>
+                <a href={~p"/book/#{@operator.slug}/#{s.id}"}
+                   class="flex-shrink-0 inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm px-4 py-2 rounded-xl transition-colors">
+                  Select Seat
+                  <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                  </svg>
+                </a>
+              <% else %>
+                <span class="flex-shrink-0 inline-flex items-center text-sm px-4 py-2 rounded-xl bg-gray-100 text-gray-400 font-medium">
+                  Fully Booked
+                </span>
+              <% end %>
+            </div>
+
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+
+  <% end %>
+</div>

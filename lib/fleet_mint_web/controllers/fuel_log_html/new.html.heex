@@ -1,0 +1,6 @@
+<.header>
+  New Fuel Log
+  <:subtitle>Record a fuel fill for a vehicle.</:subtitle>
+</.header>
+<.fuel_log_form changeset={@changeset} action={~p"/fuel_logs"} vehicles={@vehicles} drivers={@drivers} />
+<.back navigate={~p"/fuel_logs"}>Back</.back>

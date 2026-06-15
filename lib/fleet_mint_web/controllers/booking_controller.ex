@@ -2,6 +2,7 @@ defmodule FleetMintWeb.BookingController do
   use FleetMintWeb, :controller
   alias FleetMint.Transit
   alias FleetMint.Transit.Booking
+  alias FleetMint.Accounts
 
   def index(conn, params) do
     bookings = Transit.list_bookings(
@@ -12,10 +13,11 @@ defmodule FleetMintWeb.BookingController do
   end
 
   def new(conn, params) do
-    changeset = Transit.change_booking(%Booking{})
+    changeset = Transit.change_booking(%Booking{travel_date: Date.utc_today()})
     schedules = Transit.list_schedules(status: "active")
+    staff = Accounts.list_staff_with_phone()
     render(conn, :new, changeset: changeset, schedules: schedules,
-                       prefill_schedule: params["schedule_id"])
+                       prefill_schedule: params["schedule_id"], staff: staff)
   end
 
   def create(conn, %{"booking" => booking_params}) do
@@ -28,7 +30,9 @@ defmodule FleetMintWeb.BookingController do
 
       {:error, %Ecto.Changeset{} = changeset} ->
         schedules = Transit.list_schedules(status: "active")
-        render(conn, :new, changeset: changeset, schedules: schedules, prefill_schedule: nil)
+        staff = Accounts.list_staff_with_phone()
+        render(conn, :new, changeset: changeset, schedules: schedules,
+                           prefill_schedule: nil, staff: staff)
     end
   end
 
@@ -41,17 +45,21 @@ defmodule FleetMintWeb.BookingController do
     booking = Transit.get_booking!(id)
     changeset = Transit.change_booking(booking)
     schedules = Transit.list_schedules(status: "active")
-    render(conn, :edit, booking: booking, changeset: changeset, schedules: schedules)
+    staff = Accounts.list_staff_with_phone()
+    render(conn, :edit, booking: booking, changeset: changeset,
+                        schedules: schedules, staff: staff)
   end
 
   def update(conn, %{"id" => id, "booking" => booking_params}) do
     booking = Transit.get_booking!(id)
-    case Transit.update_schedule(booking, booking_params) do
+    case Transit.update_booking(booking, booking_params) do
       {:ok, booking} ->
         conn |> put_flash(:info, "Booking updated.") |> redirect(to: ~p"/bookings/#{booking}")
       {:error, changeset} ->
         schedules = Transit.list_schedules(status: "active")
-        render(conn, :edit, booking: booking, changeset: changeset, schedules: schedules)
+        staff = Accounts.list_staff_with_phone()
+        render(conn, :edit, booking: booking, changeset: changeset,
+                            schedules: schedules, staff: staff)
     end
   end
 

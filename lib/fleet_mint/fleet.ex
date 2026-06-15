@@ -9,8 +9,63 @@ defmodule FleetMint.Fleet do
   
   import Ecto.Query, warn: false
   alias FleetMint.Repo
-  
-  alias FleetMint.Fleet.Bus
+
+  alias FleetMint.Fleet.{Bus, Operator}
+
+  # ── Operators (bus companies) ──────────────────────────────────────────────
+
+  def list_operators, do: Repo.all(from o in Operator, order_by: o.name)
+
+  def list_operators_for_public do
+    from(o in Operator,
+      where: o.active == true,
+      left_join: s in assoc(o, :schedules),
+      on: s.status == "active",
+      group_by: o.id,
+      select: %{o | schedule_count: count(s.id)},
+      order_by: o.name
+    ) |> Repo.all()
+  end
+
+  def get_operator!(id), do: Repo.get!(Operator, id)
+  def get_operator_by_slug!(slug), do: Repo.get_by!(Operator, slug: slug, active: true)
+
+  def get_operator_with_routes!(id) do
+    Operator
+    |> Repo.get!(id)
+    |> Repo.preload(routes: from(r in FleetMint.Fleet.Route, order_by: r.name))
+  end
+
+  def list_operators_with_route_counts do
+    from(o in Operator,
+      left_join: or_ in "operator_routes", on: or_.operator_id == o.id,
+      group_by: o.id,
+      select: %{o | schedule_count: count(or_.route_id)},
+      order_by: o.name
+    ) |> Repo.all()
+  end
+
+  def add_route_to_operator(%Operator{} = op, %FleetMint.Fleet.Route{} = route) do
+    Repo.insert_all("operator_routes",
+      [%{operator_id: op.id, route_id: route.id}],
+      on_conflict: :nothing)
+  end
+
+  def create_operator(attrs \\ %{}) do
+    %Operator{} |> Operator.changeset(attrs) |> Repo.insert()
+  end
+
+  def update_operator(%Operator{} = op, attrs) do
+    op |> Operator.changeset(attrs) |> Repo.update()
+  end
+
+  def delete_operator(%Operator{} = op), do: Repo.delete(op)
+
+  def change_operator(%Operator{} = op, attrs \\ %{}), do: Operator.changeset(op, attrs)
+
+  def list_inactive_operators do
+    from(o in Operator, where: o.active == false, order_by: o.name) |> Repo.all()
+  end
   
   @doc """
   Returns the list of buses.
@@ -482,4 +537,90 @@ defmodule FleetMint.Fleet do
 
   defp maybe_filter_vehicle_status(query, nil), do: query
   defp maybe_filter_vehicle_status(query, status), do: where(query, [v], v.status == ^status)
+
+  # ── Vehicle Maintenance ────────────────────────────────────────────────────
+
+  alias FleetMint.Fleet.VehicleMaintenance
+
+  def list_maintenances do
+    VehicleMaintenance
+    |> order_by([m], desc: m.service_date)
+    |> preload([:vehicle, :recorded_by])
+    |> Repo.all()
+  end
+
+  def list_maintenances_for_vehicle(vehicle_id) do
+    from(m in VehicleMaintenance, where: m.vehicle_id == ^vehicle_id,
+      order_by: [desc: m.service_date], preload: [:vehicle, :recorded_by])
+    |> Repo.all()
+  end
+
+  def get_maintenance!(id) do
+    VehicleMaintenance |> preload([:vehicle, :recorded_by]) |> Repo.get!(id)
+  end
+
+  def create_maintenance(attrs \\ %{}) do
+    %VehicleMaintenance{} |> VehicleMaintenance.changeset(attrs) |> Repo.insert()
+  end
+
+  def update_maintenance(%VehicleMaintenance{} = m, attrs) do
+    m |> VehicleMaintenance.changeset(attrs) |> Repo.update()
+  end
+
+  def delete_maintenance(%VehicleMaintenance{} = m), do: Repo.delete(m)
+
+  def change_maintenance(%VehicleMaintenance{} = m, attrs \\ %{}),
+    do: VehicleMaintenance.changeset(m, attrs)
+
+  # ── Fuel Logs ──────────────────────────────────────────────────────────────
+
+  alias FleetMint.Fleet.FuelLog
+
+  def list_fuel_logs do
+    FuelLog
+    |> order_by([f], desc: f.log_date)
+    |> preload([:vehicle, :driver])
+    |> Repo.all()
+  end
+
+  def list_fuel_logs_for_vehicle(vehicle_id) do
+    from(f in FuelLog, where: f.vehicle_id == ^vehicle_id,
+      order_by: [desc: f.log_date], preload: [:vehicle, :driver])
+    |> Repo.all()
+  end
+
+  def get_fuel_log!(id) do
+    FuelLog |> preload([:vehicle, :driver]) |> Repo.get!(id)
+  end
+
+  def create_fuel_log(attrs \\ %{}) do
+    %FuelLog{} |> FuelLog.changeset(attrs) |> Repo.insert()
+  end
+
+  def update_fuel_log(%FuelLog{} = log, attrs) do
+    log |> FuelLog.changeset(attrs) |> Repo.update()
+  end
+
+  def delete_fuel_log(%FuelLog{} = log), do: Repo.delete(log)
+
+  def change_fuel_log(%FuelLog{} = log, attrs \\ %{}), do: FuelLog.changeset(log, attrs)
+
+  def total_fuel_cost_for_vehicle(vehicle_id) do
+    Repo.aggregate(from(f in FuelLog, where: f.vehicle_id == ^vehicle_id), :sum, :total_cost)
+    |> Kernel.||(Decimal.new(0))
+  end
+
+  def fuel_cost_today do
+    today = Date.utc_today()
+    Repo.aggregate(from(f in FuelLog, where: f.log_date == ^today), :sum, :total_cost)
+    |> Kernel.||(Decimal.new(0))
+  end
+
+  def count_pending_maintenances do
+    Repo.aggregate(from(m in VehicleMaintenance, where: m.status in ["scheduled", "in_progress"]), :count)
+  end
+
+  def count_vehicles do
+    Repo.aggregate(Vehicle, :count, :id)
+  end
 end

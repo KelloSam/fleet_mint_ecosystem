@@ -17,6 +17,7 @@ defmodule FleetMint.Transit.Schedule do
     belongs_to :route, FleetMint.Fleet.Route
     belongs_to :driver, FleetMint.Accounts.User
     belongs_to :conductor, FleetMint.Accounts.User
+    belongs_to :operator, FleetMint.Fleet.Operator
 
     has_many :bookings, FleetMint.Transit.Booking
 
@@ -31,7 +32,7 @@ defmodule FleetMint.Transit.Schedule do
     schedule
     |> cast(attrs, [:schedule_code, :departure_time, :estimated_arrival_time, :days_of_week,
                     :fare, :available_seats, :status, :validation_mode, :notes,
-                    :vehicle_id, :route_id, :driver_id, :conductor_id])
+                    :vehicle_id, :route_id, :driver_id, :conductor_id, :operator_id])
     |> validate_required([:departure_time, :fare, :route_id])
     |> validate_number(:fare, greater_than: 0)
     |> validate_number(:available_seats, greater_than_or_equal_to: 0)

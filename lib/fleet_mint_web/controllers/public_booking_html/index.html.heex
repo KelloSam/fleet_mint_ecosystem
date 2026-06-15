@@ -1,0 +1,87 @@
+<%# Hero %>
+<div class="px-4 pt-8 pb-6 text-center" style="background: linear-gradient(135deg,#1e3a8a,#1d4ed8);">
+  <h1 class="text-2xl font-extrabold text-white leading-tight">Book Your Journey</h1>
+  <p class="text-blue-200 text-sm mt-1">Choose your bus company to see routes and seats</p>
+</div>
+
+<div class="px-4 pt-5">
+
+  <%= if @operators == [] do %>
+    <div class="text-center py-16">
+      <svg class="h-12 w-12 text-gray-300 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+          d="M8 7h8M8 11h5m-9 8h14a2 2 0 002-2V7a2 2 0 00-2-2H6a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+      </svg>
+      <p class="text-gray-500 font-medium">No bus companies available right now.</p>
+      <p class="text-gray-400 text-sm mt-1">Please check back later.</p>
+    </div>
+  <% else %>
+    <h2 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+      <%= length(@operators) %> bus <%= if length(@operators) == 1, do: "company", else: "companies" %> available
+    </h2>
+
+    <div class="space-y-3 mb-6">
+      <%= for op <- @operators do %>
+        <a href={~p"/book/#{op.slug}"}
+           class="flex items-center gap-4 bg-white rounded-2xl shadow-sm p-4 active:scale-98 transition-transform hover:shadow-md">
+
+          <%# Company colour badge %>
+          <div class="h-14 w-14 rounded-xl flex items-center justify-center flex-shrink-0 text-white font-extrabold text-xl"
+               style={"background: #{op.color || "#1d4ed8"};"}>
+            <%= op.name |> String.first() |> String.upcase() %>
+          </div>
+
+          <div class="flex-1 min-w-0">
+            <h3 class="font-bold text-gray-900 text-base leading-tight truncate"><%= op.name %></h3>
+            <%= if op.tagline do %>
+              <p class="text-xs text-gray-500 mt-0.5 truncate"><%= op.tagline %></p>
+            <% end %>
+            <div class="flex items-center gap-3 mt-1.5">
+              <span class="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
+                <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                <%= op.schedule_count %> active <%= if op.schedule_count == 1, do: "route", else: "routes" %>
+              </span>
+              <%= if op.contact_phone do %>
+                <span class="text-xs text-gray-400"><%= op.contact_phone %></span>
+              <% end %>
+            </div>
+          </div>
+
+          <svg class="h-5 w-5 text-gray-300 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+          </svg>
+        </a>
+      <% end %>
+    </div>
+  <% end %>
+
+  <%# How it works %>
+  <div class="bg-white rounded-2xl shadow-sm p-5 mb-4">
+    <h3 class="text-sm font-bold text-gray-700 mb-3">How to Book</h3>
+    <div class="space-y-3">
+      <div class="flex items-start gap-3">
+        <span class="h-6 w-6 rounded-full bg-blue-100 text-blue-700 text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">1</span>
+        <p class="text-sm text-gray-600">Choose a <strong>bus company</strong> above</p>
+      </div>
+      <div class="flex items-start gap-3">
+        <span class="h-6 w-6 rounded-full bg-blue-100 text-blue-700 text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">2</span>
+        <p class="text-sm text-gray-600">Select your <strong>route and travel date</strong></p>
+      </div>
+      <div class="flex items-start gap-3">
+        <span class="h-6 w-6 rounded-full bg-blue-100 text-blue-700 text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">3</span>
+        <p class="text-sm text-gray-600">Pick your <strong>seat</strong> from the bus map</p>
+      </div>
+      <div class="flex items-start gap-3">
+        <span class="h-6 w-6 rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">✓</span>
+        <p class="text-sm text-gray-600">Get your <strong>QR ticket</strong> instantly — screenshot or print it</p>
+      </div>
+    </div>
+  </div>
+
+  <%# Install PWA tip %>
+  <div class="rounded-2xl p-4 mb-2 text-xs text-blue-800" style="background:#dbeafe;">
+    <p class="font-semibold mb-1">📱 Install this app on your phone</p>
+    <p><strong>Android:</strong> Chrome menu (⋮) → "Add to Home screen"</p>
+    <p class="mt-0.5"><strong>iPhone:</strong> Safari Share button → "Add to Home Screen"</p>
+  </div>
+</div>

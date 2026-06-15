@@ -26,7 +26,7 @@ defmodule FleetMint.Finance.CashingReport do
     |> cast(attrs, [:days_worked, :expected_cashing, :received_cashing, :airtel_id, :debt_balance,
                     :expenditure, :description, :report_id, :bus_id, :conductor_id, :report_date])
     |> validate_required([:days_worked, :expected_cashing, :received_cashing,
-                          :debt_balance, :expenditure, :description, :report_id])
+                          :debt_balance, :expenditure, :description, :report_id, :report_date])
     |> validate_number(:expected_cashing, greater_than_or_equal_to: 0)
     |> validate_number(:received_cashing, greater_than_or_equal_to: 0)
     |> validate_number(:expenditure, greater_than_or_equal_to: 0)

@@ -1,0 +1,255 @@
+<%
+  booking = @result.booking
+  schedule = booking.schedule
+  route = schedule.route
+  checkpoint = @result.checkpoint
+  history = @result.history
+
+  # Work out route stops for the progress bar
+  all_stops = if route do
+    [route.start_location] ++ (route.stops || []) ++ [route.end_location]
+    |> Enum.filter(& &1)
+    |> Enum.uniq()
+  else
+    []
+  end
+
+  current_loc = if checkpoint, do: checkpoint.location, else: nil
+
+  # Find current position index in stops (case-insensitive partial match)
+  current_idx = if current_loc && all_stops != [] do
+    Enum.find_index(all_stops, fn s ->
+      String.contains?(String.downcase(s), String.downcase(current_loc)) or
+      String.contains?(String.downcase(current_loc), String.downcase(s))
+    end)
+  else
+    nil
+  end
+%>
+
+<div class="min-h-screen bg-gray-50">
+
+  <%# Top bar %>
+  <div class="bg-slate-800 px-4 py-4 flex items-center gap-3">
+    <a href="/track" class="text-white/70 hover:text-white">
+      <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+      </svg>
+    </a>
+    <div class="flex-1 min-w-0">
+      <p class="text-xs text-slate-400">Tracking</p>
+      <p class="text-sm font-mono font-bold text-white"><%= booking.booking_reference %></p>
+    </div>
+    <span class={[
+      "text-xs px-2.5 py-1 rounded-full font-semibold",
+      case booking.status do
+        "confirmed" -> "bg-emerald-100 text-emerald-700"
+        "checked_in" -> "bg-blue-100 text-blue-700"
+        "cancelled" -> "bg-red-100 text-red-700"
+        _ -> "bg-gray-100 text-gray-600"
+      end
+    ]}>
+      <%= String.capitalize(booking.status) %>
+    </span>
+  </div>
+
+  <div class="px-4 py-4 space-y-4">
+
+    <%# Current location card %>
+    <div class="bg-white rounded-2xl shadow-sm overflow-hidden">
+      <div class={["px-4 py-3 flex items-center gap-2",
+                   if(checkpoint, do: "bg-emerald-600", else: "bg-gray-500")]}>
+        <svg class="h-4 w-4 text-white flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+        </svg>
+        <p class="text-xs font-semibold text-white uppercase tracking-wider">
+          <%= if checkpoint, do: "Last Known Location", else: "Not Yet Departed" %>
+        </p>
+      </div>
+      <div class="px-4 py-4">
+        <%= if checkpoint do %>
+          <p class="text-2xl font-extrabold text-gray-900"><%= checkpoint.location %></p>
+          <p class="text-xs text-gray-400 mt-1">
+            Reported <%= Calendar.strftime(checkpoint.inserted_at, "%d %b %Y at %H:%M") %>
+            <%= if checkpoint.reported_by, do: "by #{checkpoint.reported_by.full_name || checkpoint.reported_by.username}" %>
+          </p>
+          <%= if checkpoint.notes && checkpoint.notes != "" do %>
+            <div class="mt-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-xs text-amber-800">
+              <%= checkpoint.notes %>
+            </div>
+          <% end %>
+        <% else %>
+          <p class="text-lg font-bold text-gray-500">No updates yet</p>
+          <p class="text-xs text-gray-400 mt-1">
+            The bus operator has not posted a location update for <strong><%= booking.travel_date %></strong>.
+            Check again later or call the company.
+          </p>
+        <% end %>
+      </div>
+    </div>
+
+    <%# Route progress bar %>
+    <%= if all_stops != [] && length(all_stops) >= 2 do %>
+      <div class="bg-white rounded-2xl shadow-sm p-4">
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4">Route Progress</p>
+        <div class="relative">
+          <%# Connector line %>
+          <div class="absolute left-3 top-0 bottom-0 w-0.5 bg-gray-200" style="margin-left: 1px;"></div>
+
+          <%= for {stop, idx} <- Enum.with_index(all_stops) do %>
+            <%
+              reached = case current_idx do
+                nil -> idx == 0
+                ci -> idx <= ci
+              end
+              is_current = current_idx != nil && idx == current_idx
+              is_last = idx == length(all_stops) - 1
+            %>
+            <div class="flex items-start gap-3 mb-4 last:mb-0 relative">
+              <%# Dot %>
+              <div class={[
+                "h-7 w-7 rounded-full flex items-center justify-center flex-shrink-0 border-2 z-10",
+                cond do
+                  is_current -> "bg-emerald-500 border-emerald-500"
+                  reached && !is_current -> "bg-blue-500 border-blue-500"
+                  true -> "bg-white border-gray-300"
+                end
+              ]}>
+                <%= cond do %>
+                  <% is_current -> %>
+                    <svg class="h-3.5 w-3.5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                      <circle cx="12" cy="12" r="6"/>
+                    </svg>
+                  <% reached && !is_current -> %>
+                    <svg class="h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+                    </svg>
+                  <% true -> %>
+                    <div class="h-2 w-2 rounded-full bg-gray-300"></div>
+                <% end %>
+              </div>
+
+              <% stop_color = cond do
+                   is_current -> "text-emerald-700"
+                   reached    -> "text-gray-900"
+                   true       -> "text-gray-400"
+                 end %>
+              <div class="flex-1 min-w-0 pt-0.5">
+                <p class={["text-sm font-semibold leading-tight", stop_color]}>
+                  <%= stop %>
+                  <%= cond do %>
+                    <% is_current -> %>
+                      <span class="ml-2 text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-medium">Here now</span>
+                    <% idx == 0 -> %>
+                      <span class="ml-2 text-xs text-gray-400">Origin</span>
+                    <% is_last -> %>
+                      <span class="ml-2 text-xs text-gray-400">Destination</span>
+                    <% true -> %>
+                  <% end %>
+                </p>
+                <%= if stop == (if booking.pickup_station, do: booking.pickup_station) do %>
+                  <p class="text-xs text-blue-600 font-medium mt-0.5">Your pickup point</p>
+                <% end %>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+
+    <%# Booking details %>
+    <div class="bg-white rounded-2xl shadow-sm p-4">
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Trip Details</p>
+      <div class="space-y-2.5">
+        <div class="flex justify-between text-sm">
+          <span class="text-gray-500">Passenger</span>
+          <span class="font-semibold text-gray-900"><%= booking.passenger_name %></span>
+        </div>
+        <%= if booking.pickup_station do %>
+          <div class="flex justify-between text-sm">
+            <span class="text-gray-500">Boarding at</span>
+            <span class="font-semibold text-blue-700"><%= booking.pickup_station %></span>
+          </div>
+        <% end %>
+        <div class="flex justify-between text-sm">
+          <span class="text-gray-500">Travel date</span>
+          <span class="font-semibold text-gray-900"><%= booking.travel_date %></span>
+        </div>
+        <%= if booking.seat_number do %>
+          <div class="flex justify-between text-sm">
+            <span class="text-gray-500">Seat</span>
+            <span class="font-semibold text-gray-900"><%= booking.seat_number %></span>
+          </div>
+        <% end %>
+        <div class="flex justify-between text-sm">
+          <span class="text-gray-500">Route</span>
+          <span class="font-semibold text-gray-900 text-right max-w-[60%]">
+            <%= if route, do: "#{route.start_location} → #{route.end_location}", else: "—" %>
+          </span>
+        </div>
+        <div class="flex justify-between text-sm">
+          <span class="text-gray-500">Departure</span>
+          <span class="font-semibold text-gray-900">
+            <%= schedule.departure_time |> Time.to_string() |> String.slice(0, 5) %>
+          </span>
+        </div>
+        <div class="flex justify-between text-sm">
+          <span class="text-gray-500">Operator</span>
+          <span class="font-semibold text-gray-900">
+            <%= if schedule.operator, do: schedule.operator.name, else: "—" %>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <%# Checkpoint history %>
+    <%= if history != [] do %>
+      <div class="bg-white rounded-2xl shadow-sm p-4">
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+          Location History (<%= length(history) %> updates)
+        </p>
+        <div class="space-y-3">
+          <%= for {cp, idx} <- Enum.with_index(history) do %>
+            <div class={["flex gap-3", if(idx == 0, do: "", else: "opacity-60")]}>
+              <div class="flex-shrink-0 mt-0.5">
+                <div class={["h-6 w-6 rounded-full flex items-center justify-center text-xs font-bold",
+                             if(idx == 0, do: "bg-emerald-500 text-white", else: "bg-gray-200 text-gray-500")]}>
+                  <%= length(history) - idx %>
+                </div>
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-semibold text-gray-900"><%= cp.location %></p>
+                <p class="text-xs text-gray-400">
+                  <%= Calendar.strftime(cp.inserted_at, "%d %b · %H:%M") %>
+                  <%= if cp.reported_by, do: "· #{cp.reported_by.full_name || cp.reported_by.username}" %>
+                </p>
+                <%= if cp.notes && cp.notes != "" do %>
+                  <p class="text-xs text-amber-700 mt-0.5"><%= cp.notes %></p>
+                <% end %>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+
+    <%# Call company %>
+    <%= if schedule.operator && schedule.operator.contact_phone do %>
+      <a href={"tel:#{schedule.operator.contact_phone}"}
+         class="flex items-center justify-center gap-2 bg-slate-800 text-white font-semibold py-3.5 rounded-2xl text-sm">
+        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+        </svg>
+        Call <%= schedule.operator.name %>: <%= schedule.operator.contact_phone %>
+      </a>
+    <% end %>
+
+    <div class="text-center pb-4">
+      <a href="/track" class="text-sm text-blue-600">Track another booking</a>
+    </div>
+  </div>
+</div>

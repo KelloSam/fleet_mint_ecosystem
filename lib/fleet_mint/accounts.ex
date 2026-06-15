@@ -245,6 +245,30 @@ defmodule FleetMint.Accounts do
             order_by: [asc: u.username]
     Repo.all(query)
   end
+
+  def update_last_login(%User{} = user) do
+    user
+    |> Ecto.Changeset.change(last_login: NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second))
+    |> Repo.update()
+  end
+
+  def list_on_duty_staff do
+    today_start = Date.utc_today() |> NaiveDateTime.new!(~T[00:00:00])
+    from(u in User,
+      where: u.role in ["admin", "manager", "cashier"]
+        and u.active == true
+        and not is_nil(u.last_login)
+        and u.last_login >= ^today_start,
+      order_by: [asc: u.role, asc: u.full_name]
+    ) |> Repo.all()
+  end
+
+  def list_staff_with_phone do
+    query = from u in User,
+            where: u.role in ["admin", "manager", "cashier"] and not is_nil(u.phone),
+            order_by: [asc: u.role, asc: u.full_name]
+    Repo.all(query)
+  end
   
   @doc """
   Returns the list of active users.
@@ -327,19 +351,6 @@ defmodule FleetMint.Accounts do
           {:error, :invalid_credentials}
         end
     end
-  end
-  
-  @doc """
-  Updates the last login timestamp for a user.
-  
-  ## Examples
-  
-      iex> update_last_login(user)
-      {:ok, %User{}}
-  
-  """
-  def update_last_login(%User{} = user) do
-    update_user(user, %{last_login: NaiveDateTime.utc_now()})
   end
   
   @doc """

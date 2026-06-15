@@ -4,13 +4,15 @@ defmodule FleetMintWeb.CashingReportController do
   alias FleetMint.Finance
   alias FleetMint.Finance.CashingReport
 
+  plug :require_admin_or_manager when action in [:edit, :update, :delete]
+
   def index(conn, _params) do
     cashing_reports = Finance.list_cashing_reports()
     render(conn, :index, cashing_reports: cashing_reports)
   end
 
   def new(conn, _params) do
-    changeset = Finance.change_cashing_report(%CashingReport{})
+    changeset = Finance.change_cashing_report(%CashingReport{report_date: Date.utc_today()})
     render(conn, :new, changeset: changeset)
   end
 
@@ -58,5 +60,16 @@ defmodule FleetMintWeb.CashingReportController do
     conn
     |> put_flash(:info, "Cashing report deleted successfully.")
     |> redirect(to: ~p"/cashing_reports")
+  end
+
+  defp require_admin_or_manager(conn, _opts) do
+    if conn.assigns.current_user.role in ["admin", "manager"] do
+      conn
+    else
+      conn
+      |> put_flash(:error, "You are not authorised to perform this action.")
+      |> redirect(to: ~p"/cashing_reports")
+      |> halt()
+    end
   end
 end

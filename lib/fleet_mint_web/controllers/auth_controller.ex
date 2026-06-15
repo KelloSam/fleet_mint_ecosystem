@@ -34,6 +34,7 @@ defmodule FleetMintWeb.AuthController do
   def authenticate(conn, %{"user" => %{"email" => email, "password" => password}}) do
     case Guardian.authenticate(email, password) do
       {:ok, user, token} ->
+        Accounts.update_last_login(user)
         conn
         |> put_flash(:info, "Welcome back, #{user.full_name}!")
         |> put_session(:user_token, token)

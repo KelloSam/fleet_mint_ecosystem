@@ -1,0 +1,21 @@
+<.header>
+  <%= @log.title %>
+  <:actions>
+    <.link href={~p"/operation_logs/#{@log}/edit"}><.button>Edit</.button></.link>
+  </:actions>
+</.header>
+
+<.list>
+  <:item title="Date"><%= @log.date %></:item>
+  <:item title="Category"><%= String.capitalize(@log.category) %></:item>
+  <:item title="Title"><%= @log.title %></:item>
+  <:item title="Details"><%= @log.description %></:item>
+  <:item title="Logged By"><%= @log.logged_by && (@log.logged_by.full_name || @log.logged_by.username) %></:item>
+</.list>
+
+<div class="mt-6">
+  <.link href={~p"/operation_logs/#{@log}"} method="delete" data-confirm="Delete this entry?" class="text-sm font-semibold text-red-600 hover:text-red-700">
+    Delete Entry
+  </.link>
+</div>
+<.back navigate={~p"/operation_logs"}>Back to log</.back>

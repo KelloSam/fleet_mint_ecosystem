@@ -1,0 +1,57 @@
+<div class="max-w-4xl mx-auto">
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-800">Bus Companies</h1>
+      <p class="text-sm text-gray-500 mt-0.5">Companies listed here appear on the public booking portal</p>
+    </div>
+    <.link navigate={~p"/operators/new"} class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg">
+      + Add Company
+    </.link>
+  </div>
+
+  <div class="mb-4 bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 text-sm text-blue-800">
+    Public booking portal: <a href="/book" target="_blank" class="font-semibold underline">/book</a>
+    — clients visit this to choose a company and book their seat.
+  </div>
+
+  <%= if @operators == [] do %>
+    <div class="bg-white rounded-lg shadow p-12 text-center text-gray-400">
+      <p class="font-medium">No companies yet. Add the first one.</p>
+    </div>
+  <% else %>
+    <div class="space-y-3">
+      <%= for op <- @operators do %>
+        <div class="bg-white rounded-xl shadow p-4 flex items-center gap-4">
+          <div class="h-12 w-12 rounded-xl flex items-center justify-center text-white font-extrabold text-xl flex-shrink-0"
+               style={"background: #{op.color || "#1d4ed8"};"}>
+            <%= op.name |> String.first() |> String.upcase() %>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2">
+              <h3 class="font-bold text-gray-900"><%= op.name %></h3>
+              <%= if op.active do %>
+                <span class="text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-medium">Active</span>
+              <% else %>
+                <span class="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 font-medium">Inactive</span>
+              <% end %>
+            </div>
+            <p class="text-xs text-gray-400 mt-0.5">
+              /book/<%= op.slug %>
+              <%= if op.contact_phone, do: " · #{op.contact_phone}" %>
+            </p>
+          </div>
+          <div class="flex gap-2 items-center">
+            <span class="text-xs text-gray-400 font-medium mr-1">
+              <%= op.schedule_count || 0 %> route<%= if (op.schedule_count || 0) != 1, do: "s" %>
+            </span>
+            <.link navigate={~p"/operators/#{op}"} class="text-sm text-emerald-600 hover:text-emerald-800 font-medium px-3 py-1 border border-emerald-200 rounded-lg">View Routes</.link>
+            <.link navigate={~p"/operators/#{op}/edit"} class="text-sm text-blue-600 hover:text-blue-800 font-medium px-3 py-1 border border-blue-200 rounded-lg">Edit</.link>
+            <.link href={~p"/operators/#{op}"} method="delete"
+                   data-confirm={"Remove #{op.name}?"}
+                   class="text-sm text-red-600 hover:text-red-800 font-medium px-3 py-1 border border-red-200 rounded-lg">Remove</.link>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+</div>

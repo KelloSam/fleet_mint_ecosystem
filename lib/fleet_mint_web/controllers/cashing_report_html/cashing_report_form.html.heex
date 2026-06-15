@@ -2,6 +2,7 @@
   <.error :if={@changeset.action}>
     Oops, something went wrong! Please check the errors below.
   </.error>
+  <.input field={f[:report_date]} type="date" label="Report Date" />
   <.input field={f[:days_worked]} type="number" label="Days worked" />
   <.input field={f[:expected_cashing]} type="number" label="Expected cashing" step="any" />
   <.input field={f[:received_cashing]} type="number" label="Received cashing" step="any" />

@@ -4,26 +4,6 @@ defmodule FleetMintWeb.ReportHTML do
 
   import FleetMintWeb.CoreComponents
   @doc """
-  Renders a report form.
-  """
-  attr :changeset, Ecto.Changeset, required: true
-  attr :action, :string, required: true
-  def report_form(assigns) do
-    ~H"""
-    <.simple_form :let={f} for={@changeset} action={@action}>
-      <.error :if={@changeset.action}>
-        Oops, something went wrong! Please check the errors below.
-      </.error>
-      <.input field={f[:description]} type="text" label="Description" />
-      <.input field={f[:details]} type="textarea" label="Details" />
-      <:actions>
-        <.button>Save Report</.button>
-      </:actions>
-    </.simple_form>
-    """
-  end
-
-  @doc """
   Renders a header with title.
   """
   attr :title, :string, required: true

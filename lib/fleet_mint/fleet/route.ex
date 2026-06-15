@@ -12,6 +12,10 @@ defmodule FleetMint.Fleet.Route do
     field :distance, :decimal
     field :duration, :integer
     field :fare, :decimal
+    field :stops, {:array, :string}, default: []
+
+    many_to_many :operators, FleetMint.Fleet.Operator,
+      join_through: "operator_routes"
 
     timestamps(type: :utc_datetime)
   end
@@ -28,7 +32,7 @@ defmodule FleetMint.Fleet.Route do
   """
   def changeset(route, attrs) do
     route
-    |> cast(attrs, [:name, :start_location, :end_location, :distance, :duration, :fare, :status, :description])
+    |> cast(attrs, [:name, :start_location, :end_location, :distance, :duration, :fare, :status, :description, :stops])
     |> validate_required([:name, :start_location, :end_location, :distance, :duration, :fare, :status])
     |> validate_number(:distance, greater_than: 0, message: "must be greater than 0")
     |> validate_number(:duration, greater_than: 0, message: "must be greater than 0")

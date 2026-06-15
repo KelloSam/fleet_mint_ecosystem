@@ -1,0 +1,94 @@
+<%# Search page — enter booking reference %>
+<div class="min-h-screen bg-gray-50 flex flex-col">
+
+  <%# Hero header %>
+  <div class="bg-gradient-to-br from-slate-800 to-blue-900 px-5 pt-10 pb-12 text-center">
+    <div class="h-16 w-16 bg-white/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+      <svg class="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+          d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+          d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+      </svg>
+    </div>
+    <h1 class="text-2xl font-extrabold text-white">Track Your Bus</h1>
+    <p class="text-blue-200 text-sm mt-2 max-w-xs mx-auto">
+      Enter your booking reference to see where your bus is right now.
+    </p>
+  </div>
+
+  <div class="px-4 -mt-6">
+
+    <%# Flash error %>
+    <%= if Phoenix.Flash.get(@flash, :error) do %>
+      <div class="bg-red-50 border border-red-200 rounded-xl px-4 py-3 mb-4 text-sm text-red-700">
+        <%= Phoenix.Flash.get(@flash, :error) %>
+      </div>
+    <% end %>
+
+    <%# Search card %>
+    <div class="bg-white rounded-2xl shadow-lg p-5 mb-6">
+      <form action="/track" method="get">
+        <label class="block text-sm font-semibold text-gray-700 mb-2">Booking Reference</label>
+        <div class="flex gap-2">
+          <input type="text" name="ref" value={@ref}
+                 placeholder="e.g. BK-0012345"
+                 class="flex-1 border border-gray-300 rounded-xl px-4 py-3 text-sm font-mono uppercase focus:outline-none focus:ring-2 focus:ring-blue-500"
+                 autocomplete="off" autocapitalize="characters" />
+          <button type="submit"
+                  class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-5 py-3 rounded-xl text-sm transition-colors">
+            Track
+          </button>
+        </div>
+        <p class="text-xs text-gray-400 mt-2">
+          Your reference is on your ticket — starts with <span class="font-mono">BK-</span>
+        </p>
+      </form>
+    </div>
+
+    <%# Info cards %>
+    <div class="space-y-3">
+      <div class="bg-white rounded-xl p-4 flex gap-3 items-start shadow-sm">
+        <div class="h-9 w-9 rounded-lg bg-emerald-100 flex items-center justify-center flex-shrink-0">
+          <svg class="h-5 w-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+          </svg>
+        </div>
+        <div>
+          <p class="text-sm font-semibold text-gray-800">Passenger Tracking</p>
+          <p class="text-xs text-gray-500 mt-0.5">Track your own journey — see how far the bus has reached.</p>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl p-4 flex gap-3 items-start shadow-sm">
+        <div class="h-9 w-9 rounded-lg bg-orange-100 flex items-center justify-center flex-shrink-0">
+          <svg class="h-5 w-5 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+          </svg>
+        </div>
+        <div>
+          <p class="text-sm font-semibold text-gray-800">Parcel Tracking</p>
+          <p class="text-xs text-gray-500 mt-0.5">Sent a parcel on the bus? The staff gives you a booking reference. Use it here to track.</p>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl p-4 flex gap-3 items-start shadow-sm">
+        <div class="h-9 w-9 rounded-lg bg-purple-100 flex items-center justify-center flex-shrink-0">
+          <svg class="h-5 w-5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M8 7h8M8 11h5m-9 8h14a2 2 0 002-2V7a2 2 0 00-2-2H6a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+          </svg>
+        </div>
+        <div>
+          <p class="text-sm font-semibold text-gray-800">Car Hire & Fleet</p>
+          <p class="text-xs text-gray-500 mt-0.5">Vehicle operators can track fleet movements using the same reference system.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-6 text-center">
+      <a href="/book" class="text-sm text-blue-600 hover:text-blue-800">← Back to booking portal</a>
+    </div>
+  </div>
+</div>

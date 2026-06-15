@@ -1,0 +1,18 @@
+<.header>
+  Fuel Logs
+  <:actions>
+    <.link href={~p"/fuel_logs/new"}><.button>Add Fuel Log</.button></.link>
+  </:actions>
+</.header>
+
+<.table id="fuel_logs" rows={@fuel_logs} row_click={&JS.navigate(~p"/fuel_logs/#{&1}")}>
+  <:col :let={f} label="Date"><%= f.log_date %></:col>
+  <:col :let={f} label="Vehicle"><%= f.vehicle && f.vehicle.registration_number %></:col>
+  <:col :let={f} label="Fuel Type"><%= String.capitalize(f.fuel_type) %></:col>
+  <:col :let={f} label="Litres"><%= f.liters %> L</:col>
+  <:col :let={f} label="Total Cost">ZMW <%= f.total_cost %></:col>
+  <:col :let={f} label="Station"><%= f.fuel_station %></:col>
+  <:col :let={f} label="Driver"><%= f.driver && (f.driver.full_name || f.driver.username) %></:col>
+  <:action :let={f}><.link navigate={~p"/fuel_logs/#{f}/edit"}>Edit</.link></:action>
+  <:action :let={f}><.link href={~p"/fuel_logs/#{f}"} method="delete" data-confirm="Delete?">Delete</.link></:action>
+</.table>

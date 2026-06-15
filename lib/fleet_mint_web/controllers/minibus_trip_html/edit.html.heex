@@ -1,0 +1,3 @@
+<.header>Edit Trip — <%= @trip.date %></.header>
+<.trip_form changeset={@changeset} action={~p"/minibus_trips/#{@trip}"} buses={@buses} routes={@routes} drivers={@drivers} />
+<.back navigate={~p"/minibus_trips"}>Back to trips</.back>

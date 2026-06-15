@@ -8,3 +8,18 @@
 <div class="bg-white rounded-lg shadow p-6">
   <.route_form changeset={@changeset} action={~p"/routes"} />
 </div>
+
+<script>
+  function addStop() {
+    var list = document.getElementById('stops-list');
+    var idx = list.children.length + 1;
+    var row = document.createElement('div');
+    row.className = 'flex gap-2 items-center stop-row';
+    row.innerHTML = '<input type="text" name="route[stops][]" placeholder="Stop ' + idx + '" class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />' +
+      '<button type="button" onclick="removeStop(this)" class="text-red-400 hover:text-red-600 px-2 py-2 rounded-lg text-lg leading-none">×</button>';
+    list.appendChild(row);
+  }
+  function removeStop(btn) {
+    btn.parentElement.remove();
+  }
+</script>

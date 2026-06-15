@@ -1,0 +1,6 @@
+<.header>
+  New Maintenance Record
+  <:subtitle>Log a service or repair for a vehicle.</:subtitle>
+</.header>
+<.maintenance_form changeset={@changeset} action={~p"/maintenances"} vehicles={@vehicles} />
+<.back navigate={~p"/maintenances"}>Back</.back>

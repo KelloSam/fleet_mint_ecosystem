@@ -1,0 +1,19 @@
+<.header>
+  Maintenance Record
+  <:actions><.link href={~p"/maintenances/#{@maintenance}/edit"}><.button>Edit</.button></.link></:actions>
+</.header>
+
+<.list>
+  <:item title="Vehicle"><%= @maintenance.vehicle && @maintenance.vehicle.registration_number %></:item>
+  <:item title="Service Date"><%= @maintenance.service_date %></:item>
+  <:item title="Service Type"><%= String.replace(@maintenance.service_type, "_", " ") |> String.capitalize() %></:item>
+  <:item title="Status"><%= @maintenance.status %></:item>
+  <:item title="Description"><%= @maintenance.description %></:item>
+  <:item title="Cost">ZMW <%= @maintenance.cost %></:item>
+  <:item title="Mileage at Service"><%= @maintenance.mileage_at_service %> km</:item>
+  <:item title="Garage"><%= @maintenance.garage %></:item>
+  <:item title="Next Service Date"><%= @maintenance.next_service_date %></:item>
+  <:item title="Next Service Mileage"><%= @maintenance.next_service_mileage %> km</:item>
+</.list>
+
+<.back navigate={~p"/maintenances"}>Back</.back>

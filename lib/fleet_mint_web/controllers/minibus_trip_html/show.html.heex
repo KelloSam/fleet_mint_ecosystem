@@ -1,0 +1,19 @@
+<.header>
+  Trip — <%= @trip.date %>
+  <:actions><.link href={~p"/minibus_trips/#{@trip}/edit"}><.button>Edit</.button></.link></:actions>
+</.header>
+
+<.list>
+  <:item title="Date"><%= @trip.date %></:item>
+  <:item title="Bus"><%= @trip.bus && "#{@trip.bus.registration_number} #{@trip.bus.model}" %></:item>
+  <:item title="Route"><%= @trip.route && @trip.route.name %></:item>
+  <:item title="Driver"><%= @trip.driver && (@trip.driver.full_name || @trip.driver.username) %></:item>
+  <:item title="Status"><%= String.replace(@trip.status, "_", " ") |> String.capitalize() %></:item>
+  <:item title="Passengers"><%= @trip.passengers_count %></:item>
+  <:item title="Fare Collected">ZMW <%= @trip.fare_collected %></:item>
+  <:item title="Fuel Cost">ZMW <%= @trip.fuel_cost %></:item>
+  <:item title="Net Profit">ZMW <%= FleetMint.Transit.MinibusTrip.profit(@trip) %></:item>
+  <:item title="Notes"><%= @trip.notes %></:item>
+</.list>
+
+<.back navigate={~p"/minibus_trips"}>Back to trips</.back>

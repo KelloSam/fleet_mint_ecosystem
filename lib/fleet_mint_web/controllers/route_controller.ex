@@ -4,6 +4,19 @@ defmodule FleetMintWeb.RouteController do
   alias FleetMint.Fleet
   alias FleetMint.Fleet.Route
 
+  plug :require_admin when action in [:new, :create, :edit, :update, :delete]
+
+  defp require_admin(conn, _opts) do
+    if conn.assigns.current_user.role in ["admin", "manager"] do
+      conn
+    else
+      conn
+      |> put_flash(:error, "Only admins and managers can modify routes.")
+      |> redirect(to: ~p"/routes")
+      |> halt()
+    end
+  end
+
   def index(conn, params) do
     status = Map.get(params, "status")
     routes = if status && status != "", do: Fleet.list_routes_by_status(status), else: Fleet.list_routes()

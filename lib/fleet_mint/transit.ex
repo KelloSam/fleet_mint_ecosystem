@@ -1,20 +1,65 @@
 defmodule FleetMint.Transit do
   import Ecto.Query
   alias FleetMint.Repo
-  alias FleetMint.Transit.{Schedule, Booking, Ticket}
+  alias FleetMint.Transit.{Schedule, Booking, Ticket, BusCheckpoint, MinibusTrip}
   alias FleetMint.Fleet.{Vehicle, Route}
+
+  # ── Minibus Trips ─────────────────────────────────────────────────────────
+
+  def list_minibus_trips do
+    MinibusTrip
+    |> order_by([t], desc: t.date)
+    |> preload([:bus, :route, :driver])
+    |> Repo.all()
+  end
+
+  def get_minibus_trip!(id) do
+    MinibusTrip |> preload([:bus, :route, :driver]) |> Repo.get!(id)
+  end
+
+  def create_minibus_trip(attrs \\ %{}) do
+    %MinibusTrip{} |> MinibusTrip.changeset(attrs) |> Repo.insert()
+  end
+
+  def update_minibus_trip(%MinibusTrip{} = trip, attrs) do
+    trip |> MinibusTrip.changeset(attrs) |> Repo.update()
+  end
+
+  def delete_minibus_trip(%MinibusTrip{} = trip), do: Repo.delete(trip)
+
+  def change_minibus_trip(%MinibusTrip{} = trip, attrs \\ %{}),
+    do: MinibusTrip.changeset(trip, attrs)
+
+  def count_minibus_trips_today do
+    today = Date.utc_today()
+    Repo.aggregate(from(t in MinibusTrip, where: t.date == ^today), :count)
+  end
+
+  def minibus_revenue_today do
+    today = Date.utc_today()
+    Repo.aggregate(from(t in MinibusTrip, where: t.date == ^today), :sum, :fare_collected)
+    |> Kernel.||(Decimal.new(0))
+  end
 
   # ── Schedules ─────────────────────────────────────────────────────────────
 
   def list_schedules(opts \\ []) do
     Schedule
     |> maybe_filter_status(opts[:status])
-    |> preload([:route, :vehicle, :driver, :conductor])
+    |> preload([:route, :vehicle, :driver, :conductor, :operator])
     |> order_by([s], s.departure_time)
     |> Repo.all()
   end
 
-  def get_schedule!(id), do: Repo.get!(Schedule, id) |> Repo.preload([:route, :vehicle, :driver, :conductor])
+  def list_public_schedules_for_operator(operator_id) do
+    from(s in Schedule,
+      where: s.operator_id == ^operator_id and s.status == "active",
+      preload: [:route, vehicle: :bus_profile],
+      order_by: s.departure_time
+    ) |> Repo.all()
+  end
+
+  def get_schedule!(id), do: Repo.get!(Schedule, id) |> Repo.preload([:route, :vehicle, :driver, :conductor, :operator])
 
   def create_schedule(attrs) do
     %Schedule{} |> Schedule.changeset(attrs) |> Repo.insert()
@@ -48,9 +93,45 @@ defmodule FleetMint.Transit do
       {:ok, booking} ->
         booking = Repo.preload(booking, [:schedule])
         {:ok, ticket} = issue_ticket(booking)
-        {:ok, %{booking | ticket: ticket}}
+        booking = %{booking | ticket: ticket}
+        Phoenix.PubSub.broadcast(FleetMint.PubSub, "bookings:new", {:new_booking, booking})
+        {:ok, booking}
       err -> err
     end
+  end
+
+  def update_booking(%Booking{} = booking, attrs) do
+    booking |> Booking.changeset(attrs) |> Repo.update()
+  end
+
+  def list_bookings_since(%NaiveDateTime{} = since) do
+    Booking
+    |> where([b], b.inserted_at > ^since)
+    |> order_by([b], desc: b.inserted_at)
+    |> preload([:schedule])
+    |> Repo.all()
+  end
+
+  def count_bookings_today do
+    today = Date.utc_today()
+    Booking |> where([b], b.travel_date == ^today and b.status != "cancelled") |> Repo.aggregate(:count, :id)
+  end
+
+  def revenue_today do
+    today = Date.utc_today()
+    result = Booking
+    |> where([b], b.travel_date == ^today and b.status != "cancelled")
+    |> select([b], sum(b.fare_paid))
+    |> Repo.one()
+    result || Decimal.new("0.00")
+  end
+
+  def get_booked_seats(schedule_id, %Date{} = date) do
+    Booking
+    |> where([b], b.schedule_id == ^schedule_id and b.travel_date == ^date and b.status != "cancelled")
+    |> select([b], b.seat_number)
+    |> Repo.all()
+    |> Enum.reject(&is_nil/1)
   end
 
   def cancel_booking(%Booking{} = booking) do
@@ -130,4 +211,47 @@ defmodule FleetMint.Transit do
 
   defp maybe_filter_date(query, nil), do: query
   defp maybe_filter_date(query, date), do: where(query, [b], b.travel_date == ^date)
+
+  # ── Bus Checkpoints (live location reporting) ─────────────────────────────
+
+  def post_checkpoint(attrs) do
+    %BusCheckpoint{} |> BusCheckpoint.changeset(attrs) |> Repo.insert()
+  end
+
+  def get_latest_checkpoint(schedule_id, %Date{} = date) do
+    from(c in BusCheckpoint,
+      where: c.schedule_id == ^schedule_id and c.travel_date == ^date,
+      order_by: [desc: c.inserted_at],
+      limit: 1,
+      preload: [:reported_by]
+    ) |> Repo.one()
+  end
+
+  def list_checkpoints(schedule_id, %Date{} = date) do
+    from(c in BusCheckpoint,
+      where: c.schedule_id == ^schedule_id and c.travel_date == ^date,
+      order_by: [desc: c.inserted_at],
+      preload: [:reported_by]
+    ) |> Repo.all()
+  end
+
+  def track_by_booking_reference(ref) do
+    booking =
+      from(b in Booking,
+        where: b.booking_reference == ^ref,
+        preload: [schedule: [:route, :operator]]
+      ) |> Repo.one()
+
+    case booking do
+      nil -> {:error, :not_found}
+      b ->
+        checkpoint = get_latest_checkpoint(b.schedule_id, b.travel_date)
+        all_checkpoints = list_checkpoints(b.schedule_id, b.travel_date)
+        {:ok, %{booking: b, checkpoint: checkpoint, history: all_checkpoints}}
+    end
+  end
+
+  def change_checkpoint(%BusCheckpoint{} = cp, attrs \\ %{}) do
+    BusCheckpoint.changeset(cp, attrs)
+  end
 end

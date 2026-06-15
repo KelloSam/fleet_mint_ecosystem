@@ -62,6 +62,37 @@
     placeholder="Any stops, notes or route details..."
   />
 
+  <%# Intermediate Stops Editor %>
+  <div>
+    <label class="block text-sm font-medium text-gray-700 mb-1">
+      Intermediate Stops
+      <span class="text-xs text-gray-400 font-normal ml-1">— towns/checkpoints between origin and destination</span>
+    </label>
+    <p class="text-xs text-gray-400 mb-2">
+      These appear on the booking form as pickup points. They are also used on the tracking page progress bar.
+      E.g. for Lusaka → Johannesburg: Kafue, Chirundu, Beit Bridge, Musina, Pretoria
+    </p>
+    <div id="stops-list" class="space-y-2 mb-2">
+      <%
+        existing_stops = Phoenix.HTML.Form.input_value(f, :stops) || []
+        existing_stops = if existing_stops == [], do: [""], else: existing_stops
+      %>
+      <%= for {stop, idx} <- Enum.with_index(existing_stops) do %>
+        <div class="flex gap-2 items-center stop-row">
+          <input type="text" name="route[stops][]" value={stop}
+                 placeholder={"Stop #{idx + 1} (e.g. Kafue)"}
+                 class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          <button type="button" onclick="removeStop(this)"
+                  class="text-red-400 hover:text-red-600 px-2 py-2 rounded-lg text-lg leading-none">×</button>
+        </div>
+      <% end %>
+    </div>
+    <button type="button" onclick="addStop()"
+            class="text-sm text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1">
+      + Add stop
+    </button>
+  </div>
+
   <:actions>
     <.button class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg">
       Save Route

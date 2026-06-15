@@ -1,0 +1,259 @@
+<%# Header %>
+<div class="px-4 py-4" style={"background: #{@operator.color || "#1d4ed8"};"}>
+  <a href={~p"/book/#{@operator.slug}"} class="flex items-center gap-1 text-white/80 text-sm mb-2 hover:text-white">
+    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+    </svg>
+    <%= @operator.name %>
+  </a>
+  <h1 class="text-lg font-extrabold text-white leading-tight">
+    <%= if @schedule.route, do: "#{@schedule.route.start_location} → #{@schedule.route.end_location}", else: "Book Seat" %>
+  </h1>
+  <p class="text-white/70 text-xs mt-0.5">
+    Departs <%= @schedule.departure_time |> Time.to_string() |> String.slice(0, 5) %> · ZMW <%= @schedule.fare %>
+  </p>
+</div>
+
+<form action={~p"/book/#{@operator.slug}/#{@schedule.id}"} method="post" class="px-4 pt-4" id="public-booking-form">
+  <input type="hidden" name="_csrf_token" value={Plug.CSRFProtection.get_csrf_token()} />
+
+  <%# Date picker — reloads page to refresh seat map %>
+  <div class="bg-white rounded-2xl shadow-sm p-4 mb-4">
+    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Travel Date</label>
+    <input type="date" name="booking[travel_date]" id="travel-date"
+           value={Date.to_iso8601(@date)}
+           min={Date.utc_today() |> Date.to_iso8601()}
+           class="block w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm font-semibold text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+           onchange="window.location.href='/book/'+encodeURIComponent(document.getElementById('slug-input').value)+'/'+document.getElementById('sid-input').value+'?date='+this.value" />
+    <input type="hidden" id="slug-input" value={@operator.slug} />
+    <input type="hidden" id="sid-input" value={@schedule.id} />
+  </div>
+
+  <%# Seat map %>
+  <div class="bg-white rounded-2xl shadow-sm p-4 mb-4">
+    <div class="flex items-center justify-between mb-3">
+      <label class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Choose Your Seat</label>
+      <div class="flex items-center gap-3 text-xs">
+        <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-green-200 border border-green-400 inline-block"></span> Free</span>
+        <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-red-200 border border-red-400 inline-block"></span> Taken</span>
+        <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-blue-500 inline-block"></span> Yours</span>
+      </div>
+    </div>
+
+    <%# Bus front indicator %>
+    <div class="text-center text-xs text-gray-400 mb-2 border-b border-dashed border-gray-200 pb-2">
+      🚌 FRONT — DRIVER
+    </div>
+
+    <% total = @schedule.available_seats || 0 %>
+    <% taken = @taken_seats %>
+
+    <%= if total == 0 do %>
+      <p class="text-sm text-gray-400 italic text-center py-4">Seat map not configured — any seat available.</p>
+    <% else %>
+      <div id="seat-grid" class="grid gap-2 mb-3" style="grid-template-columns: 1fr 1fr 1.5rem 1fr 1fr;">
+        <%# Column headers %>
+        <div class="text-center text-xs font-semibold text-gray-400">A</div>
+        <div class="text-center text-xs font-semibold text-gray-400">B</div>
+        <div></div>
+        <div class="text-center text-xs font-semibold text-gray-400">C</div>
+        <div class="text-center text-xs font-semibold text-gray-400">D</div>
+
+        <% rows = ceil(total / 4) %>
+        <%= for row <- 1..rows do %>
+          <% seat_a = (row - 1) * 4 + 1 %>
+          <% seat_b = (row - 1) * 4 + 2 %>
+          <% seat_c = (row - 1) * 4 + 3 %>
+          <% seat_d = (row - 1) * 4 + 4 %>
+
+          <%# Seat A %>
+          <%= if seat_a <= total do %>
+            <%= if to_string(seat_a) in taken do %>
+              <div class="h-9 rounded-lg flex items-center justify-center text-xs font-bold bg-red-100 border-2 border-red-300 text-red-500 cursor-not-allowed select-none">
+                <%= seat_a %>
+              </div>
+            <% else %>
+              <div class="seat-btn h-9 rounded-lg flex items-center justify-center text-xs font-bold bg-green-100 border-2 border-green-300 text-green-700 cursor-pointer select-none active:scale-95 transition-transform"
+                   onclick={"selectSeat('#{seat_a}', this)"}>
+                <%= seat_a %>
+              </div>
+            <% end %>
+          <% else %>
+            <div></div>
+          <% end %>
+
+          <%# Seat B %>
+          <%= if seat_b <= total do %>
+            <%= if to_string(seat_b) in taken do %>
+              <div class="h-9 rounded-lg flex items-center justify-center text-xs font-bold bg-red-100 border-2 border-red-300 text-red-500 cursor-not-allowed select-none">
+                <%= seat_b %>
+              </div>
+            <% else %>
+              <div class="seat-btn h-9 rounded-lg flex items-center justify-center text-xs font-bold bg-green-100 border-2 border-green-300 text-green-700 cursor-pointer select-none active:scale-95 transition-transform"
+                   onclick={"selectSeat('#{seat_b}', this)"}>
+                <%= seat_b %>
+              </div>
+            <% end %>
+          <% else %>
+            <div></div>
+          <% end %>
+
+          <%# Aisle gap %>
+          <div class="flex items-center justify-center text-xs text-gray-300">|</div>
+
+          <%# Seat C %>
+          <%= if seat_c <= total do %>
+            <%= if to_string(seat_c) in taken do %>
+              <div class="h-9 rounded-lg flex items-center justify-center text-xs font-bold bg-red-100 border-2 border-red-300 text-red-500 cursor-not-allowed select-none">
+                <%= seat_c %>
+              </div>
+            <% else %>
+              <div class="seat-btn h-9 rounded-lg flex items-center justify-center text-xs font-bold bg-green-100 border-2 border-green-300 text-green-700 cursor-pointer select-none active:scale-95 transition-transform"
+                   onclick={"selectSeat('#{seat_c}', this)"}>
+                <%= seat_c %>
+              </div>
+            <% end %>
+          <% else %>
+            <div></div>
+          <% end %>
+
+          <%# Seat D %>
+          <%= if seat_d <= total do %>
+            <%= if to_string(seat_d) in taken do %>
+              <div class="h-9 rounded-lg flex items-center justify-center text-xs font-bold bg-red-100 border-2 border-red-300 text-red-500 cursor-not-allowed select-none">
+                <%= seat_d %>
+              </div>
+            <% else %>
+              <div class="seat-btn h-9 rounded-lg flex items-center justify-center text-xs font-bold bg-green-100 border-2 border-green-300 text-green-700 cursor-pointer select-none active:scale-95 transition-transform"
+                   onclick={"selectSeat('#{seat_d}', this)"}>
+                <%= seat_d %>
+              </div>
+            <% end %>
+          <% else %>
+            <div></div>
+          <% end %>
+        <% end %>
+      </div>
+    <% end %>
+
+    <input type="hidden" name="booking[seat_number]" id="seat-input" />
+    <div id="seat-label" class="text-center text-sm text-gray-400 italic hidden">
+      Selected seat: <strong id="seat-display" class="text-blue-700 not-italic"></strong>
+    </div>
+    <div id="no-seat-warn" class="text-center text-xs text-orange-500 mt-1 hidden">
+      Please select a seat to continue.
+    </div>
+  </div>
+
+  <%# Pickup station — only shown when route has intermediate stops %>
+  <%= if @schedule.route && @schedule.route.stops && @schedule.route.stops != [] do %>
+    <%
+      pickup_options = [@schedule.route.start_location] ++
+                       (@schedule.route.stops || []) ++
+                       [@schedule.route.end_location]
+      pickup_options = Enum.filter(pickup_options, & &1) |> Enum.uniq()
+    %>
+    <div class="bg-white rounded-2xl shadow-sm p-4 mb-4">
+      <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Pickup / Boarding Point</h3>
+      <p class="text-xs text-gray-400 mb-3">
+        Where will you board the bus? Select the stop closest to you.
+      </p>
+      <div class="space-y-2">
+        <%= for stop <- pickup_options do %>
+          <label class="flex items-center gap-3 p-3 rounded-xl border-2 border-gray-100 has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50 cursor-pointer transition-colors">
+            <input type="radio" name="booking[pickup_station]" value={stop}
+                   class="text-blue-600 w-4 h-4 flex-shrink-0"
+                   checked={stop == @schedule.route.start_location} />
+            <div class="min-w-0 flex-1">
+              <p class="text-sm font-semibold text-gray-800"><%= stop %></p>
+              <%= if stop == @schedule.route.start_location do %>
+                <p class="text-xs text-gray-400">Origin — main departure point</p>
+              <% end %>
+              <%= if stop == @schedule.route.end_location do %>
+                <p class="text-xs text-gray-400">Final destination</p>
+              <% end %>
+            </div>
+          </label>
+        <% end %>
+      </div>
+      <p class="text-xs text-amber-700 bg-amber-50 rounded-lg px-3 py-2 mt-3">
+        If you are boarding at an intermediate stop, the bus will pick you up there — confirm your stop with the conductor.
+      </p>
+    </div>
+  <% end %>
+
+  <%# Passenger details %>
+  <div class="bg-white rounded-2xl shadow-sm p-4 mb-4">
+    <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Your Details</h3>
+    <div class="space-y-3">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Full Name <span class="text-red-500">*</span></label>
+        <input type="text" name="booking[passenger_name]" required
+               class="block w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+               placeholder="Your full name" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Phone Number <span class="text-red-500">*</span></label>
+        <input type="tel" name="booking[passenger_phone]" required
+               class="block w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+               placeholder="+260 97x xxx xxx" />
+      </div>
+    </div>
+  </div>
+
+  <%# Payment %>
+  <div class="bg-white rounded-2xl shadow-sm p-4 mb-4">
+    <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Payment</h3>
+    <div class="space-y-3">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Payment Method</label>
+        <select name="booking[payment_method]"
+                class="block w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <option value="cash">Cash at counter</option>
+          <option value="airtel_money">Airtel Money</option>
+          <option value="mtn_money">MTN Mobile Money</option>
+          <option value="card">Card</option>
+        </select>
+      </div>
+      <div class="flex items-center justify-between bg-blue-50 rounded-xl p-3">
+        <span class="text-sm font-semibold text-gray-700">Fare</span>
+        <span class="text-lg font-extrabold text-blue-700">ZMW <%= @schedule.fare %></span>
+      </div>
+      <input type="hidden" name="booking[fare_paid]" value={@schedule.fare} />
+    </div>
+  </div>
+
+  <%# Submit %>
+  <button type="submit" id="submit-btn"
+          class="w-full text-white font-bold py-4 rounded-2xl text-base shadow-lg mb-6 transition-opacity"
+          style={"background: #{@operator.color || "#1d4ed8"};"}
+          onclick="return validateSeat()">
+    Confirm Booking · ZMW <%= @schedule.fare %>
+  </button>
+</form>
+
+<script>
+  function selectSeat(seat, el) {
+    document.querySelectorAll('.seat-btn').forEach(function(d) {
+      d.classList.remove('bg-blue-500', 'text-white', 'border-blue-600');
+      d.classList.add('bg-green-100', 'border-green-300', 'text-green-700');
+    });
+    el.classList.remove('bg-green-100', 'border-green-300', 'text-green-700');
+    el.classList.add('bg-blue-500', 'text-white', 'border-blue-600');
+    document.getElementById('seat-input').value = seat;
+    document.getElementById('seat-display').textContent = seat;
+    document.getElementById('seat-label').classList.remove('hidden');
+    document.getElementById('no-seat-warn').classList.add('hidden');
+  }
+
+  function validateSeat() {
+    var seat = document.getElementById('seat-input').value;
+    var total = <%= @schedule.available_seats || 0 %>;
+    if (total > 0 && !seat) {
+      document.getElementById('no-seat-warn').classList.remove('hidden');
+      document.getElementById('seat-grid').scrollIntoView({behavior: 'smooth', block: 'center'});
+      return false;
+    }
+    return true;
+  }
+</script>

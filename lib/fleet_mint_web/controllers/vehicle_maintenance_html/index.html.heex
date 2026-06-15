@@ -1,0 +1,26 @@
+<.header>
+  Maintenance Records
+  <:actions>
+    <.link href={~p"/maintenances/new"}><.button>Add Record</.button></.link>
+  </:actions>
+</.header>
+
+<.table id="maintenances" rows={@maintenances} row_click={&JS.navigate(~p"/maintenances/#{&1}")}>
+  <:col :let={m} label="Date"><%= m.service_date %></:col>
+  <:col :let={m} label="Vehicle"><%= m.vehicle && m.vehicle.registration_number %></:col>
+  <:col :let={m} label="Service Type"><%= String.replace(m.service_type, "_", " ") |> String.capitalize() %></:col>
+  <:col :let={m} label="Garage"><%= m.garage %></:col>
+  <:col :let={m} label="Cost">ZMW <%= m.cost %></:col>
+  <:col :let={m} label="Status">
+    <span class={["px-2 py-0.5 rounded-full text-xs font-semibold",
+      case m.status do
+        "completed"   -> "bg-green-100 text-green-700"
+        "in_progress" -> "bg-blue-100 text-blue-700"
+        _             -> "bg-yellow-100 text-yellow-700"
+      end]}>
+      <%= String.replace(m.status, "_", " ") |> String.capitalize() %>
+    </span>
+  </:col>
+  <:action :let={m}><.link navigate={~p"/maintenances/#{m}/edit"}>Edit</.link></:action>
+  <:action :let={m}><.link href={~p"/maintenances/#{m}"} method="delete" data-confirm="Delete?">Delete</.link></:action>
+</.table>

@@ -1,3 +1,91 @@
 <div class="max-w-2xl mx-auto">
-  <p class="text-gray-500">This module is under construction.</p>
+  <div class="mb-6">
+    <.link navigate={~p"/schedules"} class="text-sm text-blue-600 hover:text-blue-800">← Back to Schedules</.link>
+    <h1 class="text-2xl font-bold text-gray-800 mt-2">New Schedule</h1>
+  </div>
+
+  <div class="bg-white rounded-xl shadow p-6">
+    <.form :let={f} for={@changeset} action={~p"/schedules"}>
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Bus Company (Operator)</label>
+          <select name="schedule[operator_id]" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="">— No specific operator —</option>
+            <%= for op <- @operators do %>
+              <option value={op.id} selected={Phoenix.HTML.Form.input_value(f, :operator_id) == op.id}>
+                <%= op.name %>
+              </option>
+            <% end %>
+          </select>
+          <p class="text-xs text-gray-400 mt-0.5">Assign this schedule to a company so it appears on the public booking portal.</p>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Route <span class="text-red-500">*</span></label>
+          <select name="schedule[route_id]" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+            <option value="">— Select Route —</option>
+            <%= for r <- @routes do %>
+              <option value={r.id} selected={Phoenix.HTML.Form.input_value(f, :route_id) == r.id}>
+                <%= r.start_location %> → <%= r.end_location %> (<%= r.name %>)
+              </option>
+            <% end %>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Vehicle (Bus)</label>
+          <select name="schedule[vehicle_id]" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="">— No vehicle assigned —</option>
+            <%= for v <- @vehicles do %>
+              <option value={v.id} selected={Phoenix.HTML.Form.input_value(f, :vehicle_id) == v.id}>
+                <%= v.registration_number %><%= if v.bus_profile, do: " (#{v.bus_profile.seat_capacity} seats)" %>
+              </option>
+            <% end %>
+          </select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <.input field={f[:departure_time]} type="time" label="Departure Time" required />
+          <.input field={f[:estimated_arrival_time]} type="time" label="Est. Arrival Time" />
+        </div>
+
+        <.input field={f[:fare]} type="number" label="Fare (ZMW)" step="0.01" min="0" required />
+        <.input field={f[:available_seats]} type="number" label="Available Seats" min="0" />
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Days of Operation</label>
+          <div class="flex flex-wrap gap-2">
+            <%= for {label, val} <- [{"Mon","mon"},{"Tue","tue"},{"Wed","wed"},{"Thu","thu"},{"Fri","fri"},{"Sat","sat"},{"Sun","sun"}] do %>
+              <label class="flex items-center gap-1 text-sm">
+                <input type="checkbox" name="schedule[days_of_week][]" value={val}
+                       checked={val in (Phoenix.HTML.Form.input_value(f, :days_of_week) || [])}
+                       class="rounded border-gray-300 text-blue-600" />
+                <%= label %>
+              </label>
+            <% end %>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+          <select name="schedule[status]" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+            <%= for s <- ["active", "suspended", "cancelled"] do %>
+              <option value={s} selected={Phoenix.HTML.Form.input_value(f, :status) == s}><%= String.capitalize(s) %></option>
+            <% end %>
+          </select>
+        </div>
+
+        <.input field={f[:notes]} type="textarea" label="Notes (optional)" />
+      </div>
+
+      <div class="mt-6 flex gap-3">
+        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2 rounded-lg">
+          Create Schedule
+        </button>
+        <.link navigate={~p"/schedules"} class="px-6 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50">
+          Cancel
+        </.link>
+      </div>
+    </.form>
+  </div>
 </div>

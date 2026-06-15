@@ -14,6 +14,7 @@ defmodule FleetMint.Accounts.User do
     field :password_hash, :string
     field :password, :string, virtual: true
     field :full_name, :string
+    field :phone, :string
     field :last_login, :naive_datetime
 
     timestamps(type: :utc_datetime)
@@ -25,7 +26,7 @@ defmodule FleetMint.Accounts.User do
   """
   def changeset(user, attrs) do
     user
-    |> cast(attrs, [:username, :email, :role, :full_name, :active, :last_login])
+    |> cast(attrs, [:username, :email, :role, :full_name, :phone, :active, :last_login])
     |> validate_required([:username, :email, :role, :full_name, :active])
     |> validate_format(:email, @email_regex, message: "must have the @ sign and no spaces")
     |> validate_inclusion(:role, @valid_roles, message: "must be one of: #{Enum.join(@valid_roles, ", ")}")

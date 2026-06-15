@@ -1,0 +1,43 @@
+<div class="max-w-xl mx-auto">
+  <div class="mb-6">
+    <.link navigate={~p"/operators"} class="text-sm text-blue-600 hover:text-blue-800">← Back to Companies</.link>
+    <h1 class="text-2xl font-bold text-gray-800 mt-2">Edit: <%= @operator.name %></h1>
+  </div>
+
+  <div class="bg-white rounded-xl shadow p-6">
+    <.form :let={f} for={@changeset} action={~p"/operators/#{@operator}"} method="put">
+      <div class="space-y-4">
+        <.input field={f[:name]} type="text" label="Company Name" required />
+        <.input field={f[:slug]} type="text" label="URL Slug" required />
+        <.input field={f[:tagline]} type="text" label="Tagline (optional)" />
+        <.input field={f[:contact_phone]} type="text" label="Contact Phone" />
+        <.input field={f[:contact_email]} type="email" label="Contact Email" />
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Brand Color</label>
+          <div class="flex items-center gap-3">
+            <input type="color" name="operator[color]" value={Phoenix.HTML.Form.input_value(f, :color) || "#1d4ed8"}
+                   class="h-10 w-16 cursor-pointer rounded border border-gray-300" />
+            <span class="text-xs text-gray-500">Shown on the booking portal</span>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <input type="checkbox" name="operator[active]" id="operator_active" value="true"
+                 checked={Phoenix.HTML.Form.input_value(f, :active) != false}
+                 class="h-4 w-4 text-blue-600 rounded border-gray-300" />
+          <label for="operator_active" class="text-sm text-gray-700">Active (visible on public portal)</label>
+        </div>
+      </div>
+
+      <div class="mt-6 flex gap-3">
+        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2 rounded-lg">
+          Save Changes
+        </button>
+        <.link navigate={~p"/operators"} class="px-6 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50">
+          Cancel
+        </.link>
+      </div>
+    </.form>
+  </div>
+</div>

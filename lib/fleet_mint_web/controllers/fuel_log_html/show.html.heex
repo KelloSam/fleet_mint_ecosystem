@@ -1,0 +1,19 @@
+<.header>
+  Fuel Log
+  <:actions><.link href={~p"/fuel_logs/#{@fuel_log}/edit"}><.button>Edit</.button></.link></:actions>
+</.header>
+
+<.list>
+  <:item title="Vehicle"><%= @fuel_log.vehicle && @fuel_log.vehicle.registration_number %></:item>
+  <:item title="Date"><%= @fuel_log.log_date %></:item>
+  <:item title="Fuel Type"><%= String.capitalize(@fuel_log.fuel_type) %></:item>
+  <:item title="Litres"><%= @fuel_log.liters %> L</:item>
+  <:item title="Cost per Litre">ZMW <%= @fuel_log.cost_per_liter %></:item>
+  <:item title="Total Cost">ZMW <%= @fuel_log.total_cost %></:item>
+  <:item title="Mileage"><%= @fuel_log.mileage %> km</:item>
+  <:item title="Fuel Station"><%= @fuel_log.fuel_station %></:item>
+  <:item title="Driver"><%= @fuel_log.driver && (@fuel_log.driver.full_name || @fuel_log.driver.username) %></:item>
+  <:item title="Notes"><%= @fuel_log.notes %></:item>
+</.list>
+
+<.back navigate={~p"/fuel_logs"}>Back</.back>

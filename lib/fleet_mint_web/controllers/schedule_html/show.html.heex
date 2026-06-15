@@ -1,3 +1,134 @@
-<div class="max-w-2xl mx-auto">
-  <p class="text-gray-500">This module is under construction.</p>
+<div class="max-w-3xl mx-auto space-y-6">
+  <div class="flex items-center justify-between">
+    <div>
+      <.link navigate={~p"/schedules"} class="text-sm text-blue-600 hover:text-blue-800">← Schedules</.link>
+      <h1 class="text-2xl font-bold text-gray-800 mt-1">
+        <%= @schedule.schedule_code %>
+        <span class={["text-sm font-medium ml-2 px-2 py-0.5 rounded-full",
+                       if(@schedule.status == "active", do: "bg-emerald-100 text-emerald-700", else: "bg-gray-100 text-gray-500")]}>
+          <%= String.capitalize(@schedule.status) %>
+        </span>
+      </h1>
+    </div>
+    <.link navigate={~p"/schedules/#{@schedule}/edit"} class="text-sm text-blue-600 border border-blue-200 px-3 py-1.5 rounded-lg hover:bg-blue-50">
+      Edit
+    </.link>
+  </div>
+
+  <%# Route & timing %>
+  <div class="bg-white rounded-xl shadow p-5">
+    <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Route & Timing</h2>
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <p class="text-xs text-gray-400">From</p>
+        <p class="font-semibold text-gray-900"><%= if @schedule.route, do: @schedule.route.start_location, else: "—" %></p>
+      </div>
+      <div>
+        <p class="text-xs text-gray-400">To</p>
+        <p class="font-semibold text-gray-900"><%= if @schedule.route, do: @schedule.route.end_location, else: "—" %></p>
+      </div>
+      <div>
+        <p class="text-xs text-gray-400">Departure</p>
+        <p class="font-semibold text-gray-900"><%= @schedule.departure_time |> Time.to_string() |> String.slice(0, 5) %></p>
+      </div>
+      <div>
+        <p class="text-xs text-gray-400">Fare</p>
+        <p class="font-semibold text-gray-900">ZMW <%= @schedule.fare %></p>
+      </div>
+      <div>
+        <p class="text-xs text-gray-400">Operator</p>
+        <p class="font-semibold text-gray-900"><%= if @schedule.operator, do: @schedule.operator.name, else: "—" %></p>
+      </div>
+      <div>
+        <p class="text-xs text-gray-400">Available Seats</p>
+        <p class="font-semibold text-gray-900"><%= @schedule.available_seats %></p>
+      </div>
+    </div>
+
+    <%# Stops %>
+    <%= if @schedule.route && @schedule.route.stops && @schedule.route.stops != [] do %>
+      <div class="mt-4 pt-4 border-t border-gray-100">
+        <p class="text-xs text-gray-400 mb-2">Stops along route</p>
+        <div class="flex flex-wrap gap-2">
+          <%= for stop <- @schedule.route.stops do %>
+            <span class="text-xs bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full"><%= stop %></span>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+  <%# Post location update for today %>
+  <div class="bg-white rounded-xl shadow p-5">
+    <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-1">Post Location Update</h2>
+    <p class="text-xs text-gray-400 mb-4">Let passengers and parcel senders track this bus in real time.</p>
+
+    <form action={~p"/schedules/#{@schedule}/checkpoint"} method="post" class="space-y-3">
+      <input type="hidden" name="_csrf_token" value={Plug.CSRFProtection.get_csrf_token()} />
+      <input type="hidden" name="travel_date" value={Date.utc_today()} />
+
+      <%# Quick-pick stops %>
+      <%= if @schedule.route && @schedule.route.stops && @schedule.route.stops != [] do %>
+        <div>
+          <p class="text-xs font-medium text-gray-600 mb-1.5">Quick pick a stop:</p>
+          <div class="flex flex-wrap gap-1.5">
+            <%
+              all_stops = [@schedule.route.start_location] ++
+                          (@schedule.route.stops || []) ++
+                          [@schedule.route.end_location]
+              all_stops = Enum.filter(all_stops, & &1)
+            %>
+            <%= for stop <- all_stops do %>
+              <button type="button"
+                      onclick={"document.getElementById('cp_location').value = '#{stop}'"}
+                      class="text-xs bg-gray-100 hover:bg-blue-100 hover:text-blue-700 text-gray-600 px-3 py-1.5 rounded-full transition-colors">
+                <%= stop %>
+              </button>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Current Location <span class="text-red-500">*</span></label>
+        <input type="text" name="location" id="cp_location" required
+               placeholder="e.g. Chirundu Border Post"
+               class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Notes (optional)</label>
+        <input type="text" name="notes"
+               placeholder="e.g. Slight delay at border — expect 30 min"
+               class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+      </div>
+
+      <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-5 py-2 rounded-lg text-sm">
+        Post Update
+      </button>
+    </form>
+
+    <%# Today's history %>
+    <%= if @checkpoints != [] do %>
+      <div class="mt-5 pt-4 border-t border-gray-100">
+        <p class="text-xs font-medium text-gray-500 mb-3">Today's updates (newest first)</p>
+        <div class="space-y-2">
+          <%= for cp <- @checkpoints do %>
+            <div class="flex items-start gap-3">
+              <div class="h-2 w-2 rounded-full bg-emerald-400 mt-1.5 flex-shrink-0"></div>
+              <div class="min-w-0">
+                <p class="text-sm font-semibold text-gray-800"><%= cp.location %></p>
+                <p class="text-xs text-gray-400">
+                  <%= Calendar.strftime(cp.inserted_at, "%H:%M") %>
+                  <%= if cp.reported_by, do: "· #{cp.reported_by.full_name || cp.reported_by.username}" %>
+                  <%= if cp.notes && cp.notes != "", do: "· #{cp.notes}" %>
+                </p>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
 </div>

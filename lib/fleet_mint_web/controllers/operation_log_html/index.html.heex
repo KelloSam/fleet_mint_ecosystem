@@ -1,0 +1,28 @@
+<.header>
+  Operations Log
+  <:subtitle>Daily record of fleet events, incidents, and decisions.</:subtitle>
+  <:actions>
+    <.link href={~p"/operation_logs/new"}><.button>Add Entry</.button></.link>
+  </:actions>
+</.header>
+
+<.table id="operation_logs" rows={@logs} row_click={&JS.navigate(~p"/operation_logs/#{&1}")}>
+  <:col :let={l} label="Date"><%= l.date %></:col>
+  <:col :let={l} label="Title"><%= l.title %></:col>
+  <:col :let={l} label="Category">
+    <span class={["px-2 py-0.5 rounded-full text-xs font-semibold",
+      case l.category do
+        "incident"    -> "bg-red-100 text-red-700"
+        "maintenance" -> "bg-amber-100 text-amber-700"
+        "finance"     -> "bg-emerald-100 text-emerald-700"
+        "staff"       -> "bg-blue-100 text-blue-700"
+        "passenger"   -> "bg-purple-100 text-purple-700"
+        _             -> "bg-gray-100 text-gray-600"
+      end]}>
+      <%= String.capitalize(l.category) %>
+    </span>
+  </:col>
+  <:col :let={l} label="Logged By"><%= l.logged_by && (l.logged_by.full_name || l.logged_by.username) %></:col>
+  <:action :let={l}><.link navigate={~p"/operation_logs/#{l}/edit"}>Edit</.link></:action>
+  <:action :let={l}><.link href={~p"/operation_logs/#{l}"} method="delete" data-confirm="Delete entry?">Delete</.link></:action>
+</.table>

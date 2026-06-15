@@ -1,0 +1,35 @@
+<.header>
+  Drivers
+  <:actions>
+    <.link href={~p"/drivers/new"}><.button>Add Driver</.button></.link>
+  </:actions>
+</.header>
+
+<.table id="drivers" rows={@drivers} row_click={&JS.navigate(~p"/drivers/#{&1}")}>
+  <:col :let={d} label="Name"><%= d.name %></:col>
+  <:col :let={d} label="Phone"><%= d.phone %></:col>
+  <:col :let={d} label="License No."><%= d.license_number %></:col>
+  <:col :let={d} label="License Expiry">
+    <%= if d.license_expiry do %>
+      <span class={if FleetMint.Operations.Driver.license_expired?(d), do: "text-red-600 font-semibold", else: ""}>
+        <%= d.license_expiry %>
+        <%= if FleetMint.Operations.Driver.license_expired?(d), do: " ⚠ EXPIRED" %>
+      </span>
+    <% else %>
+      —
+    <% end %>
+  </:col>
+  <:col :let={d} label="Daily Rate">ZMW <%= d.daily_rate %></:col>
+  <:col :let={d} label="Status">
+    <span class={["px-2 py-0.5 rounded-full text-xs font-semibold",
+      case d.status do
+        "active"    -> "bg-green-100 text-green-700"
+        "suspended" -> "bg-red-100 text-red-700"
+        _           -> "bg-gray-100 text-gray-500"
+      end]}>
+      <%= String.capitalize(d.status) %>
+    </span>
+  </:col>
+  <:action :let={d}><.link navigate={~p"/drivers/#{d}/edit"}>Edit</.link></:action>
+  <:action :let={d}><.link href={~p"/drivers/#{d}"} method="delete" data-confirm="Remove driver?">Delete</.link></:action>
+</.table>

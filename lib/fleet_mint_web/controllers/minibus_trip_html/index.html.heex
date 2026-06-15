@@ -1,0 +1,28 @@
+<.header>
+  Minibus Trips
+  <:actions>
+    <.link href={~p"/minibus_trips/new"}><.button>Record Trip</.button></.link>
+  </:actions>
+</.header>
+
+<.table id="minibus_trips" rows={@trips} row_click={&JS.navigate(~p"/minibus_trips/#{&1}")}>
+  <:col :let={t} label="Date"><%= t.date %></:col>
+  <:col :let={t} label="Bus"><%= t.bus && t.bus.registration_number %></:col>
+  <:col :let={t} label="Route"><%= t.route && t.route.name %></:col>
+  <:col :let={t} label="Driver"><%= t.driver && (t.driver.full_name || t.driver.username) %></:col>
+  <:col :let={t} label="Pax"><%= t.passengers_count %></:col>
+  <:col :let={t} label="Fare">ZMW <%= t.fare_collected %></:col>
+  <:col :let={t} label="Status">
+    <span class={["px-2 py-0.5 rounded-full text-xs font-semibold",
+      case t.status do
+        "completed"   -> "bg-green-100 text-green-700"
+        "in_progress" -> "bg-blue-100 text-blue-700"
+        "scheduled"   -> "bg-yellow-100 text-yellow-700"
+        _             -> "bg-gray-100 text-gray-500"
+      end]}>
+      <%= String.replace(t.status, "_", " ") |> String.capitalize() %>
+    </span>
+  </:col>
+  <:action :let={t}><.link navigate={~p"/minibus_trips/#{t}/edit"}>Edit</.link></:action>
+  <:action :let={t}><.link href={~p"/minibus_trips/#{t}"} method="delete" data-confirm="Delete?">Delete</.link></:action>
+</.table>

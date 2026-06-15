@@ -1,0 +1,6 @@
+<.header>
+  Record New Minibus Trip
+  <:subtitle>Log a daily trip with fare collection and fuel cost.</:subtitle>
+</.header>
+<.trip_form changeset={@changeset} action={~p"/minibus_trips"} buses={@buses} routes={@routes} drivers={@drivers} />
+<.back navigate={~p"/minibus_trips"}>Back to trips</.back>
