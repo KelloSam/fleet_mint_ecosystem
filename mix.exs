@@ -55,8 +55,8 @@ defmodule FleetMint.MixProject do
       {:bcrypt_elixir, "~> 3.0"},
       {:guardian, "~> 2.3"},
       {:chromic_pdf, "~> 1.17"},
-      {:eqrcode, "~> 0.2"}
-
+      {:eqrcode, "~> 0.2"},
+      {:nimble_totp, "~> 1.0"}
     ]
   end
 

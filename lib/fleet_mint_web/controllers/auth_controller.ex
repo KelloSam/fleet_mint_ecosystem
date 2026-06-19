@@ -4,6 +4,7 @@ defmodule FleetMintWeb.AuthController do
   alias FleetMint.Accounts
   alias FleetMint.Accounts.User
   alias FleetMint.Auth.Guardian
+  alias FleetMint.AuditLogs
 
   def register(conn, _params) do
     changeset = Accounts.change_user(%User{})
@@ -34,17 +35,53 @@ defmodule FleetMintWeb.AuthController do
   def authenticate(conn, %{"user" => %{"email" => email, "password" => password}}) do
     case Guardian.authenticate(email, password) do
       {:ok, user, token} ->
-        Accounts.update_last_login(user)
-        conn
-        |> put_flash(:info, "Welcome back, #{user.full_name}!")
-        |> put_session(:user_token, token)
-        |> configure_session(renew: true)
-        |> redirect(to: ~p"/dashboard")
+        AuditLogs.log("login_success",
+          actor_id: user.id,
+          actor_email: user.email,
+          ip_address: get_ip(conn)
+        )
 
-      {:error, :invalid_credentials} ->
+        conn = configure_session(conn, renew: true)
+
+        if user.totp_enabled do
+          conn
+          |> put_session(:pending_2fa_user_id, user.id)
+          |> redirect(to: ~p"/login/verify")
+        else
+          conn
+          |> put_session(:user_token, token)
+          |> put_flash(:info, "Welcome back, #{user.full_name}!")
+          |> redirect(to: ~p"/dashboard")
+        end
+
+      {:error, {:account_locked, locked_until}} ->
+        remaining = max(1, div(NaiveDateTime.diff(locked_until, NaiveDateTime.utc_now(), :second), 60))
+
+        AuditLogs.log("login_blocked_lockout",
+          actor_email: email,
+          ip_address: get_ip(conn),
+          metadata: %{attempted_email: email}
+        )
+
         conn
-        |> put_flash(:error, "Invalid email or password")
-        |> render(:login, error_message: "Invalid email or password")
+        |> put_flash(:error, "Account locked after too many failed attempts. Try again in #{remaining} minute(s).")
+        |> render(:login, error_message: "Account temporarily locked. Try again in #{remaining} minute(s).")
+
+      {:error, :inactive_account} ->
+        conn
+        |> put_flash(:error, "Your account is inactive. Contact an administrator.")
+        |> render(:login, error_message: "Account inactive.")
+
+      {:error, _} ->
+        AuditLogs.log("login_failure",
+          actor_email: email,
+          ip_address: get_ip(conn),
+          metadata: %{attempted_email: email}
+        )
+
+        conn
+        |> put_flash(:error, "Invalid email or password.")
+        |> render(:login, error_message: "Invalid email or password.")
     end
   end
 
@@ -53,5 +90,11 @@ defmodule FleetMintWeb.AuthController do
     |> configure_session(drop: true)
     |> redirect(to: ~p"/login")
   end
-end
 
+  defp get_ip(conn) do
+    case Plug.Conn.get_req_header(conn, "x-forwarded-for") do
+      [ip | _] -> ip
+      [] -> to_string(:inet.ntoa(conn.remote_ip))
+    end
+  end
+end

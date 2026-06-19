@@ -34,17 +34,9 @@ defmodule FleetMint.Auth.Guardian do
   Generate an access token for a user
   """
   def authenticate(email, password) do
-    case Accounts.get_user_by_email(email) do
-      nil ->
-        # Don't reveal that the email doesn't exist
-        Bcrypt.no_user_verify()
-        {:error, :invalid_credentials}
-      
-      user ->
-        case Bcrypt.verify_pass(password, user.password_hash) do
-          true -> create_token(user)
-          false -> {:error, :invalid_credentials}
-        end
+    case Accounts.authenticate_user(email, password) do
+      {:ok, user} -> create_token(user)
+      error -> error
     end
   end
 

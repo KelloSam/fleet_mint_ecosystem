@@ -7,7 +7,17 @@ defmodule FleetMintWeb.Router do
     plug :fetch_live_flash
     plug :put_root_layout, html: {FleetMintWeb.Layouts, :root}
     plug :protect_from_forgery
-    plug :put_secure_browser_headers
+    plug :put_secure_browser_headers, %{
+      "content-security-policy" =>
+        "default-src 'self'; " <>
+        "script-src 'self' 'unsafe-inline'; " <>
+        "style-src 'self' 'unsafe-inline'; " <>
+        "img-src 'self' data: blob:; " <>
+        "connect-src 'self' ws: wss:; " <>
+        "frame-ancestors 'self'; " <>
+        "base-uri 'self'; " <>
+        "form-action 'self';"
+    }
   end
   
   pipeline :auth do
@@ -28,6 +38,8 @@ defmodule FleetMintWeb.Router do
     get "/register", AuthController, :register
     post "/register", AuthController, :create
     delete "/logout", AuthController, :logout
+    get  "/login/verify", TwoFactorController, :verify
+    post "/login/verify", TwoFactorController, :confirm
 
     # Home page accessible without login
     get "/", PageController, :home
@@ -95,6 +107,12 @@ defmodule FleetMintWeb.Router do
 
     # Complaints & suggestions management (staff view)
     resources "/complaints", ComplaintController, only: [:index, :show, :update, :delete]
+
+    # Security
+    get    "/settings/2fa",         TwoFactorController, :setup
+    post   "/settings/2fa/enable",  TwoFactorController, :enable
+    delete "/settings/2fa/disable", TwoFactorController, :disable
+    get    "/audit-log",            AuditLogController,  :index
 
     # Admin reports hub
     get "/admin/reports", PdfReportController, :index

@@ -320,37 +320,103 @@ defmodule FleetMint.Accounts do
       {:error, :inactive_account}
   
   """
+  @max_attempts 5
+  @lockout_minutes 15
+
   def authenticate_user(email_or_username, password) when is_binary(email_or_username) and is_binary(password) do
-    user = 
+    user =
       if String.contains?(email_or_username, "@") do
         get_user_by_email(email_or_username)
       else
         get_user_by_username(email_or_username)
       end
-      
+
     cond do
-      # User not found
       is_nil(user) ->
-        # Use constant-time comparison to avoid timing attacks
         Bcrypt.no_user_verify()
         {:error, :invalid_credentials}
-        
-      # User exists but is inactive
-      user && !user.active ->
-        # Still verify the password to avoid timing attacks
+
+      !user.active ->
         Bcrypt.verify_pass(password, user.password_hash)
         {:error, :inactive_account}
-        
-      # User exists and is active - verify password
-      user && user.active ->
-        if Bcrypt.verify_pass(password, user.password_hash) do
-          # Update the last login timestamp
-          {:ok, updated_user} = update_last_login(user)
-          {:ok, updated_user}
-        else
-          {:error, :invalid_credentials}
-        end
+
+      account_locked?(user) ->
+        {:error, {:account_locked, user.locked_until}}
+
+      Bcrypt.verify_pass(password, user.password_hash) ->
+        reset_failed_attempts(user)
+        {:ok, updated_user} = update_last_login(user)
+        {:ok, updated_user}
+
+      true ->
+        increment_failed_attempts(user)
+        {:error, :invalid_credentials}
     end
+  end
+
+  def account_locked?(%User{locked_until: nil}), do: false
+
+  def account_locked?(%User{locked_until: locked_until}) do
+    NaiveDateTime.compare(NaiveDateTime.utc_now(), locked_until) == :lt
+  end
+
+  defp increment_failed_attempts(user) do
+    new_attempts = (user.failed_attempts || 0) + 1
+
+    attrs =
+      if new_attempts >= @max_attempts do
+        locked_until =
+          NaiveDateTime.utc_now()
+          |> NaiveDateTime.add(@lockout_minutes * 60, :second)
+          |> NaiveDateTime.truncate(:second)
+
+        %{failed_attempts: new_attempts, locked_until: locked_until}
+      else
+        %{failed_attempts: new_attempts}
+      end
+
+    user |> User.security_changeset(attrs) |> Repo.update()
+  end
+
+  defp reset_failed_attempts(%User{failed_attempts: 0, locked_until: nil}), do: :ok
+
+  defp reset_failed_attempts(user) do
+    user
+    |> User.security_changeset(%{failed_attempts: 0, locked_until: nil})
+    |> Repo.update()
+  end
+
+  # ---------------------------------------------------------------------------
+  # TOTP / Two-Factor Authentication
+  # ---------------------------------------------------------------------------
+
+  def generate_totp_secret, do: NimbleTOTP.secret()
+
+  def totp_uri(%User{email: email}, secret) do
+    NimbleTOTP.otpauth_uri("FleetMint:#{email}", secret, issuer: "FleetMint")
+  end
+
+  def valid_totp?(%User{totp_secret: encoded}, code) when is_binary(encoded) do
+    secret = Base.decode64!(encoded)
+    NimbleTOTP.valid?(secret, code)
+  end
+
+  def valid_totp?(_, _), do: false
+
+  def valid_totp_for_secret?(secret, code) when is_binary(secret) do
+    NimbleTOTP.valid?(secret, code)
+  end
+
+  def enable_totp(%User{} = user, secret) when is_binary(secret) do
+    user
+    |> User.totp_changeset(%{totp_secret: Base.encode64(secret), totp_enabled: true})
+    |> Repo.update()
+  end
+
+  def disable_totp(%User{} = user) do
+    user
+    |> User.totp_changeset(%{totp_secret: nil, totp_enabled: false})
+    |> Repo.update()
   end
   
   @doc """
