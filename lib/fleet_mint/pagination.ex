@@ -8,7 +8,15 @@ defmodule FleetMint.Pagination do
     page = max(1, page)
     per_page = min(per_page, 100)
     offset = (page - 1) * per_page
-    total = Repo.aggregate(subquery(queryable), :count)
+    count_query =
+      queryable
+      |> exclude(:preload)
+      |> exclude(:order_by)
+      |> exclude(:select)
+      |> exclude(:limit)
+      |> exclude(:offset)
+
+    total = Repo.aggregate(count_query, :count)
     entries = queryable |> limit(^per_page) |> offset(^offset) |> Repo.all()
 
     %{
