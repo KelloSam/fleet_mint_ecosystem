@@ -7,11 +7,13 @@ defmodule FleetMint.Operations do
   alias FleetMint.Operations.Driver
 
   def list_drivers do
-    Driver |> order_by([d], d.name) |> preload(:user) |> Repo.all()
+    from(d in Driver, where: is_nil(d.archived_at), order_by: d.name)
+    |> preload(:user)
+    |> Repo.all()
   end
 
   def list_active_drivers do
-    from(d in Driver, where: d.status == "active", order_by: d.name)
+    from(d in Driver, where: d.status == "active" and is_nil(d.archived_at), order_by: d.name)
     |> preload(:user)
     |> Repo.all()
   end
@@ -26,7 +28,11 @@ defmodule FleetMint.Operations do
     driver |> Driver.changeset(attrs) |> Repo.update()
   end
 
-  def delete_driver(%Driver{} = driver), do: Repo.delete(driver)
+  def delete_driver(%Driver{} = driver) do
+    driver
+    |> Ecto.Changeset.change(archived_at: NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second))
+    |> Repo.update()
+  end
 
   def change_driver(%Driver{} = driver, attrs \\ %{}), do: Driver.changeset(driver, attrs)
 

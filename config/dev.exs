@@ -84,3 +84,10 @@ config :phoenix_live_view,
 
 # Disable swoosh api client as it is only required for production adapters.
 config :swoosh, :api_client, false
+
+# QR ticket signing secret (dev only — use a strong random value in production).
+config :fleet_mint, :qr_secret, "dev_only_qr_secret_change_in_prod"
+
+# VAT rate applied to freight invoices (Zambia standard rate). Override in production
+# or runtime.exs if the rate changes — no redeployment required.
+config :fleet_mint, :vat_rate, "0.16"

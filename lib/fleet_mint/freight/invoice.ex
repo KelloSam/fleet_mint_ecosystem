@@ -24,7 +24,10 @@ defmodule FleetMint.Freight.Invoice do
   end
 
   @statuses ~w(draft issued paid overdue cancelled)
-  @vat_rate Decimal.new("0.16")
+
+  defp vat_rate do
+    Application.get_env(:fleet_mint, :vat_rate, "0.16") |> Decimal.new()
+  end
 
   def changeset(invoice, attrs) do
     invoice
@@ -45,7 +48,7 @@ defmodule FleetMint.Freight.Invoice do
     fuel = get_field(changeset, :fuel_surcharge) || Decimal.new(0)
     toll = get_field(changeset, :toll_surcharge) || Decimal.new(0)
     subtotal = Decimal.add(base, Decimal.add(fuel, toll))
-    vat = Decimal.mult(subtotal, @vat_rate) |> Decimal.round(2)
+    vat = Decimal.mult(subtotal, vat_rate()) |> Decimal.round(2)
     total = Decimal.add(subtotal, vat) |> Decimal.round(2)
     changeset
     |> put_change(:vat_amount, vat)
@@ -54,8 +57,8 @@ defmodule FleetMint.Freight.Invoice do
 
   defp generate_invoice_number(%Ecto.Changeset{data: %{id: nil}} = changeset) do
     year = Date.utc_today().year
-    num = "INV-#{year}-#{:rand.uniform(99999) |> Integer.to_string() |> String.pad_leading(5, "0")}"
-    put_change(changeset, :invoice_number, num)
+    suffix = :crypto.strong_rand_bytes(3) |> Base.encode16()
+    put_change(changeset, :invoice_number, "INV-#{year}-#{suffix}")
   end
   defp generate_invoice_number(changeset), do: changeset
 end

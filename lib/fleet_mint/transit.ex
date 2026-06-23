@@ -84,14 +84,29 @@ defmodule FleetMint.Transit do
     |> Repo.all()
   end
 
+  def list_bookings_paginated(page \\ 1, opts \\ []) do
+    query =
+      Booking
+      |> maybe_filter_date(opts[:travel_date])
+      |> maybe_filter_status(opts[:status])
+      |> preload([:schedule, :booked_by, ticket: []])
+      |> order_by([b], desc: b.inserted_at)
+    FleetMint.Pagination.paginate(query, page)
+  end
+
   def get_booking!(id), do: Repo.get!(Booking, id) |> Repo.preload([:schedule, :booked_by, :ticket])
   def get_booking_by_reference!(ref), do: Repo.get_by!(Booking, booking_reference: ref) |> Repo.preload([:schedule, :ticket])
 
   def create_booking(attrs, user_id \\ nil) do
     attrs = if user_id, do: Map.put(attrs, "booked_by_id", user_id), else: attrs
-    case %Booking{} |> Booking.changeset(attrs) |> Repo.insert() do
+    changeset = if user_id,
+      do: Booking.internal_changeset(%Booking{}, attrs),
+      else: Booking.changeset(%Booking{}, attrs)
+    changeset = validate_seat_against_map(changeset)
+    case Repo.insert(changeset) do
       {:ok, booking} ->
         booking = Repo.preload(booking, [:schedule])
+        decrement_available_seats(booking.schedule_id)
         {:ok, ticket} = issue_ticket(booking)
         booking = %{booking | ticket: ticket}
         Phoenix.PubSub.broadcast(FleetMint.PubSub, "bookings:new", {:new_booking, booking})
@@ -135,7 +150,12 @@ defmodule FleetMint.Transit do
   end
 
   def cancel_booking(%Booking{} = booking) do
-    booking |> Booking.changeset(%{status: "cancelled"}) |> Repo.update()
+    case booking |> Booking.changeset(%{status: "cancelled"}) |> Repo.update() do
+      {:ok, cancelled} ->
+        increment_available_seats(booking.schedule_id)
+        {:ok, cancelled}
+      err -> err
+    end
   end
 
   def change_booking(%Booking{} = booking, attrs \\ %{}), do: Booking.changeset(booking, attrs)
@@ -160,16 +180,16 @@ defmodule FleetMint.Transit do
     |> Repo.insert()
   end
 
-  def validate_ticket(ticket_number, mode \\ :static) do
+  def validate_ticket(ticket_number, _mode \\ :static) do
     case Repo.get_by(Ticket, ticket_number: ticket_number) |> Repo.preload(booking: [:schedule]) do
       nil -> {:error, :not_found}
       %Ticket{status: "boarded"} -> {:error, :already_boarded}
       %Ticket{status: "cancelled"} -> {:error, :cancelled}
-      %Ticket{expires_at: exp} when not is_nil(exp) ->
+      %Ticket{expires_at: exp} = ticket when not is_nil(exp) ->
         if NaiveDateTime.compare(exp, NaiveDateTime.utc_now()) == :lt do
           {:error, :expired}
         else
-          do_board_ticket(mode)
+          do_board_ticket(ticket)
         end
       ticket -> do_board_ticket(ticket)
     end
@@ -184,7 +204,10 @@ defmodule FleetMint.Transit do
   # ── Private helpers ───────────────────────────────────────────────────────
 
   defp generate_validation_token(booking) do
-    secret = Application.get_env(:fleet_mint, :qr_secret, "fleet_mint_qr_secret")
+    secret =
+      Application.get_env(:fleet_mint, :qr_secret) ||
+        raise "`:qr_secret` is not set for :fleet_mint — configure it in runtime.exs to prevent ticket forgery"
+
     data = "#{booking.id}:#{booking.booking_reference}:#{booking.travel_date}"
     :crypto.mac(:hmac, :sha256, secret, data) |> Base.encode16(case: :lower) |> binary_part(0, 16)
   end
@@ -204,6 +227,36 @@ defmodule FleetMint.Transit do
     payload
     |> EQRCode.encode()
     |> EQRCode.svg(width: 200)
+  end
+
+  defp decrement_available_seats(schedule_id) do
+    from(s in Schedule, where: s.id == ^schedule_id and s.available_seats > 0)
+    |> Repo.update_all(inc: [available_seats: -1])
+  end
+
+  defp increment_available_seats(schedule_id) do
+    from(s in Schedule, where: s.id == ^schedule_id)
+    |> Repo.update_all(inc: [available_seats: 1])
+  end
+
+  defp validate_seat_against_map(changeset) do
+    import Ecto.Changeset, only: [get_field: 2, get_change: 2, add_error: 3]
+    alias FleetMint.Fleet.BusProfile
+
+    with seat when not is_nil(seat) <- get_change(changeset, :seat_number),
+         schedule_id when not is_nil(schedule_id) <- get_field(changeset, :schedule_id),
+         %Schedule{} = schedule <-
+           Repo.get(Schedule, schedule_id) |> Repo.preload(vehicle: :bus_profile),
+         %BusProfile{seat_labels: [_ | _] = labels} <-
+           schedule.vehicle && schedule.vehicle.bus_profile do
+      if seat in labels do
+        changeset
+      else
+        add_error(changeset, :seat_number, "is not valid for this vehicle")
+      end
+    else
+      _ -> changeset
+    end
   end
 
   defp maybe_filter_status(query, nil), do: query

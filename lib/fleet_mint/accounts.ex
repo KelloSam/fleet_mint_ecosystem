@@ -253,7 +253,7 @@ defmodule FleetMint.Accounts do
   end
 
   def list_on_duty_staff do
-    today_start = Date.utc_today() |> NaiveDateTime.new!(~T[00:00:00])
+    today_start = NaiveDateTime.new!(Date.utc_today(), ~T[00:00:00])
     from(u in User,
       where: u.role in ["admin", "manager", "cashier"]
         and u.active == true
@@ -477,11 +477,52 @@ defmodule FleetMint.Accounts do
   """
   def list_inactive_login_users(days) when is_integer(days) and days > 0 do
     cutoff_date = NaiveDateTime.add(NaiveDateTime.utc_now(), -days * 24 * 60 * 60, :second)
-    
+
     query = from u in User,
             where: u.last_login < ^cutoff_date or is_nil(u.last_login),
             order_by: [asc: u.username]
     Repo.all(query)
+  end
+
+  def list_users_paginated(page \\ 1) do
+    query = from u in User, order_by: [asc: u.role, asc: u.full_name]
+    FleetMint.Pagination.paginate(query, page)
+  end
+
+  def request_password_reset(email) when is_binary(email) do
+    case get_user_by_email(email) do
+      nil ->
+        {:error, :not_found}
+      user ->
+        token = :crypto.strong_rand_bytes(32) |> Base.url_encode64(padding: false)
+        token_hash = :crypto.hash(:sha256, token) |> Base.encode16(case: :lower)
+        expires_at =
+          NaiveDateTime.utc_now()
+          |> NaiveDateTime.add(3600, :second)
+          |> NaiveDateTime.truncate(:second)
+        user
+        |> User.reset_token_changeset(%{reset_token_hash: token_hash, reset_token_expires_at: expires_at})
+        |> Repo.update()
+        {:ok, user, token}
+    end
+  end
+
+  def reset_password_by_token(token, new_password) when is_binary(token) do
+    token_hash = :crypto.hash(:sha256, token) |> Base.encode16(case: :lower)
+    now = NaiveDateTime.utc_now()
+    case Repo.get_by(User, reset_token_hash: token_hash) do
+      nil ->
+        {:error, :invalid_token}
+      %User{reset_token_expires_at: exp} = user ->
+        if NaiveDateTime.compare(exp, now) == :lt do
+          {:error, :expired_token}
+        else
+          user
+          |> User.password_changeset(%{password: new_password})
+          |> Ecto.Changeset.change(reset_token_hash: nil, reset_token_expires_at: nil)
+          |> Repo.update()
+        end
+    end
   end
 end
 

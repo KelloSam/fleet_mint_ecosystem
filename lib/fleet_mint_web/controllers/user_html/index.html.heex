@@ -1,0 +1,80 @@
+<div class="max-w-7xl mx-auto">
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-800">User Management</h1>
+      <p class="text-sm text-gray-500 mt-0.5">
+        Page <%= @paged.page %> of <%= @paged.total_pages %> · <%= @paged.total %> total users
+      </p>
+    </div>
+    <.link navigate={~p"/users/new"} class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg">
+      + New User
+    </.link>
+  </div>
+
+  <div class="bg-white rounded-lg shadow overflow-hidden">
+    <table class="min-w-full divide-y divide-gray-200">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Name</th>
+          <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Email</th>
+          <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Role</th>
+          <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Status</th>
+          <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Last Login</th>
+          <th class="px-5 py-3"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        <%= for u <- @paged.entries do %>
+          <tr class="hover:bg-gray-50">
+            <td class="px-5 py-3 text-sm font-medium text-gray-900"><%= u.full_name %></td>
+            <td class="px-5 py-3 text-sm text-gray-600"><%= u.email %></td>
+            <td class="px-5 py-3">
+              <span class={["px-2 py-0.5 rounded-full text-xs font-semibold capitalize",
+                case u.role do
+                  "admin"    -> "bg-purple-100 text-purple-700"
+                  "manager"  -> "bg-blue-100 text-blue-700"
+                  "cashier"  -> "bg-green-100 text-green-700"
+                  "operator" -> "bg-orange-100 text-orange-700"
+                  _          -> "bg-gray-100 text-gray-600"
+                end]}>
+                <%= u.role %>
+              </span>
+            </td>
+            <td class="px-5 py-3">
+              <span class={["px-2 py-0.5 rounded-full text-xs font-semibold",
+                if(u.active, do: "bg-green-100 text-green-700", else: "bg-red-100 text-red-600")]}>
+                <%= if u.active, do: "Active", else: "Inactive" %>
+              </span>
+            </td>
+            <td class="px-5 py-3 text-sm text-gray-500">
+              <%= if u.last_login, do: Calendar.strftime(u.last_login, "%d %b %Y %H:%M"), else: "Never" %>
+            </td>
+            <td class="px-5 py-3 text-right space-x-3">
+              <.link navigate={~p"/users/#{u}/edit"} class="text-sm text-blue-600 hover:underline">Edit</.link>
+              <%= if u.active do %>
+                <.link href={~p"/users/#{u}/deactivate"} method="post"
+                       data-confirm={"Deactivate #{u.full_name}?"}
+                       class="text-sm text-red-500 hover:underline">Deactivate</.link>
+              <% else %>
+                <.link href={~p"/users/#{u}/activate"} method="post"
+                       class="text-sm text-green-600 hover:underline">Activate</.link>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+
+  <%= if @paged.total_pages > 1 do %>
+    <div class="flex justify-center gap-2 mt-6">
+      <%= if @paged.page > 1 do %>
+        <.link navigate={~p"/users?page=#{@paged.page - 1}"} class="px-3 py-1.5 rounded bg-white border text-sm hover:bg-gray-50">← Prev</.link>
+      <% end %>
+      <span class="px-3 py-1.5 rounded bg-blue-600 text-white text-sm"><%= @paged.page %></span>
+      <%= if @paged.page < @paged.total_pages do %>
+        <.link navigate={~p"/users?page=#{@paged.page + 1}"} class="px-3 py-1.5 rounded bg-white border text-sm hover:bg-gray-50">Next →</.link>
+      <% end %>
+    </div>
+  <% end %>
+</div>

@@ -40,11 +40,21 @@ defmodule FleetMint.Transit.Booking do
     |> validate_inclusion(:payment_method, @payment_methods)
     |> generate_reference()
     |> unique_constraint(:booking_reference)
+    |> unique_constraint(:seat_number,
+      name: :bookings_active_seat_unique,
+      message: "seat is already booked for this schedule and date"
+    )
+  end
+
+  def internal_changeset(booking, attrs) do
+    booking
+    |> changeset(attrs)
+    |> validate_required([:booked_by_id])
   end
 
   defp generate_reference(%Ecto.Changeset{data: %{id: nil}} = changeset) do
-    ref = "BK-#{:rand.uniform(9999999) |> Integer.to_string() |> String.pad_leading(7, "0")}"
-    put_change(changeset, :booking_reference, ref)
+    suffix = :crypto.strong_rand_bytes(4) |> Base.encode16()
+    put_change(changeset, :booking_reference, "BK-#{suffix}")
   end
   defp generate_reference(changeset), do: changeset
 end

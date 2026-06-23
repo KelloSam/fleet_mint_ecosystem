@@ -53,6 +53,19 @@ if config_env() == :prod do
 
   config :fleet_mint, :dns_cluster_query, System.get_env("DNS_CLUSTER_QUERY")
 
+  qr_secret =
+    System.get_env("QR_SECRET") ||
+      raise """
+      environment variable QR_SECRET is missing.
+      Generate one with: mix phx.gen.secret
+      """
+
+  config :fleet_mint, :qr_secret, qr_secret
+
+  if vat = System.get_env("VAT_RATE") do
+    config :fleet_mint, :vat_rate, vat
+  end
+
   config :fleet_mint, FleetMintWeb.Endpoint,
     url: [host: host, port: 443, scheme: "https"],
     http: [

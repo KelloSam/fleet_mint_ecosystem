@@ -16,7 +16,7 @@ defmodule FleetMint.Operations.OperationLog do
   def changeset(log, attrs) do
     log
     |> cast(attrs, [:date, :title, :description, :category, :logged_by_id])
-    |> validate_required([:date, :title])
+    |> validate_required([:date, :title, :logged_by_id])
     |> validate_inclusion(:category, category_options() |> Keyword.values())
   end
 

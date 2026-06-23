@@ -527,24 +527,11 @@ defmodule FleetMint.Finance do
   
   """
   def list_recent_reports(limit \\ 5) do
-    query = from r in Report,
-            order_by: [desc: r.inserted_at],
-            limit: ^limit,
-            preload: [:cashing_reports]
-    
-    reports = Repo.all(query)
-    
-    # If there are no reports or we need additional cashing reports to reach the limit
-    if length(reports) < limit do
-      cashing_reports_query = from cr in CashingReport,
-                             order_by: [desc: cr.inserted_at],
-                             limit: ^(limit - length(reports))
-      
-      cashing_reports = Repo.all(cashing_reports_query)
-      reports ++ cashing_reports
-    else
-      reports
-    end
+    from(r in Report,
+      order_by: [desc: r.inserted_at],
+      limit: ^limit,
+      preload: [:cashing_reports]
+    ) |> Repo.all()
   end
   
   @doc """

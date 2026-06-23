@@ -14,11 +14,13 @@ defmodule FleetMint.Fleet do
 
   # ── Operators (bus companies) ──────────────────────────────────────────────
 
-  def list_operators, do: Repo.all(from o in Operator, order_by: o.name)
+  def list_operators do
+    from(o in Operator, where: is_nil(o.archived_at), order_by: o.name) |> Repo.all()
+  end
 
   def list_operators_for_public do
     from(o in Operator,
-      where: o.active == true,
+      where: o.active == true and is_nil(o.archived_at),
       left_join: s in assoc(o, :schedules),
       on: s.status == "active",
       group_by: o.id,
@@ -38,6 +40,7 @@ defmodule FleetMint.Fleet do
 
   def list_operators_with_route_counts do
     from(o in Operator,
+      where: is_nil(o.archived_at),
       left_join: or_ in "operator_routes", on: or_.operator_id == o.id,
       group_by: o.id,
       select: %{o | schedule_count: count(or_.route_id)},
@@ -59,12 +62,17 @@ defmodule FleetMint.Fleet do
     op |> Operator.changeset(attrs) |> Repo.update()
   end
 
-  def delete_operator(%Operator{} = op), do: Repo.delete(op)
+  def delete_operator(%Operator{} = op) do
+    op
+    |> Ecto.Changeset.change(archived_at: NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second))
+    |> Repo.update()
+  end
 
   def change_operator(%Operator{} = op, attrs \\ %{}), do: Operator.changeset(op, attrs)
 
   def list_inactive_operators do
-    from(o in Operator, where: o.active == false, order_by: o.name) |> Repo.all()
+    from(o in Operator, where: o.active == false and is_nil(o.archived_at), order_by: o.name)
+    |> Repo.all()
   end
   
   @doc """
@@ -239,7 +247,7 @@ defmodule FleetMint.Fleet do
   
   """
   def list_routes do
-    Repo.all(Route)
+    from(r in Route, where: is_nil(r.archived_at), order_by: r.name) |> Repo.all()
   end
   
   @doc """
@@ -341,7 +349,9 @@ defmodule FleetMint.Fleet do
   
   """
   def delete_route(%Route{} = route) do
-    Repo.delete(route)
+    route
+    |> Ecto.Changeset.change(archived_at: NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second))
+    |> Repo.update()
   end
   
   @doc """
@@ -367,10 +377,8 @@ defmodule FleetMint.Fleet do
   
   """
   def list_routes_by_status(status) do
-    query = from r in Route,
-            where: r.status == ^status,
-            order_by: [desc: r.inserted_at]
-    Repo.all(query)
+    from(r in Route, where: r.status == ^status and is_nil(r.archived_at), order_by: [desc: r.inserted_at])
+    |> Repo.all()
   end
   
   @doc """
@@ -383,10 +391,8 @@ defmodule FleetMint.Fleet do
   
   """
   def list_routes_by_start_location(location) do
-    query = from r in Route,
-            where: r.start_location == ^location,
-            order_by: [asc: r.name]
-    Repo.all(query)
+    from(r in Route, where: r.start_location == ^location and is_nil(r.archived_at), order_by: [asc: r.name])
+    |> Repo.all()
   end
   
   @doc """
@@ -399,10 +405,8 @@ defmodule FleetMint.Fleet do
   
   """
   def list_routes_by_end_location(location) do
-    query = from r in Route,
-            where: r.end_location == ^location,
-            order_by: [asc: r.name]
-    Repo.all(query)
+    from(r in Route, where: r.end_location == ^location and is_nil(r.archived_at), order_by: [asc: r.name])
+    |> Repo.all()
   end
   
   @doc """
@@ -415,10 +419,10 @@ defmodule FleetMint.Fleet do
   
   """
   def list_routes_by_location(location) do
-    query = from r in Route,
-            where: r.start_location == ^location or r.end_location == ^location,
-            order_by: [asc: r.name]
-    Repo.all(query)
+    from(r in Route,
+      where: (r.start_location == ^location or r.end_location == ^location) and is_nil(r.archived_at),
+      order_by: [asc: r.name]
+    ) |> Repo.all()
   end
   
   @doc """
@@ -431,10 +435,10 @@ defmodule FleetMint.Fleet do
   
   """
   def list_routes_by_fare_range(min_fare, max_fare) do
-    query = from r in Route,
-            where: r.fare >= ^min_fare and r.fare <= ^max_fare,
-            order_by: [asc: r.fare]
-    Repo.all(query)
+    from(r in Route,
+      where: r.fare >= ^min_fare and r.fare <= ^max_fare and is_nil(r.archived_at),
+      order_by: [asc: r.fare]
+    ) |> Repo.all()
   end
   @doc """
   Returns the total count of buses.
@@ -467,7 +471,7 @@ defmodule FleetMint.Fleet do
   alias FleetMint.Fleet.{Vehicle, BusProfile, TruckProfile}
 
   def list_vehicles(opts \\ []) do
-    Vehicle
+    from(v in Vehicle, where: is_nil(v.archived_at))
     |> maybe_filter_vehicle_type(opts[:type])
     |> maybe_filter_vehicle_status(opts[:status])
     |> preload([:bus_profile, :truck_profile, :current_driver])
@@ -515,7 +519,11 @@ defmodule FleetMint.Fleet do
     end)
   end
 
-  def delete_vehicle(%Vehicle{} = vehicle), do: Repo.delete(vehicle)
+  def delete_vehicle(%Vehicle{} = vehicle) do
+    vehicle
+    |> Ecto.Changeset.change(archived_at: NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second))
+    |> Repo.update()
+  end
 
   def change_vehicle(%Vehicle{} = vehicle, attrs \\ %{}) do
     Vehicle.changeset(vehicle, attrs)

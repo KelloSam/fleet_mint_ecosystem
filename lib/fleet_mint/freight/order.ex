@@ -57,8 +57,8 @@ defmodule FleetMint.Freight.Order do
   end
 
   defp generate_reference(%Ecto.Changeset{data: %{id: nil}} = changeset) do
-    ref = "ORD-#{:rand.uniform(9999999) |> Integer.to_string() |> String.pad_leading(7, "0")}"
-    put_change(changeset, :order_reference, ref)
+    suffix = :crypto.strong_rand_bytes(4) |> Base.encode16()
+    put_change(changeset, :order_reference, "ORD-#{suffix}")
   end
   defp generate_reference(changeset), do: changeset
 end

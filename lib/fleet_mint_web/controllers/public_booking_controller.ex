@@ -50,7 +50,11 @@ defmodule FleetMintWeb.PublicBookingController do
     operator = Fleet.get_operator_by_slug!(slug)
     schedule = Transit.get_schedule!(sid)
 
-    booking_params = Map.put(booking_params, "schedule_id", sid)
+    # Always use the server's fare — never trust the client-submitted amount.
+    booking_params =
+      booking_params
+      |> Map.put("schedule_id", sid)
+      |> Map.put("fare_paid", schedule.fare)
 
     case Transit.create_booking(booking_params) do
       {:ok, booking} ->

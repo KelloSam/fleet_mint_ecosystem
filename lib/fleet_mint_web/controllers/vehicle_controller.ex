@@ -54,7 +54,7 @@ defmodule FleetMintWeb.VehicleController do
     vehicle = Fleet.get_vehicle!(id)
     {:ok, _} = Fleet.delete_vehicle(vehicle)
     conn
-    |> put_flash(:info, "Vehicle removed from fleet.")
+    |> put_flash(:info, "Vehicle archived and removed from active fleet.")
     |> redirect(to: ~p"/vehicles")
   end
 end

@@ -2,28 +2,39 @@ defmodule FleetMintWeb.ApiController do
   use FleetMintWeb, :controller
   alias FleetMint.Transit
 
+  @pii_roles ~w(admin manager)
+
   # GET /api/notifications?since=YYYY-MM-DDTHH:MM:SS
   def notifications(conn, %{"since" => since_str}) do
-    since =
-      case NaiveDateTime.from_iso8601(since_str) do
-        {:ok, dt} -> dt
-        _ -> NaiveDateTime.add(NaiveDateTime.utc_now(), -60, :second)
-      end
+    current_user = conn.assigns.current_user
 
-    bookings = Transit.list_bookings_since(since)
+    unless current_user.role in @pii_roles do
+      conn
+      |> put_status(:forbidden)
+      |> json(%{error: "Insufficient permissions to view passenger data"})
+      |> halt()
+    else
+      since =
+        case NaiveDateTime.from_iso8601(since_str) do
+          {:ok, dt} -> dt
+          _ -> NaiveDateTime.add(NaiveDateTime.utc_now(), -60, :second)
+        end
 
-    data =
-      Enum.map(bookings, fn b ->
-        %{
-          reference: b.booking_reference,
-          passenger: b.passenger_name,
-          seat: b.seat_number,
-          date: to_string(b.travel_date),
-          at: NaiveDateTime.to_iso8601(b.inserted_at)
-        }
-      end)
+      bookings = Transit.list_bookings_since(since)
 
-    json(conn, %{bookings: data})
+      data =
+        Enum.map(bookings, fn b ->
+          %{
+            reference: b.booking_reference,
+            passenger: b.passenger_name,
+            seat: b.seat_number,
+            date: to_string(b.travel_date),
+            at: NaiveDateTime.to_iso8601(b.inserted_at)
+          }
+        end)
+
+      json(conn, %{bookings: data})
+    end
   end
 
   def notifications(conn, _params), do: json(conn, %{bookings: []})

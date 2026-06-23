@@ -1,0 +1,32 @@
+<div class="max-w-2xl mx-auto">
+  <div class="flex items-center gap-4 mb-6">
+    <.link navigate={~p"/users"} class="text-sm text-gray-500 hover:text-gray-700">← Users</.link>
+    <h1 class="text-2xl font-bold text-gray-800"><%= @user.full_name %></h1>
+    <span class={["px-2 py-0.5 rounded-full text-xs font-semibold capitalize ml-auto",
+      if(@user.active, do: "bg-green-100 text-green-700", else: "bg-red-100 text-red-600")]}>
+      <%= if @user.active, do: "Active", else: "Inactive" %>
+    </span>
+  </div>
+
+  <div class="bg-white rounded-xl shadow p-6 space-y-4">
+    <div class="grid grid-cols-2 gap-4">
+      <div><p class="text-xs text-gray-400 uppercase mb-1">Username</p><p class="text-sm font-medium"><%= @user.username %></p></div>
+      <div><p class="text-xs text-gray-400 uppercase mb-1">Email</p><p class="text-sm font-medium"><%= @user.email %></p></div>
+      <div><p class="text-xs text-gray-400 uppercase mb-1">Role</p><p class="text-sm font-medium capitalize"><%= @user.role %></p></div>
+      <div><p class="text-xs text-gray-400 uppercase mb-1">Phone</p><p class="text-sm font-medium"><%= @user.phone || "—" %></p></div>
+      <div><p class="text-xs text-gray-400 uppercase mb-1">Last Login</p><p class="text-sm font-medium"><%= if @user.last_login, do: Calendar.strftime(@user.last_login, "%d %b %Y %H:%M"), else: "Never" %></p></div>
+    </div>
+  </div>
+
+  <div class="flex gap-3 mt-6">
+    <.link navigate={~p"/users/#{@user}/edit"} class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">Edit</.link>
+    <%= if @user.active do %>
+      <.link href={~p"/users/#{@user}/deactivate"} method="post"
+             data-confirm={"Deactivate #{@user.full_name}?"}
+             class="px-4 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700">Deactivate</.link>
+    <% else %>
+      <.link href={~p"/users/#{@user}/activate"} method="post"
+             class="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700">Activate</.link>
+    <% end %>
+  </div>
+</div>

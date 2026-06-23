@@ -104,4 +104,16 @@
       </table>
     </div>
   <% end %>
+
+  <%= if @paged.total_pages > 1 do %>
+    <div class="flex justify-center gap-2 mt-6">
+      <%= if @paged.page > 1 do %>
+        <.link navigate={~p"/bookings?page=#{@paged.page - 1}"} class="px-3 py-1.5 rounded bg-white border text-sm hover:bg-gray-50">← Prev</.link>
+      <% end %>
+      <span class="px-3 py-1.5 rounded bg-blue-600 text-white text-sm font-medium"><%= @paged.page %> / <%= @paged.total_pages %></span>
+      <%= if @paged.page < @paged.total_pages do %>
+        <.link navigate={~p"/bookings?page=#{@paged.page + 1}"} class="px-3 py-1.5 rounded bg-white border text-sm hover:bg-gray-50">Next →</.link>
+      <% end %>
+    </div>
+  <% end %>
 </div>

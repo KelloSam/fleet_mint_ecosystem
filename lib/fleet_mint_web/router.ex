@@ -28,18 +28,42 @@ defmodule FleetMintWeb.Router do
     plug :accepts, ["json"]
   end
 
+  pipeline :require_manager do
+    plug FleetMintWeb.Plugs.RequireRolePlug, roles: ["admin", "manager"]
+  end
+
+  pipeline :require_admin do
+    plug FleetMintWeb.Plugs.RequireRolePlug, roles: ["admin"]
+  end
+
+  pipeline :rate_limited do
+    plug FleetMintWeb.Plugs.RateLimitPlug
+  end
+
+  # Rate-limited routes (login POST only)
+  scope "/", FleetMintWeb do
+    pipe_through [:browser, :rate_limited]
+
+    post "/login", AuthController, :authenticate
+  end
+
   # Public routes - no authentication required
   scope "/", FleetMintWeb do
     pipe_through :browser
 
     # Authentication routes
     get "/login", AuthController, :login
-    post "/login", AuthController, :authenticate
     get "/register", AuthController, :register
     post "/register", AuthController, :create
     delete "/logout", AuthController, :logout
     get  "/login/verify", TwoFactorController, :verify
     post "/login/verify", TwoFactorController, :confirm
+
+    # Password reset (public)
+    get  "/password-reset",        PasswordResetController, :new
+    post "/password-reset",        PasswordResetController, :create
+    get  "/password-reset/:token", PasswordResetController, :edit
+    put  "/password-reset/:token", PasswordResetController, :update
 
     # Home page accessible without login
     get "/", PageController, :home
@@ -112,16 +136,27 @@ defmodule FleetMintWeb.Router do
     get    "/settings/2fa",         TwoFactorController, :setup
     post   "/settings/2fa/enable",  TwoFactorController, :enable
     delete "/settings/2fa/disable", TwoFactorController, :disable
-    get    "/audit-log",            AuditLogController,  :index
+  end
 
-    # Admin reports hub
-    get "/admin/reports", PdfReportController, :index
+  # Manager and admin only
+  scope "/", FleetMintWeb do
+    pipe_through [:browser, :auth, :require_manager]
 
-    # PDF download endpoints (open in new tab → browser saves PDF)
-    get "/pdf/daily", PdfReportController, :daily
-    get "/pdf/weekly/:id", PdfReportController, :weekly
-    get "/pdf/receipt/:id", PdfReportController, :receipt
+    get "/admin/reports",    PdfReportController, :index
+    get "/pdf/daily",        PdfReportController, :daily
+    get "/pdf/weekly/:id",   PdfReportController, :weekly
+    get "/pdf/receipt/:id",  PdfReportController, :receipt
     get "/pdf/expenditures", PdfReportController, :expenditures
+  end
+
+  # Admin only
+  scope "/", FleetMintWeb do
+    pipe_through [:browser, :auth, :require_admin]
+
+    get "/audit-log", AuditLogController, :index
+    resources "/users", UserController, except: [:delete]
+    post "/users/:id/activate",   UserController, :activate
+    post "/users/:id/deactivate", UserController, :deactivate
   end
 
   # Other scopes may use custom stacks.

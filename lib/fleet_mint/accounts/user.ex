@@ -17,8 +17,10 @@ defmodule FleetMint.Accounts.User do
     field :last_login,      :naive_datetime
     field :totp_secret,     :string
     field :totp_enabled,    :boolean, default: false
-    field :failed_attempts, :integer, default: 0
-    field :locked_until,    :naive_datetime
+    field :failed_attempts,        :integer, default: 0
+    field :locked_until,           :naive_datetime
+    field :reset_token_hash,       :string
+    field :reset_token_expires_at, :naive_datetime
 
     timestamps(type: :utc_datetime)
   end
@@ -65,6 +67,10 @@ defmodule FleetMint.Accounts.User do
 
   def totp_changeset(user, attrs) do
     cast(user, attrs, [:totp_secret, :totp_enabled])
+  end
+
+  def reset_token_changeset(user, attrs) do
+    cast(user, attrs, [:reset_token_hash, :reset_token_expires_at])
   end
 
   defp put_password_hash(%Ecto.Changeset{valid?: true, changes: %{password: password}} = changeset) do

@@ -12,16 +12,18 @@ defmodule FleetMintWeb.AuthController do
   end
 
   def create(conn, %{"user" => user_params}) do
-    user_params = Map.put_new(user_params, "active", true)
-    case Accounts.create_user(user_params) do
-      {:ok, user} ->
-        {:ok, _user, token} = Guardian.create_token(user)
+    # Strip any role or active flags submitted by the user — all self-registered
+    # accounts land as inactive "staff" and require admin approval before login.
+    user_params =
+      user_params
+      |> Map.put("role", "staff")
+      |> Map.put("active", false)
 
+    case Accounts.create_user(user_params) do
+      {:ok, _user} ->
         conn
-        |> put_flash(:info, "Welcome, #{user.full_name}! Your account has been created.")
-        |> put_session(:user_token, token)
-        |> configure_session(renew: true)
-        |> redirect(to: ~p"/dashboard")
+        |> put_flash(:info, "Account created. An administrator must activate it before you can log in.")
+        |> redirect(to: ~p"/login")
 
       {:error, %Ecto.Changeset{} = changeset} ->
         render(conn, :register, changeset: changeset)

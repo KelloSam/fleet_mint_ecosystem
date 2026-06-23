@@ -11,6 +11,7 @@ defmodule FleetMint.Operations.Driver do
     field :date_hired, :date
     field :status, :string, default: "active"
     field :notes, :string
+    field :archived_at, :naive_datetime
 
     belongs_to :user, FleetMint.Accounts.User
 

@@ -1,0 +1,23 @@
+<div class="max-w-xl mx-auto">
+  <div class="flex items-center gap-3 mb-6">
+    <.link navigate={~p"/users"} class="text-sm text-gray-500 hover:text-gray-700">← Users</.link>
+    <h1 class="text-2xl font-bold text-gray-800">New User</h1>
+  </div>
+
+  <div class="bg-white rounded-xl shadow p-6">
+    <.simple_form :let={f} for={@changeset} action={~p"/users"}>
+      <.error :if={@changeset.action}>Please fix the errors below.</.error>
+      <.input field={f[:full_name]} label="Full Name" />
+      <.input field={f[:username]} label="Username" />
+      <.input field={f[:email]} type="email" label="Email" />
+      <.input field={f[:phone]} label="Phone" />
+      <.input field={f[:password]} type="password" label="Password" />
+      <.input field={f[:role]} type="select" label="Role"
+              options={[{"Admin", "admin"}, {"Manager", "manager"}, {"Cashier", "cashier"}, {"Operator", "operator"}]} />
+      <.input field={f[:active]} type="checkbox" label="Active immediately" />
+      <:actions>
+        <.button>Create User</.button>
+      </:actions>
+    </.simple_form>
+  </div>
+</div>

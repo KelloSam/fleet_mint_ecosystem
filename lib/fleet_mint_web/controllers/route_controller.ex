@@ -70,7 +70,7 @@ defmodule FleetMintWeb.RouteController do
     {:ok, _route} = Fleet.delete_route(route)
 
     conn
-    |> put_flash(:info, "Route \"#{route.name}\" deleted.")
+    |> put_flash(:info, "Route \"#{route.name}\" archived.")
     |> redirect(to: ~p"/routes")
   end
 end

@@ -12,6 +12,7 @@ defmodule FleetMint.Fleet.Vehicle do
     field :vehicle_type, :string, default: "bus"
     field :status, :string, default: "active"
     field :description, :string
+    field :archived_at, :naive_datetime
 
     belongs_to :current_driver, FleetMint.Accounts.User
     has_one :bus_profile, FleetMint.Fleet.BusProfile

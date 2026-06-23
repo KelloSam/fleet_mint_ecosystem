@@ -48,7 +48,7 @@ defmodule FleetMintWeb.OperatorController do
   def delete(conn, %{"id" => id}) do
     op = Fleet.get_operator!(id)
     {:ok, _} = Fleet.delete_operator(op)
-    conn |> put_flash(:info, "#{op.name} removed.") |> redirect(to: ~p"/operators")
+    conn |> put_flash(:info, "#{op.name} archived.") |> redirect(to: ~p"/operators")
   end
 
   defp require_admin(conn, _opts) do

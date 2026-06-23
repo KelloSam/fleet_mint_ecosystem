@@ -14,6 +14,7 @@ defmodule FleetMint.Application do
       {Phoenix.PubSub, name: FleetMint.PubSub},
       # Start the Finch HTTP client for sending emails
       {Finch, name: FleetMint.Finch},
+      {PlugAttack.Storage.Ets, name: FleetMintWeb.RateLimitStorage, clean_period: 60_000},
       {ChromicPDF, chromic_pdf_opts()},
       FleetMintWeb.Endpoint
     ]

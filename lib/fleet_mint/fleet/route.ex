@@ -13,6 +13,7 @@ defmodule FleetMint.Fleet.Route do
     field :duration, :integer
     field :fare, :decimal
     field :stops, {:array, :string}, default: []
+    field :archived_at, :naive_datetime
 
     many_to_many :operators, FleetMint.Fleet.Operator,
       join_through: "operator_routes"

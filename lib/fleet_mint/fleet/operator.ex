@@ -10,6 +10,7 @@ defmodule FleetMint.Fleet.Operator do
     field :contact_email, :string
     field :color, :string, default: "#1d4ed8"
     field :active, :boolean, default: true
+    field :archived_at, :naive_datetime
 
     field :schedule_count, :integer, virtual: true
 

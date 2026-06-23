@@ -5,11 +5,19 @@ defmodule FleetMintWeb.BookingController do
   alias FleetMint.Accounts
 
   def index(conn, params) do
-    bookings = Transit.list_bookings(
-      travel_date: params["date"] && Date.from_iso8601!(params["date"]),
-      status: params["status"]
-    )
-    render(conn, :index, bookings: bookings)
+    page = FleetMint.Pagination.parse_page(params)
+    travel_date =
+      case params["date"] do
+        nil -> nil
+        "" -> nil
+        d ->
+          case Date.from_iso8601(d) do
+            {:ok, date} -> date
+            _ -> nil
+          end
+      end
+    paged = Transit.list_bookings_paginated(page, travel_date: travel_date, status: params["status"])
+    render(conn, :index, bookings: paged.entries, paged: paged)
   end
 
   def new(conn, params) do

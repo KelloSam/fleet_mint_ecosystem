@@ -47,6 +47,6 @@ defmodule FleetMintWeb.DriverController do
   def delete(conn, %{"id" => id}) do
     driver = Operations.get_driver!(id)
     {:ok, _} = Operations.delete_driver(driver)
-    conn |> put_flash(:info, "Driver removed.") |> redirect(to: ~p"/drivers")
+    conn |> put_flash(:info, "Driver archived.") |> redirect(to: ~p"/drivers")
   end
 end

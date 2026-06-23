@@ -57,7 +57,8 @@ defmodule FleetMint.Transit.Schedule do
     if get_field(changeset, :schedule_code) do
       changeset
     else
-      put_change(changeset, :schedule_code, "SCH-#{:rand.uniform(99999) |> Integer.to_string() |> String.pad_leading(5, "0")}")
+      suffix = :crypto.strong_rand_bytes(3) |> Base.encode16()
+      put_change(changeset, :schedule_code, "SCH-#{suffix}")
     end
   end
   defp maybe_generate_code(changeset), do: changeset
