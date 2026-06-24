@@ -84,37 +84,65 @@ defmodule FleetMintWeb.Router do
     get  "/feedback/thank_you",            ComplaintController, :thank_you
   end
   
-  # Protected routes - authentication required
+  # All authenticated users (cashier and above)
   scope "/", FleetMintWeb do
     pipe_through [:browser, :auth]
-    
-    # Dashboard will be the main entry point after login
+
     get "/dashboard", PageController, :dashboard
-    
-    # Protected resources
-    resources "/reports", ReportController
+
+    # Cashier-owned resources — full CRUD
     resources "/cashing_reports", CashingReportController
     resources "/expenditures", ExpenditureController
-    resources "/operators", OperatorController
-    resources "/buses", BusController
-    resources "/routes", RouteController
-
-    # Unified vehicle fleet (buses + trucks)
-    resources "/vehicles", VehicleController
-    resources "/maintenances", VehicleMaintenanceController
+    resources "/bookings", BookingController
+    resources "/operation_logs", OperationLogController
     resources "/fuel_logs", FuelLogController
     resources "/minibus_trips", MinibusTripController
-    resources "/drivers", DriverController
-    resources "/operation_logs", OperationLogController
 
-    # Transit (passenger)
-    resources "/schedules", ScheduleController
-    post "/schedules/:id/checkpoint", ScheduleController, :post_checkpoint
-    resources "/bookings", BookingController
+    # Tickets: view and validate only
     resources "/tickets", TicketController, only: [:index, :show]
     get "/tickets/:id/validate", TicketController, :validate
 
-    # Freight (haulage)
+    # Fleet: read-only for cashiers and operators
+    resources "/vehicles", VehicleController, only: [:index, :show]
+    resources "/maintenances", VehicleMaintenanceController, only: [:index, :show]
+    resources "/drivers", DriverController, only: [:index, :show]
+    resources "/routes", RouteController, only: [:index, :show]
+    resources "/schedules", ScheduleController, only: [:index, :show]
+    resources "/operators", OperatorController, only: [:index, :show]
+    resources "/buses", BusController, only: [:index, :show]
+
+    # Bus GPS checkpoint (posted by on-duty staff)
+    post "/schedules/:id/checkpoint", ScheduleController, :post_checkpoint
+
+    # Complaints management (all staff)
+    resources "/complaints", ComplaintController, only: [:index, :show, :update, :delete]
+
+    # Internal JSON API
+    get "/api/notifications", ApiController, :notifications
+    get "/api/seats", ApiController, :available_seats
+
+    # 2FA settings
+    get    "/settings/2fa",         TwoFactorController, :setup
+    post   "/settings/2fa/enable",  TwoFactorController, :enable
+    delete "/settings/2fa/disable", TwoFactorController, :disable
+  end
+
+  # Manager and admin — fleet management, freight, financial reports
+  scope "/", FleetMintWeb do
+    pipe_through [:browser, :auth, :require_manager]
+
+    resources "/reports", ReportController
+
+    # Fleet write access (create, edit, update, delete)
+    resources "/vehicles", VehicleController, except: [:index, :show]
+    resources "/maintenances", VehicleMaintenanceController, except: [:index, :show]
+    resources "/drivers", DriverController, except: [:index, :show]
+    resources "/routes", RouteController, except: [:index, :show]
+    resources "/schedules", ScheduleController, except: [:index, :show]
+    resources "/operators", OperatorController, except: [:index, :show]
+    resources "/buses", BusController, except: [:index, :show]
+
+    # Freight management
     scope "/freight" do
       resources "/clients", FreightClientController
       resources "/orders", FreightOrderController
@@ -125,23 +153,7 @@ defmodule FleetMintWeb.Router do
       resources "/invoices", FreightInvoiceController
     end
 
-    # Internal JSON API (authenticated)
-    get "/api/notifications", ApiController, :notifications
-    get "/api/seats", ApiController, :available_seats
-
-    # Complaints & suggestions management (staff view)
-    resources "/complaints", ComplaintController, only: [:index, :show, :update, :delete]
-
-    # Security
-    get    "/settings/2fa",         TwoFactorController, :setup
-    post   "/settings/2fa/enable",  TwoFactorController, :enable
-    delete "/settings/2fa/disable", TwoFactorController, :disable
-  end
-
-  # Manager and admin only
-  scope "/", FleetMintWeb do
-    pipe_through [:browser, :auth, :require_manager]
-
+    # PDF and financial reports
     get "/admin/reports",    PdfReportController, :index
     get "/pdf/daily",        PdfReportController, :daily
     get "/pdf/weekly/:id",   PdfReportController, :weekly
