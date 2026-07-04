@@ -4,7 +4,7 @@ defmodule FleetMintWeb.AuthController do
   alias FleetMint.Identity
   alias FleetMint.Identity.User
   alias FleetMint.Identity.Guardian
-  alias FleetMint.AuditLogs
+  alias FleetMint.Administration
 
   def register(conn, _params) do
     changeset = Identity.change_user(%User{})
@@ -37,7 +37,7 @@ defmodule FleetMintWeb.AuthController do
   def authenticate(conn, %{"user" => %{"email" => email, "password" => password}}) do
     case Guardian.authenticate(email, password) do
       {:ok, user, token} ->
-        AuditLogs.log("login_success",
+        Administration.log("login_success",
           actor_id: user.id,
           actor_email: user.email,
           ip_address: get_ip(conn)
@@ -59,7 +59,7 @@ defmodule FleetMintWeb.AuthController do
       {:error, {:account_locked, locked_until}} ->
         remaining = max(1, div(NaiveDateTime.diff(locked_until, NaiveDateTime.utc_now(), :second), 60))
 
-        AuditLogs.log("login_blocked_lockout",
+        Administration.log("login_blocked_lockout",
           actor_email: email,
           ip_address: get_ip(conn),
           metadata: %{attempted_email: email}
@@ -75,7 +75,7 @@ defmodule FleetMintWeb.AuthController do
         |> render(:login, error_message: "Account inactive.")
 
       {:error, _} ->
-        AuditLogs.log("login_failure",
+        Administration.log("login_failure",
           actor_email: email,
           ip_address: get_ip(conn),
           metadata: %{attempted_email: email}

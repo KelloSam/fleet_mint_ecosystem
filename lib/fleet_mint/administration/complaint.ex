@@ -1,4 +1,4 @@
-defmodule FleetMint.Feedback.Complaint do
+defmodule FleetMint.Administration.Complaint do
   use Ecto.Schema
   import Ecto.Changeset
 

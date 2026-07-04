@@ -12,7 +12,7 @@ defmodule FleetMintWeb.FreightTripController do
   def new(conn, _params) do
     changeset = Cargo.change_trip(%Trip{})
     vehicles = Fleet.list_trucks()
-    drivers = FleetMint.Operations.list_drivers()
+    drivers = FleetMint.HR.list_drivers()
     render(conn, :new, changeset: changeset, vehicles: vehicles, drivers: drivers)
   end
 
@@ -23,7 +23,7 @@ defmodule FleetMintWeb.FreightTripController do
         conn |> put_flash(:info, "Trip #{trip.trip_reference} scheduled.") |> redirect(to: ~p"/freight/trips/#{trip}")
       {:error, changeset} ->
         vehicles = Fleet.list_trucks()
-        drivers = FleetMint.Operations.list_drivers()
+        drivers = FleetMint.HR.list_drivers()
         render(conn, :new, changeset: changeset, vehicles: vehicles, drivers: drivers)
     end
   end
@@ -37,7 +37,7 @@ defmodule FleetMintWeb.FreightTripController do
     trip = Cargo.get_trip!(id)
     changeset = Cargo.change_trip(trip)
     vehicles = Fleet.list_trucks()
-    drivers = FleetMint.Operations.list_drivers()
+    drivers = FleetMint.HR.list_drivers()
     render(conn, :edit, trip: trip, changeset: changeset, vehicles: vehicles, drivers: drivers)
   end
 
@@ -48,7 +48,7 @@ defmodule FleetMintWeb.FreightTripController do
         conn |> put_flash(:info, "Trip updated.") |> redirect(to: ~p"/freight/trips/#{trip}")
       {:error, changeset} ->
         vehicles = Fleet.list_trucks()
-        drivers = FleetMint.Operations.list_drivers()
+        drivers = FleetMint.HR.list_drivers()
         render(conn, :edit, trip: trip, changeset: changeset, vehicles: vehicles, drivers: drivers)
     end
   end

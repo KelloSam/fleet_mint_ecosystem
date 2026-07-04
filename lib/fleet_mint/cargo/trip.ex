@@ -20,8 +20,8 @@ defmodule FleetMint.Cargo.Trip do
     field :notes, :string
 
     belongs_to :vehicle, FleetMint.Transport.Fleet.Vehicle
-    belongs_to :driver, FleetMint.Operations.Driver
-    belongs_to :co_driver, FleetMint.Operations.Driver
+    belongs_to :driver, FleetMint.HR.Driver
+    belongs_to :co_driver, FleetMint.HR.Driver
     belongs_to :created_by, FleetMint.Identity.User
 
     has_many :orders, FleetMint.Cargo.Order, foreign_key: :assigned_trip_id

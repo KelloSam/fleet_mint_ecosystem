@@ -11,9 +11,9 @@
   <:col :let={d} label="License No."><%= d.license_number %></:col>
   <:col :let={d} label="License Expiry">
     <%= if d.license_expiry do %>
-      <span class={if FleetMint.Operations.Driver.license_expired?(d), do: "text-red-600 font-semibold", else: ""}>
+      <span class={if FleetMint.HR.Driver.license_expired?(d), do: "text-red-600 font-semibold", else: ""}>
         <%= d.license_expiry %>
-        <%= if FleetMint.Operations.Driver.license_expired?(d), do: " ⚠ EXPIRED" %>
+        <%= if FleetMint.HR.Driver.license_expired?(d), do: " ⚠ EXPIRED" %>
       </span>
     <% else %>
       —

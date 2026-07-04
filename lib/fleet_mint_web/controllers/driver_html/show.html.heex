@@ -15,9 +15,9 @@
   <:item title="License Number"><%= @driver.license_number || "—" %></:item>
   <:item title="License Expiry">
     <%= if @driver.license_expiry do %>
-      <span class={if FleetMint.Operations.Driver.license_expired?(@driver), do: "text-red-600 font-bold", else: "text-green-700"}>
+      <span class={if FleetMint.HR.Driver.license_expired?(@driver), do: "text-red-600 font-bold", else: "text-green-700"}>
         <%= @driver.license_expiry %>
-        <%= if FleetMint.Operations.Driver.license_expired?(@driver), do: " — EXPIRED" %>
+        <%= if FleetMint.HR.Driver.license_expired?(@driver), do: " — EXPIRED" %>
       </span>
     <% else %>—<% end %>
   </:item>

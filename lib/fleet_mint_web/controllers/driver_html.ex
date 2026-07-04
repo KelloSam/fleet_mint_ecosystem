@@ -47,7 +47,7 @@ defmodule FleetMintWeb.DriverHTML do
       <.input field={f[:daily_rate]} type="number" label="Daily Rate (ZMW)" step="0.01" />
       <.input field={f[:date_hired]} type="date" label="Date Hired" />
       <.input field={f[:status]} type="select" label="Status"
-        options={FleetMint.Operations.Driver.status_options()} />
+        options={FleetMint.HR.Driver.status_options()} />
       <.input field={f[:notes]} type="textarea" label="Notes" />
       <:actions>
         <.button>Save Driver</.button>

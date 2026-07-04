@@ -1,4 +1,4 @@
-defmodule FleetMint.AuditLogs.AuditLog do
+defmodule FleetMint.Administration.AuditLog do
   use Ecto.Schema
   import Ecto.Changeset
 

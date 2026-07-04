@@ -1,11 +1,11 @@
 defmodule FleetMintWeb.AuditLogController do
   use FleetMintWeb, :controller
 
-  alias FleetMint.AuditLogs
+  alias FleetMint.Administration
 
   def index(conn, _params) do
-    logs = AuditLogs.list_recent(200)
-    today_count = AuditLogs.count_today()
+    logs = Administration.list_recent_audit_logs(200)
+    today_count = Administration.count_audit_logs_today()
     render(conn, :index, logs: logs, today_count: today_count)
   end
 end

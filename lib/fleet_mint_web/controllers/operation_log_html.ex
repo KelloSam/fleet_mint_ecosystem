@@ -43,7 +43,7 @@ defmodule FleetMintWeb.OperationLogHTML do
       <.input field={f[:date]} type="date" label="Date" />
       <.input field={f[:title]} type="text" label="Title / Subject" />
       <.input field={f[:category]} type="select" label="Category"
-        options={FleetMint.Operations.OperationLog.category_options()} />
+        options={FleetMint.Administration.OperationLog.category_options()} />
       <.input field={f[:description]} type="textarea" label="Details" />
       <:actions>
         <.button>Save Entry</.button>

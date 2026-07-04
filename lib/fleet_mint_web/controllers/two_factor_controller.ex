@@ -3,7 +3,7 @@ defmodule FleetMintWeb.TwoFactorController do
 
   alias FleetMint.Identity
   alias FleetMint.Identity.Guardian
-  alias FleetMint.AuditLogs
+  alias FleetMint.Administration
 
   # ── 2FA verify step (after password, before full session) ──────────────────
 
@@ -23,7 +23,7 @@ defmodule FleetMintWeb.TwoFactorController do
          true <- Identity.valid_totp?(user, code) do
       {:ok, _user, token} = Guardian.create_token(user)
 
-      AuditLogs.log("2fa_success",
+      Administration.log("2fa_success",
         actor_id: user.id,
         actor_email: user.email,
         ip_address: get_ip(conn)
@@ -37,7 +37,7 @@ defmodule FleetMintWeb.TwoFactorController do
       |> redirect(to: ~p"/dashboard")
     else
       _ ->
-        AuditLogs.log("2fa_failure", ip_address: get_ip(conn))
+        Administration.log("2fa_failure", ip_address: get_ip(conn))
 
         conn
         |> put_flash(:error, "Invalid or expired code. Please try again.")
@@ -67,7 +67,7 @@ defmodule FleetMintWeb.TwoFactorController do
          secret = Base.decode64!(encoded_secret),
          true <- Identity.valid_totp_for_secret?(secret, code),
          {:ok, _} <- Identity.enable_totp(user, secret) do
-      AuditLogs.log("2fa_enabled",
+      Administration.log("2fa_enabled",
         actor_id: user.id,
         actor_email: user.email,
         ip_address: get_ip(conn)
@@ -89,7 +89,7 @@ defmodule FleetMintWeb.TwoFactorController do
     user = Identity.get_user!(conn.assigns.current_user.id)
     Identity.disable_totp(user)
 
-    AuditLogs.log("2fa_disabled",
+    Administration.log("2fa_disabled",
       actor_id: user.id,
       actor_email: user.email,
       ip_address: get_ip(conn)

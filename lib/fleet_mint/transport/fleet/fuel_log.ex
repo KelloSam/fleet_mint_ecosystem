@@ -13,7 +13,7 @@ defmodule FleetMint.Transport.Fleet.FuelLog do
     field :notes, :string
 
     belongs_to :vehicle, FleetMint.Transport.Fleet.Vehicle
-    belongs_to :driver, FleetMint.Operations.Driver, foreign_key: :driver_id
+    belongs_to :driver, FleetMint.HR.Driver, foreign_key: :driver_id
     belongs_to :recorded_by, FleetMint.Identity.User, foreign_key: :recorded_by_id
 
     timestamps()

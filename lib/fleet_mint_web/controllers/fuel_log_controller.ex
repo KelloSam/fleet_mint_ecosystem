@@ -3,7 +3,7 @@ defmodule FleetMintWeb.FuelLogController do
 
   alias FleetMint.Transport.Fleet
   alias FleetMint.Transport.Fleet.FuelLog
-  alias FleetMint.Operations
+  alias FleetMint.HR
 
   def index(conn, _params) do
     fuel_logs = Fleet.list_fuel_logs()
@@ -15,7 +15,7 @@ defmodule FleetMintWeb.FuelLogController do
     render(conn, :new,
       changeset: changeset,
       vehicles: Fleet.list_vehicles(),
-      drivers: Operations.list_drivers()
+      drivers: HR.list_drivers()
     )
   end
 
@@ -28,7 +28,7 @@ defmodule FleetMintWeb.FuelLogController do
         render(conn, :new,
           changeset: changeset,
           vehicles: Fleet.list_vehicles(),
-          drivers: Operations.list_drivers()
+          drivers: HR.list_drivers()
         )
     end
   end
@@ -45,7 +45,7 @@ defmodule FleetMintWeb.FuelLogController do
       fuel_log: fuel_log,
       changeset: changeset,
       vehicles: Fleet.list_vehicles(),
-      drivers: Operations.list_drivers()
+      drivers: HR.list_drivers()
     )
   end
 
@@ -59,7 +59,7 @@ defmodule FleetMintWeb.FuelLogController do
           fuel_log: fuel_log,
           changeset: changeset,
           vehicles: Fleet.list_vehicles(),
-          drivers: Operations.list_drivers()
+          drivers: HR.list_drivers()
         )
     end
   end

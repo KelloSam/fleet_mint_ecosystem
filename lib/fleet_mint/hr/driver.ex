@@ -1,4 +1,4 @@
-defmodule FleetMint.Operations.Driver do
+defmodule FleetMint.HR.Driver do
   use Ecto.Schema
   import Ecto.Changeset
 
