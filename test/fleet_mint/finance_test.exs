@@ -2,6 +2,7 @@ defmodule FleetMint.FinanceTest do
   use FleetMint.DataCase
 
   alias FleetMint.Finance
+  alias FleetMint.Accounting
 
   describe "cashing_reports" do
     alias FleetMint.Finance.CashingReport
@@ -78,6 +79,35 @@ defmodule FleetMint.FinanceTest do
       cashing_report = cashing_report_fixture()
       assert %Ecto.Changeset{} = Finance.change_cashing_report(cashing_report)
     end
+
+    test "create_cashing_report/1 writes a matching revenue ledger entry" do
+      report = FleetMint.FinanceFixtures.report_fixture()
+
+      {:ok, cashing_report} =
+        Finance.create_cashing_report(%{
+          description: "some description",
+          days_worked: 42,
+          expected_cashing: "120.5",
+          received_cashing: "200.00",
+          airtel_id: "some airtel_id",
+          debt_balance: "0",
+          expenditure: "0",
+          report_id: report.id,
+          report_date: report.start_date
+        })
+
+      assert [entry] = Accounting.entries_for_source("CashingReport", cashing_report.id)
+      assert entry.entry_type == "revenue"
+      assert Decimal.equal?(entry.amount, Decimal.new("200.00"))
+    end
+
+    test "update_cashing_report/2 syncs the linked ledger entry's amount" do
+      cashing_report = cashing_report_fixture(%{received_cashing: "100.00"})
+      assert {:ok, updated} = Finance.update_cashing_report(cashing_report, %{received_cashing: "300.00"})
+
+      assert [entry] = Accounting.entries_for_source("CashingReport", updated.id)
+      assert Decimal.equal?(entry.amount, Decimal.new("300.00"))
+    end
   end
 
   describe "expenditures" do
@@ -150,6 +180,30 @@ defmodule FleetMint.FinanceTest do
     test "change_expenditure/1 returns a expenditure changeset" do
       expenditure = expenditure_fixture()
       assert %Ecto.Changeset{} = Finance.change_expenditure(expenditure)
+    end
+
+    test "create_expenditure/1 writes a matching expense ledger entry" do
+      cashing_report = cashing_report_fixture()
+
+      {:ok, expenditure} =
+        Finance.create_expenditure(%{
+          description: "fuel",
+          amount: "75.50",
+          date: DateTime.utc_now(),
+          cashing_report_id: cashing_report.id
+        })
+
+      assert [entry] = Accounting.entries_for_source("Expenditure", expenditure.id)
+      assert entry.entry_type == "expense"
+      assert Decimal.equal?(entry.amount, Decimal.new("75.50"))
+    end
+
+    test "update_expenditure/2 syncs the linked ledger entry's amount" do
+      expenditure = expenditure_fixture(%{amount: "10.00"})
+      assert {:ok, updated} = Finance.update_expenditure(expenditure, %{amount: "45.00"})
+
+      assert [entry] = Accounting.entries_for_source("Expenditure", updated.id)
+      assert Decimal.equal?(entry.amount, Decimal.new("45.00"))
     end
   end
 end

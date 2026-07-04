@@ -5,6 +5,7 @@ defmodule FleetMint.Finance do
 
   import Ecto.Query, warn: false
   alias FleetMint.Repo
+  alias FleetMint.Accounting
 
   alias FleetMint.Finance.CashingReport
 
@@ -47,9 +48,23 @@ defmodule FleetMint.Finance do
 
   """
   def create_cashing_report(attrs \\ %{}) do
-    %CashingReport{}
-    |> CashingReport.changeset(attrs)
-    |> Repo.insert()
+    changeset = CashingReport.changeset(%CashingReport{}, attrs)
+
+    Ecto.Multi.new()
+    |> Ecto.Multi.insert(:cashing_report, changeset)
+    |> Accounting.multi_insert_entry(:ledger_entry, fn %{cashing_report: cashing_report} ->
+      %{
+        entry_type: "revenue",
+        source_type: "CashingReport",
+        source_id: cashing_report.id,
+        amount: cashing_report.received_cashing,
+        recorded_by_id: cashing_report.conductor_id,
+        occurred_at: DateTime.new!(cashing_report.report_date, ~T[00:00:00]),
+        description: "Cash received for report #{cashing_report.report_date}"
+      }
+    end)
+    |> Repo.transaction()
+    |> unwrap_multi(:cashing_report)
   end
 
   @doc """
@@ -65,9 +80,27 @@ defmodule FleetMint.Finance do
 
   """
   def update_cashing_report(%CashingReport{} = cashing_report, attrs) do
-    cashing_report
-    |> CashingReport.changeset(attrs)
-    |> Repo.update()
+    changeset = CashingReport.changeset(cashing_report, attrs)
+
+    Ecto.Multi.new()
+    |> Ecto.Multi.update(:cashing_report, changeset)
+    |> Ecto.Multi.run(:ledger_entry, fn _repo, %{cashing_report: updated} ->
+      case Accounting.entries_for_source("CashingReport", updated.id, "revenue") do
+        [entry] ->
+          entry
+          |> Accounting.change_entry(%{
+            amount: updated.received_cashing,
+            recorded_by_id: updated.conductor_id,
+            occurred_at: DateTime.new!(updated.report_date, ~T[00:00:00])
+          })
+          |> Repo.update()
+
+        [] ->
+          {:ok, nil}
+      end
+    end)
+    |> Repo.transaction()
+    |> unwrap_multi(:cashing_report)
   end
 
   @doc """
@@ -251,9 +284,22 @@ defmodule FleetMint.Finance do
 
   """
   def create_expenditure(attrs \\ %{}) do
-    %Expenditure{}
-    |> Expenditure.changeset(attrs)
-    |> Repo.insert()
+    changeset = Expenditure.changeset(%Expenditure{}, attrs)
+
+    Ecto.Multi.new()
+    |> Ecto.Multi.insert(:expenditure, changeset)
+    |> Accounting.multi_insert_entry(:ledger_entry, fn %{expenditure: expenditure} ->
+      %{
+        entry_type: "expense",
+        source_type: "Expenditure",
+        source_id: expenditure.id,
+        amount: expenditure.amount,
+        occurred_at: DateTime.from_naive!(expenditure.date, "Etc/UTC"),
+        description: expenditure.description
+      }
+    end)
+    |> Repo.transaction()
+    |> unwrap_multi(:expenditure)
   end
 
   @doc """
@@ -269,9 +315,27 @@ defmodule FleetMint.Finance do
 
   """
   def update_expenditure(%Expenditure{} = expenditure, attrs) do
-    expenditure
-    |> Expenditure.changeset(attrs)
-    |> Repo.update()
+    changeset = Expenditure.changeset(expenditure, attrs)
+
+    Ecto.Multi.new()
+    |> Ecto.Multi.update(:expenditure, changeset)
+    |> Ecto.Multi.run(:ledger_entry, fn _repo, %{expenditure: updated} ->
+      case Accounting.entries_for_source("Expenditure", updated.id, "expense") do
+        [entry] ->
+          entry
+          |> Accounting.change_entry(%{
+            amount: updated.amount,
+            description: updated.description,
+            occurred_at: DateTime.from_naive!(updated.date, "Etc/UTC")
+          })
+          |> Repo.update()
+
+        [] ->
+          {:ok, nil}
+      end
+    end)
+    |> Repo.transaction()
+    |> unwrap_multi(:expenditure)
   end
 
   @doc """
@@ -642,5 +706,14 @@ defmodule FleetMint.Finance do
       variance: variance,
       count: length(reports)
     }
+  end
+
+  # ── Private ───────────────────────────────────────────────────────────────
+
+  defp unwrap_multi(multi_result, ok_key) do
+    case multi_result do
+      {:ok, changes} -> {:ok, Map.fetch!(changes, ok_key)}
+      {:error, _failed_step, failed_value, _changes} -> {:error, failed_value}
+    end
   end
 end
