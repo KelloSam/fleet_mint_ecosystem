@@ -1,6 +1,7 @@
 # FleetMint Ecosystem — Project Documentation
 
 **Date:** 2026-06-11
+**Last updated:** 2026-07-04 — schema hardening pass, see "Schema Hardening" section below
 **Framework:** Elixir / Phoenix 1.7.14
 **Database:** PostgreSQL (port 5433)
 **Running at:** `http://localhost:4004`
@@ -85,7 +86,7 @@ Fleet_Mint_Ecosystem/
 │       └── router.ex            # All routes
 └── priv/
     └── repo/
-        └── migrations/          # 24 migration files
+        └── migrations/          # 38 migration files
 ```
 
 ---
@@ -362,7 +363,7 @@ The index page shows a colored status badge and an expiry warning inline.
 | date | date | Required |
 | bus_id | ref → buses | |
 | route_id | ref → routes | |
-| driver_id | ref → users | Staff member who drove |
+| driver_id | ref → drivers | Repointed from `users` on 2026-07-04 |
 | passengers_count | integer | |
 | fare_collected | decimal | ZMW |
 | fuel_cost | decimal | ZMW |
@@ -407,7 +408,7 @@ The show page displays **Net Profit = fare_collected − fuel_cost**.
 | total_cost | decimal | Auto-calculated: liters × cost_per_liter |
 | mileage | integer | Odometer reading in km |
 | fuel_station | string | |
-| driver_id | ref → users | Optional |
+| driver_id | ref → drivers | Optional; repointed from `users` on 2026-07-04 |
 | notes | text | |
 
 ---
@@ -513,6 +514,41 @@ cd /home/think/Fleet_Mint_Ecosystem && mix phx.server
 
 ---
 
+## Schema Hardening — 2026-07-04
+
+A growth/scalability audit of the schema (29 tables at the time) found 7 issues, ranked by priority. Six are now fixed across 5 migrations; the 7th is deliberately deferred. No data migration was needed — every table was empty when these ran.
+
+**Migrations added:**
+
+| File | What it does |
+|---|---|
+| `20260704155637_link_buses_to_vehicles_and_repoint_drivers.exs` | Bridges `buses` to `vehicles` and repoints driver FKs |
+| `20260704162048_add_missing_foreign_key_indexes.exs` | Adds 18 indexes on previously unindexed FK columns |
+| `20260704162049_standardize_monetary_column_precision.exs` | Scales legacy bare `numeric` money columns to `numeric(p,s)` |
+| `20260704162050_add_status_check_constraints.exs` | Adds 28 `CHECK` constraints mirroring existing Ecto validations |
+| `20260704162051_add_gin_indexes_for_array_columns.exs` | Adds GIN indexes to the 5 array columns |
+
+**1. Bridged `buses` ↔ `vehicles`.** The legacy minibus-cashing tables (`buses`, `cashing_reports`, `minibus_trips`) and the newer fleet model (`vehicles` + `bus_profiles`) described the same physical bus with no link between them. Added `buses.vehicle_id → vehicles(id)` (`ON DELETE SET NULL`) and a matching `belongs_to :vehicle` on `FleetMint.Fleet.Bus`. This is a bridge, not a merge — the existing bus/minibus-trip controllers and templates are untouched. Fully retiring `buses` in favor of `vehicles`/`bus_profiles` remains a larger, separate decision (would mean rewriting the bus and minibus-trip UI).
+
+**2. Repointed driver assignment at `drivers`, not `users`.** `drivers` holds license number, license expiry, and daily rate, but `schedules.driver_id`, `freight_trips.driver_id`/`co_driver_id`, `vehicles.current_driver_id`, `fuel_logs.driver_id`, and `minibus_trips.driver_id` all referenced `users.id` directly — so a trip could be assigned to a user with no driver profile, license, or status at all. All five now reference `drivers(id)`. `schedules.conductor_id` was left pointing at `users` — there's no `conductors` table. Updated in code:
+- Ecto `belongs_to` targets on `Bus`, `Schedule`, `FuelLog`, `Freight.Trip`, `MinibusTrip`, `Vehicle`
+- `MinibusTripController`, `FuelLogController`, `FreightTripController` now source driver dropdowns from `FleetMint.Operations.list_drivers()` instead of `Accounts.list_users_by_role("operator")`
+- `minibus_trip_html.ex` and `fuel_log_html.ex` driver `<select>` options now read `driver.name` instead of `user.full_name`/`username`
+
+**3. Added the 18 missing FK indexes** — columns like `bookings.booked_by_id`, `complaints.reviewed_by_id`, `schedules.driver_id`/`conductor_id`, and several `created_by_id`/`recorded_by_id` columns had no supporting index.
+
+**4. Standardized monetary precision.** `cashing_reports` (4 columns), `expenditures.amount`, `transactions.amount`, and `vehicle_maintenances.cost` moved to `numeric(12,2)`; `fuel_logs.liters`/`cost_per_liter` and `minibus_trips.fare_collected`/`fuel_cost` moved to `numeric(10,2)` — matching the precision already used on the freight/booking tables.
+
+**5. Added 28 `CHECK` constraints** so the database enforces the same status/category/type vocabularies as the Ecto changesets (`validate_inclusion`) across `buses`, `vehicles`, `bus_profiles`, `drivers`, `schedules`, `minibus_trips`, `bookings`, `tickets`, `complaints`, `freight_clients`, `freight_orders`, `freight_trips`, `freight_invoices`, `truck_profiles`, `vehicle_maintenances`, `operation_logs`, `fuel_logs`, `users`, and `transactions`. This closes the gap where a second write path (a script, another service, a bulk import) could previously insert any string.
+
+  While tracing these, found that `tickets` has two disconnected schema modules: `FleetMint.Transit.Ticket` (the real one, matches the table) and an orphaned `FleetMint.Ticketing.Ticket` referencing columns (`passenger_name`, `route_id`, `bus_id`, `fare_amount`, etc.) that don't exist on the table at all. Left as-is — it's dead code, not one of the audit's original findings, and worth a separate cleanup pass.
+
+**6. Added GIN indexes** on `routes.stops`, `schedules.days_of_week`, `bus_profiles.amenities`/`seat_labels`, and `truck_profiles.allowed_cargo_types` so array-containment queries can use an index once they're written.
+
+**7. Partitioning — deferred on purpose.** `audit_logs`, `transactions`, `bookings`, `fuel_logs`, and `trip_milestones` are the append-heavy tables here, currently unpartitioned. Not fixed because, unlike the other six, it isn't additive: Postgres requires the partition key inside the primary key, which would force a composite key on `bookings`/`transactions` and cascade into every table referencing them (e.g. `tickets.booking_id`). Revisit once there's a real growth curve to pick the partitioning key against — almost certainly month, on `inserted_at`/`travel_date`.
+
+---
+
 ## Known Warnings (non-breaking)
 
 The following compile warnings exist but do not affect functionality:
@@ -523,7 +559,6 @@ The following compile warnings exist but do not affect functionality:
 
 ## Planned / Possible Next Features
 
-- Driver assignment directly on trip records (link drivers table to minibus_trips)
 - Monthly salary / payroll calculation based on driver daily rate × trips worked
 - Income vs Expenditure summary page (profit/loss view)
 - Role-based access control (e.g. cashiers cannot delete drivers)
