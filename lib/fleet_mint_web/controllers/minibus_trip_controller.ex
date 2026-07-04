@@ -4,7 +4,7 @@ defmodule FleetMintWeb.MinibusTripController do
   alias FleetMint.Transit
   alias FleetMint.Transit.MinibusTrip
   alias FleetMint.Fleet
-  alias FleetMint.Accounts
+  alias FleetMint.Operations
 
   def index(conn, _params) do
     trips = Transit.list_minibus_trips()
@@ -17,7 +17,7 @@ defmodule FleetMintWeb.MinibusTripController do
       changeset: changeset,
       buses: Fleet.list_buses(),
       routes: Fleet.list_routes(),
-      drivers: Accounts.list_users_by_role("operator")
+      drivers: Operations.list_drivers()
     )
   end
 
@@ -30,7 +30,7 @@ defmodule FleetMintWeb.MinibusTripController do
           changeset: changeset,
           buses: Fleet.list_buses(),
           routes: Fleet.list_routes(),
-          drivers: Accounts.list_users_by_role("operator")
+          drivers: Operations.list_drivers()
         )
     end
   end
@@ -48,7 +48,7 @@ defmodule FleetMintWeb.MinibusTripController do
       changeset: changeset,
       buses: Fleet.list_buses(),
       routes: Fleet.list_routes(),
-      drivers: Accounts.list_users_by_role("operator")
+      drivers: Operations.list_drivers()
     )
   end
 
@@ -63,7 +63,7 @@ defmodule FleetMintWeb.MinibusTripController do
           changeset: changeset,
           buses: Fleet.list_buses(),
           routes: Fleet.list_routes(),
-          drivers: Accounts.list_users_by_role("operator")
+          drivers: Operations.list_drivers()
         )
     end
   end

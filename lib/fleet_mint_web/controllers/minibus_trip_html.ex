@@ -43,8 +43,8 @@ defmodule FleetMintWeb.MinibusTripHTML do
     <.input field={f[:route_id]} type="select" label="Route"
       options={Enum.map(@routes, &{"#{&1.name} — ZMW #{&1.fare}", &1.id})}
       prompt="Select route" />
-    <.input field={f[:driver_id]} type="select" label="Driver / Operator"
-      options={Enum.map(@drivers, &{&1.full_name || &1.username, &1.id})}
+    <.input field={f[:driver_id]} type="select" label="Driver"
+      options={Enum.map(@drivers, &{&1.name, &1.id})}
       prompt="Select driver" />
     <.input field={f[:status]} type="select" label="Status"
       options={FleetMint.Transit.MinibusTrip.status_options()} />

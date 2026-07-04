@@ -15,7 +15,7 @@ defmodule FleetMint.Transit.Schedule do
 
     belongs_to :vehicle, FleetMint.Fleet.Vehicle
     belongs_to :route, FleetMint.Fleet.Route
-    belongs_to :driver, FleetMint.Accounts.User
+    belongs_to :driver, FleetMint.Operations.Driver
     belongs_to :conductor, FleetMint.Accounts.User
     belongs_to :operator, FleetMint.Fleet.Operator
 

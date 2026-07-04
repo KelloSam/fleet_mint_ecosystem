@@ -48,7 +48,7 @@ defmodule FleetMintWeb.FuelLogHTML do
     <.input field={f[:mileage]} type="number" label="Mileage / Odometer (km)" />
     <.input field={f[:fuel_station]} type="text" label="Fuel Station" />
     <.input field={f[:driver_id]} type="select" label="Driver (optional)"
-      options={Enum.map(@drivers, &{&1.full_name || &1.username, &1.id})}
+      options={Enum.map(@drivers, &{&1.name, &1.id})}
       prompt="Select driver" />
     <.input field={f[:notes]} type="textarea" label="Notes" />
     <:actions>

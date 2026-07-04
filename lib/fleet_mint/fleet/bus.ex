@@ -13,6 +13,8 @@ defmodule FleetMint.Fleet.Bus do
     field :capacity, :integer
     field :model, :string
 
+    belongs_to :vehicle, FleetMint.Fleet.Vehicle
+
     timestamps(type: :utc_datetime)
   end
 
@@ -21,7 +23,7 @@ defmodule FleetMint.Fleet.Bus do
   """
   def changeset(bus, attrs) do
     bus
-    |> cast(attrs, [:registration_number, :capacity, :model, :year, :status, :description])
+    |> cast(attrs, [:registration_number, :capacity, :model, :year, :status, :description, :vehicle_id])
     |> validate_required([:registration_number, :capacity, :model, :year, :status])
     |> validate_format(:registration_number, ~r/^[A-Z0-9]+$/, message: "must contain only uppercase letters and numbers")
     |> validate_number(:capacity, greater_than: 0, message: "must be greater than 0")

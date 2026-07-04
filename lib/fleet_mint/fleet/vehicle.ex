@@ -14,7 +14,7 @@ defmodule FleetMint.Fleet.Vehicle do
     field :description, :string
     field :archived_at, :naive_datetime
 
-    belongs_to :current_driver, FleetMint.Accounts.User
+    belongs_to :current_driver, FleetMint.Operations.Driver
     has_one :bus_profile, FleetMint.Fleet.BusProfile
     has_one :truck_profile, FleetMint.Fleet.TruckProfile
 
