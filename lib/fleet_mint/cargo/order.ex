@@ -1,4 +1,4 @@
-defmodule FleetMint.Freight.Order do
+defmodule FleetMint.Cargo.Order do
   use Ecto.Schema
   import Ecto.Changeset
 
@@ -19,8 +19,8 @@ defmodule FleetMint.Freight.Order do
     field :requires_refrigeration, :boolean, default: false
     field :hazmat_class, :string
 
-    belongs_to :client, FleetMint.Freight.Client
-    belongs_to :assigned_trip, FleetMint.Freight.Trip
+    belongs_to :client, FleetMint.Cargo.Client
+    belongs_to :assigned_trip, FleetMint.Cargo.Trip
     belongs_to :created_by, FleetMint.Identity.User
 
     timestamps()

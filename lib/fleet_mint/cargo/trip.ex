@@ -1,4 +1,4 @@
-defmodule FleetMint.Freight.Trip do
+defmodule FleetMint.Cargo.Trip do
   use Ecto.Schema
   import Ecto.Changeset
 
@@ -24,9 +24,9 @@ defmodule FleetMint.Freight.Trip do
     belongs_to :co_driver, FleetMint.Operations.Driver
     belongs_to :created_by, FleetMint.Identity.User
 
-    has_many :orders, FleetMint.Freight.Order, foreign_key: :assigned_trip_id
-    has_many :milestones, FleetMint.Freight.TripMilestone
-    has_many :invoices, FleetMint.Freight.Invoice
+    has_many :orders, FleetMint.Cargo.Order, foreign_key: :assigned_trip_id
+    has_many :milestones, FleetMint.Cargo.TripMilestone
+    has_many :invoices, FleetMint.Cargo.Invoice
 
     timestamps()
   end

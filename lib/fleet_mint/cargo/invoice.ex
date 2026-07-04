@@ -1,4 +1,4 @@
-defmodule FleetMint.Freight.Invoice do
+defmodule FleetMint.Cargo.Invoice do
   use Ecto.Schema
   import Ecto.Changeset
 
@@ -16,8 +16,8 @@ defmodule FleetMint.Freight.Invoice do
     field :payment_reference, :string
     field :notes, :string
 
-    belongs_to :client, FleetMint.Freight.Client
-    belongs_to :trip, FleetMint.Freight.Trip
+    belongs_to :client, FleetMint.Cargo.Client
+    belongs_to :trip, FleetMint.Cargo.Trip
     belongs_to :created_by, FleetMint.Identity.User
 
     timestamps()

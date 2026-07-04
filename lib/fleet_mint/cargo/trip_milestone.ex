@@ -1,4 +1,4 @@
-defmodule FleetMint.Freight.TripMilestone do
+defmodule FleetMint.Cargo.TripMilestone do
   use Ecto.Schema
   import Ecto.Changeset
 
@@ -12,7 +12,7 @@ defmodule FleetMint.Freight.TripMilestone do
     field :notes, :string
     field :recorded_by, :string
 
-    belongs_to :trip, FleetMint.Freight.Trip
+    belongs_to :trip, FleetMint.Cargo.Trip
 
     timestamps()
   end

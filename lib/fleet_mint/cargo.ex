@@ -1,7 +1,7 @@
-defmodule FleetMint.Freight do
+defmodule FleetMint.Cargo do
   import Ecto.Query
   alias FleetMint.Repo
-  alias FleetMint.Freight.{Client, Order, Trip, TripMilestone, Invoice}
+  alias FleetMint.Cargo.{Client, Order, Trip, TripMilestone, Invoice}
 
   # ── Clients ───────────────────────────────────────────────────────────────
 

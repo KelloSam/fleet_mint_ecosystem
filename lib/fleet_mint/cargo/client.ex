@@ -1,4 +1,4 @@
-defmodule FleetMint.Freight.Client do
+defmodule FleetMint.Cargo.Client do
   use Ecto.Schema
   import Ecto.Changeset
 
@@ -16,8 +16,8 @@ defmodule FleetMint.Freight.Client do
     field :status, :string, default: "active"
     field :notes, :string
 
-    has_many :orders, FleetMint.Freight.Order
-    has_many :invoices, FleetMint.Freight.Invoice
+    has_many :orders, FleetMint.Cargo.Order
+    has_many :invoices, FleetMint.Cargo.Invoice
 
     timestamps()
   end
