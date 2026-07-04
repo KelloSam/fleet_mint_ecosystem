@@ -1,4 +1,4 @@
-defmodule FleetMint.Transit.Schedule do
+defmodule FleetMint.Transport.Trips.Schedule do
   use Ecto.Schema
   import Ecto.Changeset
 
@@ -19,7 +19,7 @@ defmodule FleetMint.Transit.Schedule do
     belongs_to :conductor, FleetMint.Identity.User
     belongs_to :operator, FleetMint.Transport.Fleet.Operator
 
-    has_many :bookings, FleetMint.Transit.Booking
+    has_many :bookings, FleetMint.Transport.Ticketing.Booking
 
     timestamps()
   end

@@ -1,22 +1,23 @@
 defmodule FleetMintWeb.TicketController do
   use FleetMintWeb, :controller
-  alias FleetMint.Transit
+  alias FleetMint.Transport.Ticketing
+  alias FleetMint.Transport.Boarding
 
   def index(conn, params) do
-    bookings = Transit.list_bookings(status: params["status"], travel_date: params["date"] && Date.from_iso8601!(params["date"]))
+    bookings = Ticketing.list_bookings(status: params["status"], travel_date: params["date"] && Date.from_iso8601!(params["date"]))
     render(conn, :index, bookings: bookings)
   end
 
   def show(conn, %{"id" => id}) do
-    booking = Transit.get_booking!(id)
+    booking = Ticketing.get_booking!(id)
     render(conn, :show, booking: booking, ticket: booking.ticket)
   end
 
   def validate(conn, %{"id" => id}) do
-    booking = Transit.get_booking!(id)
+    booking = Ticketing.get_booking!(id)
     ticket = booking.ticket
     if ticket do
-      case Transit.validate_ticket(ticket.ticket_number, :static) do
+      case Boarding.validate_ticket(ticket.ticket_number, :static) do
         {:ok, _ticket} ->
           conn |> put_flash(:info, "Ticket validated — passenger boarded.") |> redirect(to: ~p"/tickets/#{booking}")
         {:error, reason} ->

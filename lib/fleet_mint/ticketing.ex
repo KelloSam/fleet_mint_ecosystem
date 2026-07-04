@@ -1,10 +1,12 @@
 defmodule FleetMint.Ticketing do
   @moduledoc """
-  The Ticketing context.
-  
-  This context handles operations related to ticket management, including
-  creating, updating, and managing ticket status. It also provides functions
-  for searching tickets, generating reports, and validating seat availability.
+  DEAD CODE: zero callers anywhere in the app (confirmed 2026-07-04). Its
+  schema, FleetMint.Ticketing.Ticket, declares columns that don't exist on
+  the real `tickets` table — the live ticketing flow is
+  FleetMint.Transport.Ticketing / FleetMint.Transport.Ticketing.Ticket.
+  Left at this path rather than moved into the new domain namespaces so the
+  new modules don't inherit broken, unexercised code under a legitimate-
+  looking name. Candidate for deletion in a future pass.
   """
   
   import Ecto.Query, warn: false

@@ -1,4 +1,4 @@
-defmodule FleetMint.Transit.Booking do
+defmodule FleetMint.Transport.Ticketing.Booking do
   use Ecto.Schema
   import Ecto.Changeset
 
@@ -18,9 +18,9 @@ defmodule FleetMint.Transit.Booking do
     field :has_luggage, :boolean, default: false
     field :luggage_description, :string
 
-    belongs_to :schedule, FleetMint.Transit.Schedule
+    belongs_to :schedule, FleetMint.Transport.Trips.Schedule
     belongs_to :booked_by, FleetMint.Identity.User
-    has_one :ticket, FleetMint.Transit.Ticket
+    has_one :ticket, FleetMint.Transport.Ticketing.Ticket
 
     timestamps()
   end

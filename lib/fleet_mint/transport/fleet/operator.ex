@@ -14,7 +14,7 @@ defmodule FleetMint.Transport.Fleet.Operator do
 
     field :schedule_count, :integer, virtual: true
 
-    has_many :schedules, FleetMint.Transit.Schedule
+    has_many :schedules, FleetMint.Transport.Trips.Schedule
     many_to_many :routes, FleetMint.Transport.Fleet.Route,
       join_through: "operator_routes",
       on_replace: :delete

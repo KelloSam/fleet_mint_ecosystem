@@ -1,6 +1,7 @@
 defmodule FleetMintWeb.ApiController do
   use FleetMintWeb, :controller
-  alias FleetMint.Transit
+  alias FleetMint.Transport.Trips
+  alias FleetMint.Transport.Ticketing
 
   @pii_roles ~w(admin manager)
 
@@ -20,7 +21,7 @@ defmodule FleetMintWeb.ApiController do
           _ -> NaiveDateTime.add(NaiveDateTime.utc_now(), -60, :second)
         end
 
-      bookings = Transit.list_bookings_since(since)
+      bookings = Ticketing.list_bookings_since(since)
 
       data =
         Enum.map(bookings, fn b ->
@@ -43,8 +44,8 @@ defmodule FleetMintWeb.ApiController do
   def available_seats(conn, %{"schedule_id" => sid, "date" => date_str}) do
     with {schedule_id, ""} <- Integer.parse(sid),
          {:ok, date} <- Date.from_iso8601(date_str) do
-      schedule = Transit.get_schedule!(schedule_id)
-      taken = Transit.get_booked_seats(schedule_id, date)
+      schedule = Trips.get_schedule!(schedule_id)
+      taken = Ticketing.get_booked_seats(schedule_id, date)
       json(conn, %{total: schedule.available_seats, taken: taken})
     else
       _ -> json(conn, %{total: 0, taken: []})

@@ -12,7 +12,7 @@
   <:item title="Passengers"><%= @trip.passengers_count %></:item>
   <:item title="Fare Collected">ZMW <%= @trip.fare_collected %></:item>
   <:item title="Fuel Cost">ZMW <%= @trip.fuel_cost %></:item>
-  <:item title="Net Profit">ZMW <%= FleetMint.Transit.MinibusTrip.profit(@trip) %></:item>
+  <:item title="Net Profit">ZMW <%= FleetMint.Transport.Trips.MinibusTrip.profit(@trip) %></:item>
   <:item title="Notes"><%= @trip.notes %></:item>
 </.list>
 

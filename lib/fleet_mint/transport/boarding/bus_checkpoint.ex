@@ -1,4 +1,4 @@
-defmodule FleetMint.Transit.BusCheckpoint do
+defmodule FleetMint.Transport.Boarding.BusCheckpoint do
   use Ecto.Schema
   import Ecto.Changeset
 
@@ -7,7 +7,7 @@ defmodule FleetMint.Transit.BusCheckpoint do
     field :notes, :string
     field :travel_date, :date
 
-    belongs_to :schedule, FleetMint.Transit.Schedule
+    belongs_to :schedule, FleetMint.Transport.Trips.Schedule
     belongs_to :reported_by, FleetMint.Identity.User
 
     timestamps(updated_at: false)

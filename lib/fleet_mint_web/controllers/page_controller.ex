@@ -4,7 +4,8 @@ defmodule FleetMintWeb.PageController do
   alias FleetMint.Finance
   alias FleetMint.Transport.Fleet
   alias FleetMint.Identity
-  alias FleetMint.Transit
+  alias FleetMint.Transport.Trips
+  alias FleetMint.Transport.Ticketing
 
   def home(conn, _params) do
     if FleetMintWeb.Plugs.AuthPlug.logged_in?(conn) do
@@ -24,10 +25,10 @@ defmodule FleetMintWeb.PageController do
     total_vehicles = Fleet.count_vehicles()
     total_expenditures = Finance.count_expenditures()
     on_duty = Identity.list_on_duty_staff()
-    bookings_today = Transit.count_bookings_today()
-    revenue_today = Transit.revenue_today()
-    trips_today = Transit.count_minibus_trips_today()
-    minibus_revenue_today = Transit.minibus_revenue_today()
+    bookings_today = Ticketing.count_bookings_today()
+    revenue_today = Ticketing.revenue_today()
+    trips_today = Trips.count_minibus_trips_today()
+    minibus_revenue_today = Trips.minibus_revenue_today()
     pending_maintenances = Fleet.count_pending_maintenances()
     fuel_cost_today = Fleet.fuel_cost_today()
 

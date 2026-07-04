@@ -1,4 +1,4 @@
-defmodule FleetMint.Transit.MinibusTrip do
+defmodule FleetMint.Transport.Trips.MinibusTrip do
   use Ecto.Schema
   import Ecto.Changeset
 

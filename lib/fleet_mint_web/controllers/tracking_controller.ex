@@ -1,12 +1,12 @@
 defmodule FleetMintWeb.TrackingController do
   use FleetMintWeb, :controller
-  alias FleetMint.Transit
+  alias FleetMint.Transport.Boarding
 
   plug :put_layout, html: {FleetMintWeb.Layouts, :public}
 
   # GET /track
   def index(conn, %{"ref" => ref}) when ref != "" do
-    case Transit.track_by_booking_reference(String.upcase(String.trim(ref))) do
+    case Boarding.track_by_booking_reference(String.upcase(String.trim(ref))) do
       {:ok, result} ->
         render(conn, :result, result: result, ref: ref)
       {:error, :not_found} ->

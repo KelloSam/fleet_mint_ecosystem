@@ -1,10 +1,12 @@
 defmodule FleetMint.Payments do
   @moduledoc """
-  The Payments context.
-  
-  This context handles operations related to payment transactions, including
-  creating, processing, and managing transactions. It also provides functions
-  for generating financial reports and analytics.
+  DEAD CODE: zero callers anywhere in the app (confirmed 2026-07-04). Its
+  schema, FleetMint.Payments.Transaction, belongs_to a Ticket via a
+  `ticket_id` column that no migration ever added to the `transactions`
+  table — this code has never run end-to-end. Left at this path rather
+  than merged into FleetMint.Finance so Finance doesn't inherit broken,
+  unexercised code under a legitimate-looking name. Candidate for deletion
+  in a future pass.
   """
   
   import Ecto.Query, warn: false

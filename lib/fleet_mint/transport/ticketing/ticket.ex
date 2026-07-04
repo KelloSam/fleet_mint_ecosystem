@@ -1,4 +1,4 @@
-defmodule FleetMint.Transit.Ticket do
+defmodule FleetMint.Transport.Ticketing.Ticket do
   use Ecto.Schema
   import Ecto.Changeset
 
@@ -11,7 +11,7 @@ defmodule FleetMint.Transit.Ticket do
     field :validation_token, :string
     field :expires_at, :naive_datetime
 
-    belongs_to :booking, FleetMint.Transit.Booking
+    belongs_to :booking, FleetMint.Transport.Ticketing.Booking
 
     timestamps()
   end
@@ -30,7 +30,7 @@ defmodule FleetMint.Transit.Ticket do
   end
 
   def board_changeset(ticket) do
-    change(ticket, status: "boarded", boarded_at: NaiveDateTime.utc_now())
+    change(ticket, status: "boarded", boarded_at: NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second))
   end
 
   defp generate_ticket_number(%Ecto.Changeset{data: %{id: nil}} = changeset) do
