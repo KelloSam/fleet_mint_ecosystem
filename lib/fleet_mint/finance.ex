@@ -608,34 +608,16 @@ defmodule FleetMint.Finance do
   
   """
   def list_recent_transactions(limit \\ 5) do
-    query = from cr in CashingReport,
-            select: %{
-              id: cr.id,
-              type: "income",
-              amount: cr.received_cashing,
-              inserted_at: cr.inserted_at
-            },
-            order_by: [desc: cr.inserted_at],
-            limit: ^limit
-    
-    income_transactions = Repo.all(query)
-    
-    expenditure_query = from e in Expenditure,
-                        select: %{
-                          id: e.id,
-                          type: "expense",
-                          amount: e.amount,
-                          inserted_at: e.inserted_at
-                        },
-                        order_by: [desc: e.inserted_at],
-                        limit: ^limit
-    
-    expense_transactions = Repo.all(expenditure_query)
-    
-    # Combine and sort both types of transactions by date
-    (income_transactions ++ expense_transactions)
-    |> Enum.sort_by(fn t -> t.inserted_at end, {:desc, NaiveDateTime})
+    Accounting.list_entries()
     |> Enum.take(limit)
+    |> Enum.map(fn entry ->
+      %{
+        id: entry.id,
+        type: if(entry.entry_type == "revenue", do: "income", else: entry.entry_type),
+        amount: entry.amount,
+        inserted_at: entry.inserted_at
+      }
+    end)
   end
   
   @doc """
