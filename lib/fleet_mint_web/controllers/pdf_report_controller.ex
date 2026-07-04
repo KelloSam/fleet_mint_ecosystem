@@ -2,7 +2,7 @@ defmodule FleetMintWeb.PdfReportController do
   use FleetMintWeb, :controller
 
   alias FleetMint.Finance
-  alias FleetMint.Reports.PdfGenerator
+  alias FleetMint.Reporting.PdfGenerator
 
   # GET /admin/reports — Reports hub page
   def index(conn, params) do

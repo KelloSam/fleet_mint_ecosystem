@@ -1,4 +1,4 @@
-defmodule FleetMint.Reports.PdfGenerator do
+defmodule FleetMint.Reporting.PdfGenerator do
   @moduledoc "Generates PDF reports by rendering EEx HTML templates through Chrome headless."
 
   @templates_dir Path.join(:code.priv_dir(:fleet_mint), "templates/pdf")

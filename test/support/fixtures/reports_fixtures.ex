@@ -1,7 +1,7 @@
 defmodule FleetMint.ReportsFixtures do
   @moduledoc """
   This module defines test helpers for creating
-  entities via the `FleetMint.Reports` context.
+  entities via the `FleetMint.Finance` context.
   """
 
   @doc """
@@ -14,7 +14,7 @@ defmodule FleetMint.ReportsFixtures do
         end_date: ~D[2025-03-03],
         start_date: ~D[2025-03-03]
       })
-      |> FleetMint.Reports.create_report()
+      |> FleetMint.Finance.create_report()
 
     report
   end
