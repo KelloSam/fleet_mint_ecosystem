@@ -36,7 +36,8 @@ defmodule FleetMint.FinanceFixtures do
         expected_cashing: "120.5",
         expenditure: "120.5",
         received_cashing: "120.5",
-        report_id: report.id
+        report_id: report.id,
+        report_date: ~D[2025-03-03]
       })
       |> FleetMint.Finance.create_cashing_report()
 
