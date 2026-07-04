@@ -1,7 +1,7 @@
 defmodule FleetMintWeb.OperatorController do
   use FleetMintWeb, :controller
-  alias FleetMint.Fleet
-  alias FleetMint.Fleet.Operator
+  alias FleetMint.Transport.Fleet
+  alias FleetMint.Transport.Fleet.Operator
 
   plug :require_admin when action in [:new, :create, :edit, :update, :delete]
 

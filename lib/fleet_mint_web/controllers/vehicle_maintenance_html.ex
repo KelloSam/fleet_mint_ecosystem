@@ -41,9 +41,9 @@ defmodule FleetMintWeb.VehicleMaintenanceHTML do
       prompt="Select vehicle" />
     <.input field={f[:service_date]} type="date" label="Service Date" />
     <.input field={f[:service_type]} type="select" label="Service Type"
-      options={FleetMint.Fleet.VehicleMaintenance.service_type_options()} />
+      options={FleetMint.Transport.Fleet.VehicleMaintenance.service_type_options()} />
     <.input field={f[:status]} type="select" label="Status"
-      options={FleetMint.Fleet.VehicleMaintenance.status_options()} />
+      options={FleetMint.Transport.Fleet.VehicleMaintenance.status_options()} />
     <.input field={f[:description]} type="textarea" label="Description / Notes" />
     <.input field={f[:cost]} type="number" label="Cost (ZMW)" step="0.01" />
     <.input field={f[:mileage_at_service]} type="number" label="Mileage at Service (km)" />

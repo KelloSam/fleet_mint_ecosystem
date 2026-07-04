@@ -1,8 +1,8 @@
 defmodule FleetMintWeb.FuelLogController do
   use FleetMintWeb, :controller
 
-  alias FleetMint.Fleet
-  alias FleetMint.Fleet.FuelLog
+  alias FleetMint.Transport.Fleet
+  alias FleetMint.Transport.Fleet.FuelLog
   alias FleetMint.Operations
 
   def index(conn, _params) do

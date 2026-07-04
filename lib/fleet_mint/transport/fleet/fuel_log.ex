@@ -1,4 +1,4 @@
-defmodule FleetMint.Fleet.FuelLog do
+defmodule FleetMint.Transport.Fleet.FuelLog do
   use Ecto.Schema
   import Ecto.Changeset
 
@@ -12,7 +12,7 @@ defmodule FleetMint.Fleet.FuelLog do
     field :fuel_type, :string, default: "diesel"
     field :notes, :string
 
-    belongs_to :vehicle, FleetMint.Fleet.Vehicle
+    belongs_to :vehicle, FleetMint.Transport.Fleet.Vehicle
     belongs_to :driver, FleetMint.Operations.Driver, foreign_key: :driver_id
     belongs_to :recorded_by, FleetMint.Identity.User, foreign_key: :recorded_by_id
 

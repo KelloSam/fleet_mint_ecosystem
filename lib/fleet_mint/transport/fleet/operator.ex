@@ -1,4 +1,4 @@
-defmodule FleetMint.Fleet.Operator do
+defmodule FleetMint.Transport.Fleet.Operator do
   use Ecto.Schema
   import Ecto.Changeset
 
@@ -15,7 +15,7 @@ defmodule FleetMint.Fleet.Operator do
     field :schedule_count, :integer, virtual: true
 
     has_many :schedules, FleetMint.Transit.Schedule
-    many_to_many :routes, FleetMint.Fleet.Route,
+    many_to_many :routes, FleetMint.Transport.Fleet.Route,
       join_through: "operator_routes",
       on_replace: :delete
 

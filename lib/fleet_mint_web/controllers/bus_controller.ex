@@ -1,8 +1,8 @@
 defmodule FleetMintWeb.BusController do
   use FleetMintWeb, :controller
 
-  alias FleetMint.Fleet
-  alias FleetMint.Fleet.Bus
+  alias FleetMint.Transport.Fleet
+  alias FleetMint.Transport.Fleet.Bus
 
   def index(conn, params) do
     status = Map.get(params, "status")

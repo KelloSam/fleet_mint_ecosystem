@@ -1,4 +1,4 @@
-defmodule FleetMint.Fleet.TruckProfile do
+defmodule FleetMint.Transport.Fleet.TruckProfile do
   use Ecto.Schema
   import Ecto.Changeset
 
@@ -11,7 +11,7 @@ defmodule FleetMint.Fleet.TruckProfile do
     field :refrigerated, :boolean, default: false
     field :gvw_kg, :integer
 
-    belongs_to :vehicle, FleetMint.Fleet.Vehicle
+    belongs_to :vehicle, FleetMint.Transport.Fleet.Vehicle
 
     timestamps()
   end

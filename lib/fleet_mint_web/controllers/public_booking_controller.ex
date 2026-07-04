@@ -1,7 +1,7 @@
 defmodule FleetMintWeb.PublicBookingController do
   use FleetMintWeb, :controller
 
-  alias FleetMint.Fleet
+  alias FleetMint.Transport.Fleet
   alias FleetMint.Transit
 
   plug :put_layout, html: {FleetMintWeb.Layouts, :public}

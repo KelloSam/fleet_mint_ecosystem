@@ -1,4 +1,4 @@
-defmodule FleetMint.Fleet.BusProfile do
+defmodule FleetMint.Transport.Fleet.BusProfile do
   use Ecto.Schema
   import Ecto.Changeset
 
@@ -9,8 +9,8 @@ defmodule FleetMint.Fleet.BusProfile do
     field :route_type,   :string, default: "urban"
     field :seat_labels,  {:array, :string}, default: []
 
-    belongs_to :vehicle, FleetMint.Fleet.Vehicle
-    belongs_to :current_route, FleetMint.Fleet.Route
+    belongs_to :vehicle, FleetMint.Transport.Fleet.Vehicle
+    belongs_to :current_route, FleetMint.Transport.Fleet.Route
 
     timestamps()
   end

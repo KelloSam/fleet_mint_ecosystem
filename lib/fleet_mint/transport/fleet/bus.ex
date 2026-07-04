@@ -1,4 +1,4 @@
-defmodule FleetMint.Fleet.Bus do
+defmodule FleetMint.Transport.Fleet.Bus do
   use Ecto.Schema
   import Ecto.Changeset
 
@@ -13,7 +13,7 @@ defmodule FleetMint.Fleet.Bus do
     field :capacity, :integer
     field :model, :string
 
-    belongs_to :vehicle, FleetMint.Fleet.Vehicle
+    belongs_to :vehicle, FleetMint.Transport.Fleet.Vehicle
 
     timestamps(type: :utc_datetime)
   end

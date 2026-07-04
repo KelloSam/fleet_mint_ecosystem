@@ -1,4 +1,4 @@
-defmodule FleetMint.Fleet.VehicleMaintenance do
+defmodule FleetMint.Transport.Fleet.VehicleMaintenance do
   use Ecto.Schema
   import Ecto.Changeset
 
@@ -13,7 +13,7 @@ defmodule FleetMint.Fleet.VehicleMaintenance do
     field :garage, :string
     field :status, :string, default: "completed"
 
-    belongs_to :vehicle, FleetMint.Fleet.Vehicle
+    belongs_to :vehicle, FleetMint.Transport.Fleet.Vehicle
     belongs_to :recorded_by, FleetMint.Identity.User, foreign_key: :recorded_by_id
 
     timestamps()

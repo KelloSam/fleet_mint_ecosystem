@@ -2,7 +2,7 @@ defmodule FleetMintWeb.FreightTripController do
   use FleetMintWeb, :controller
   alias FleetMint.Cargo
   alias FleetMint.Cargo.Trip
-  alias FleetMint.Fleet
+  alias FleetMint.Transport.Fleet
 
   def index(conn, params) do
     trips = Cargo.list_trips(status: params["status"])

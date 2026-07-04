@@ -19,7 +19,7 @@ defmodule FleetMint.Cargo.Trip do
     field :other_expenses, :decimal, default: Decimal.new(0)
     field :notes, :string
 
-    belongs_to :vehicle, FleetMint.Fleet.Vehicle
+    belongs_to :vehicle, FleetMint.Transport.Fleet.Vehicle
     belongs_to :driver, FleetMint.Operations.Driver
     belongs_to :co_driver, FleetMint.Operations.Driver
     belongs_to :created_by, FleetMint.Identity.User

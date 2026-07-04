@@ -1,7 +1,7 @@
 defmodule FleetMintWeb.VehicleController do
   use FleetMintWeb, :controller
-  alias FleetMint.Fleet
-  alias FleetMint.Fleet.Vehicle
+  alias FleetMint.Transport.Fleet
+  alias FleetMint.Transport.Fleet.Vehicle
 
   def index(conn, params) do
     vehicles = Fleet.list_vehicles(type: params["type"], status: params["status"])

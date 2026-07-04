@@ -1,4 +1,4 @@
-defmodule FleetMint.Fleet.Route do
+defmodule FleetMint.Transport.Fleet.Route do
   use Ecto.Schema
   import Ecto.Changeset
 
@@ -15,7 +15,7 @@ defmodule FleetMint.Fleet.Route do
     field :stops, {:array, :string}, default: []
     field :archived_at, :naive_datetime
 
-    many_to_many :operators, FleetMint.Fleet.Operator,
+    many_to_many :operators, FleetMint.Transport.Fleet.Operator,
       join_through: "operator_routes"
 
     timestamps(type: :utc_datetime)

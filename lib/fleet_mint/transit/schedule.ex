@@ -13,11 +13,11 @@ defmodule FleetMint.Transit.Schedule do
     field :validation_mode, :string, default: "static"
     field :notes, :string
 
-    belongs_to :vehicle, FleetMint.Fleet.Vehicle
-    belongs_to :route, FleetMint.Fleet.Route
+    belongs_to :vehicle, FleetMint.Transport.Fleet.Vehicle
+    belongs_to :route, FleetMint.Transport.Fleet.Route
     belongs_to :driver, FleetMint.Operations.Driver
     belongs_to :conductor, FleetMint.Identity.User
-    belongs_to :operator, FleetMint.Fleet.Operator
+    belongs_to :operator, FleetMint.Transport.Fleet.Operator
 
     has_many :bookings, FleetMint.Transit.Booking
 

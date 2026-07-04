@@ -13,7 +13,7 @@ defmodule FleetMint.Finance.CashingReport do
     field :report_date, :date
 
     belongs_to :report, FleetMint.Finance.Report
-    belongs_to :bus, FleetMint.Fleet.Bus
+    belongs_to :bus, FleetMint.Transport.Fleet.Bus
     belongs_to :conductor, FleetMint.Identity.User, foreign_key: :conductor_id
     has_many :expenditures, FleetMint.Finance.Expenditure, foreign_key: :cashing_report_id
 

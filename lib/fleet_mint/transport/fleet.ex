@@ -1,4 +1,4 @@
-defmodule FleetMint.Fleet do
+defmodule FleetMint.Transport.Fleet do
   @moduledoc """
   The Fleet context.
   
@@ -10,7 +10,7 @@ defmodule FleetMint.Fleet do
   import Ecto.Query, warn: false
   alias FleetMint.Repo
 
-  alias FleetMint.Fleet.{Bus, Operator}
+  alias FleetMint.Transport.Fleet.{Bus, Operator}
 
   # ── Operators (bus companies) ──────────────────────────────────────────────
 
@@ -35,7 +35,7 @@ defmodule FleetMint.Fleet do
   def get_operator_with_routes!(id) do
     Operator
     |> Repo.get!(id)
-    |> Repo.preload(routes: from(r in FleetMint.Fleet.Route, order_by: r.name))
+    |> Repo.preload(routes: from(r in FleetMint.Transport.Fleet.Route, order_by: r.name))
   end
 
   def list_operators_with_route_counts do
@@ -48,7 +48,7 @@ defmodule FleetMint.Fleet do
     ) |> Repo.all()
   end
 
-  def add_route_to_operator(%Operator{} = op, %FleetMint.Fleet.Route{} = route) do
+  def add_route_to_operator(%Operator{} = op, %FleetMint.Transport.Fleet.Route{} = route) do
     Repo.insert_all("operator_routes",
       [%{operator_id: op.id, route_id: route.id}],
       on_conflict: :nothing)
@@ -235,7 +235,7 @@ defmodule FleetMint.Fleet do
     Repo.all(query)
   end
   
-  alias FleetMint.Fleet.Route
+  alias FleetMint.Transport.Fleet.Route
   
   @doc """
   Returns the list of routes.
@@ -468,7 +468,7 @@ defmodule FleetMint.Fleet do
 
   # ── Vehicles (unified fleet: buses + trucks) ──────────────────────────────
 
-  alias FleetMint.Fleet.{Vehicle, BusProfile, TruckProfile}
+  alias FleetMint.Transport.Fleet.{Vehicle, BusProfile, TruckProfile}
 
   def list_vehicles(opts \\ []) do
     from(v in Vehicle, where: is_nil(v.archived_at))
@@ -548,7 +548,7 @@ defmodule FleetMint.Fleet do
 
   # ── Vehicle Maintenance ────────────────────────────────────────────────────
 
-  alias FleetMint.Fleet.VehicleMaintenance
+  alias FleetMint.Transport.Fleet.VehicleMaintenance
 
   def list_maintenances do
     VehicleMaintenance
@@ -582,7 +582,7 @@ defmodule FleetMint.Fleet do
 
   # ── Fuel Logs ──────────────────────────────────────────────────────────────
 
-  alias FleetMint.Fleet.FuelLog
+  alias FleetMint.Transport.Fleet.FuelLog
 
   def list_fuel_logs do
     FuelLog

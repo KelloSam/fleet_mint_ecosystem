@@ -1,7 +1,7 @@
 defmodule FleetMint.Ticketing.Ticket do
   use Ecto.Schema
   import Ecto.Changeset
-  alias FleetMint.Fleet.{Route, Bus}
+  alias FleetMint.Transport.Fleet.{Route, Bus}
   alias FleetMint.Identity.User
 
   @valid_statuses ["valid", "cancelled", "used"]

@@ -10,7 +10,7 @@ defmodule FleetMint.Ticketing do
   import Ecto.Query, warn: false
   alias FleetMint.Repo
   alias FleetMint.Ticketing.Ticket
-  alias FleetMint.Fleet.Route
+  alias FleetMint.Transport.Fleet.Route
   
   @doc """
   Returns the list of tickets.

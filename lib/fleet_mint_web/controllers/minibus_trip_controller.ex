@@ -3,7 +3,7 @@ defmodule FleetMintWeb.MinibusTripController do
 
   alias FleetMint.Transit
   alias FleetMint.Transit.MinibusTrip
-  alias FleetMint.Fleet
+  alias FleetMint.Transport.Fleet
   alias FleetMint.Operations
 
   def index(conn, _params) do

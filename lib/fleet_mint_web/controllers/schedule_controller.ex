@@ -2,7 +2,7 @@ defmodule FleetMintWeb.ScheduleController do
   use FleetMintWeb, :controller
   alias FleetMint.Transit
   alias FleetMint.Transit.Schedule
-  alias FleetMint.Fleet
+  alias FleetMint.Transport.Fleet
 
   def index(conn, params) do
     schedules = Transit.list_schedules(status: params["status"])

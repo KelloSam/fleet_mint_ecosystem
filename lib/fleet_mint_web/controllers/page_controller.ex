@@ -2,7 +2,7 @@ defmodule FleetMintWeb.PageController do
   use FleetMintWeb, :controller
 
   alias FleetMint.Finance
-  alias FleetMint.Fleet
+  alias FleetMint.Transport.Fleet
   alias FleetMint.Identity
   alias FleetMint.Transit
 

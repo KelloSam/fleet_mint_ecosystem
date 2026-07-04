@@ -10,8 +10,8 @@ defmodule FleetMint.Transit.MinibusTrip do
     field :fuel_cost, :decimal
     field :notes, :string
 
-    belongs_to :bus, FleetMint.Fleet.Bus
-    belongs_to :route, FleetMint.Fleet.Route
+    belongs_to :bus, FleetMint.Transport.Fleet.Bus
+    belongs_to :route, FleetMint.Transport.Fleet.Route
     belongs_to :driver, FleetMint.Operations.Driver
 
     timestamps()

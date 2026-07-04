@@ -1,8 +1,8 @@
 defmodule FleetMintWeb.VehicleMaintenanceController do
   use FleetMintWeb, :controller
 
-  alias FleetMint.Fleet
-  alias FleetMint.Fleet.VehicleMaintenance
+  alias FleetMint.Transport.Fleet
+  alias FleetMint.Transport.Fleet.VehicleMaintenance
 
   def index(conn, _params) do
     maintenances = Fleet.list_maintenances()

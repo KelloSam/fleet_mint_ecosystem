@@ -41,7 +41,7 @@ defmodule FleetMintWeb.FuelLogHTML do
       prompt="Select vehicle" />
     <.input field={f[:log_date]} type="date" label="Date" />
     <.input field={f[:fuel_type]} type="select" label="Fuel Type"
-      options={FleetMint.Fleet.FuelLog.fuel_type_options()} />
+      options={FleetMint.Transport.Fleet.FuelLog.fuel_type_options()} />
     <.input field={f[:liters]} type="number" label="Litres" step="0.01" />
     <.input field={f[:cost_per_liter]} type="number" label="Cost per Litre (ZMW)" step="0.01" />
     <.input field={f[:total_cost]} type="number" label="Total Cost (ZMW) — auto-calculated" step="0.01" />

@@ -2,7 +2,7 @@ defmodule FleetMint.Transit do
   import Ecto.Query
   alias FleetMint.Repo
   alias FleetMint.Transit.{Schedule, Booking, Ticket, BusCheckpoint, MinibusTrip}
-  alias FleetMint.Fleet.{Vehicle, Route}
+  alias FleetMint.Transport.Fleet.{Vehicle, Route}
 
   # ── Minibus Trips ─────────────────────────────────────────────────────────
 
@@ -241,7 +241,7 @@ defmodule FleetMint.Transit do
 
   defp validate_seat_against_map(changeset) do
     import Ecto.Changeset, only: [get_field: 2, get_change: 2, add_error: 3]
-    alias FleetMint.Fleet.BusProfile
+    alias FleetMint.Transport.Fleet.BusProfile
 
     with seat when not is_nil(seat) <- get_change(changeset, :seat_number),
          schedule_id when not is_nil(schedule_id) <- get_field(changeset, :schedule_id),
