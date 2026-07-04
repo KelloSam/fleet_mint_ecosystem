@@ -1,7 +1,7 @@
 # FleetMint Ecosystem — Project Documentation
 
 **Date:** 2026-06-11
-**Last updated:** 2026-07-04 — schema hardening pass, see "Schema Hardening" section below
+**Last updated:** 2026-07-04 — platform reorganization (domain-driven module structure) and Guardian secret fix, see "Platform Reorganization" section below
 **Framework:** Elixir / Phoenix 1.7.14
 **Database:** PostgreSQL (port 5433)
 **Running at:** `http://localhost:4004`
@@ -66,18 +66,23 @@ Fleet_Mint_Ecosystem/
 ├── config/
 │   └── dev.exs                  # Port 4004, DB config
 ├── lib/
-│   ├── fleet_mint/              # Business logic (contexts)
-│   │   ├── accounts/            # User accounts, auth
-│   │   ├── auth/                # Guardian JWT
-│   │   ├── fleet/               # Vehicles, buses, routes, maintenance, fuel
-│   │   ├── operations/          # Drivers, operation logs
-│   │   ├── transit/             # Schedules, bookings, tickets, trips
-│   │   ├── finance/             # Cashing reports, expenditures, reports
-│   │   ├── freight/             # Freight clients, orders, trips, invoices
-│   │   ├── payments/            # Transaction ledger
-│   │   ├── ticketing/           # QR ticket validation
-│   │   └── reports/             # PDF generation
-│   └── fleet_mint_web/          # Web layer (controllers, templates)
+│   ├── fleet_mint/              # Business logic (contexts), organized by domain
+│   │   ├── identity/             # User accounts + Guardian JWT auth
+│   │   ├── transport/
+│   │   │   ├── fleet/            # Vehicles, buses, routes, operators, maintenance, fuel
+│   │   │   ├── trips/             # Schedules, minibus trips
+│   │   │   ├── ticketing/         # Bookings, QR tickets
+│   │   │   └── boarding.ex        # Ticket validation, GPS checkpoints, tracking
+│   │   ├── cargo/                 # Freight clients, orders, trips, invoices
+│   │   ├── finance/               # Cashing reports, expenditures, weekly reports
+│   │   ├── hr/                    # Drivers
+│   │   ├── administration/        # Operation logs, audit logs, complaints/feedback
+│   │   ├── reporting/             # PDF generation
+│   │   ├── notifications.ex
+│   │   ├── pagination.ex
+│   │   ├── payments.ex + payments/     # DEAD CODE — zero callers anywhere, kept in place
+│   │   └── ticketing.ex + ticketing/   # DEAD CODE — zero callers anywhere, kept in place
+│   └── fleet_mint_web/          # Web layer (controllers, templates) — unchanged file layout
 │       ├── components/
 │       │   └── layouts/
 │       │       ├── app.html.heex      # Dark sidebar layout
@@ -89,101 +94,111 @@ Fleet_Mint_Ecosystem/
         └── migrations/          # 38 migration files
 ```
 
+> The two "DEAD CODE" entries above are confirmed unused — zero callers anywhere in the app, and `Payments.Transaction` references a `ticket_id` column that was never migrated onto `transactions`. They're deliberately kept at their original top-level paths (not moved into a domain namespace) so the new module names don't inherit broken, unexercised code. Candidates for deletion in a future pass. See "Platform Reorganization" below.
+
 ---
 
-## Database Tables (25 total)
+## Database Tables (28 total)
 
 | Table | Context | Purpose |
 |---|---|---|
-| `users` | Accounts | Staff accounts with roles |
-| `buses` | Fleet | Bus registry |
-| `routes` | Fleet | Passenger routes with fares and stops |
-| `vehicles` | Fleet | Unified fleet — buses + trucks |
-| `bus_profiles` | Fleet | Extra detail for bus-type vehicles |
-| `truck_profiles` | Fleet | Extra detail for truck-type vehicles |
-| `operators` | Fleet | Bus companies / transport operators |
-| `drivers` | Operations | Driver profiles with license and pay info |
-| `operation_logs` | Operations | Daily diary of fleet events |
-| `schedules` | Transit | Timetabled departures (route + bus + time) |
-| `bookings` | Transit | Passenger bookings per schedule |
-| `tickets` | Transit / Ticketing | QR-code tickets per booking |
-| `bus_checkpoints` | Transit | Live location updates from conductors |
-| `minibus_trips` | Transit | Daily trip log per bus run |
+| `users` | Identity | Staff accounts with roles |
+| `buses` | Transport.Fleet | Bus registry (separate from `vehicles`, bridged via `vehicle_id`) |
+| `routes` | Transport.Fleet | Passenger routes with fares and stops |
+| `vehicles` | Transport.Fleet | Unified fleet — buses + trucks |
+| `bus_profiles` | Transport.Fleet | Extra detail for bus-type vehicles |
+| `truck_profiles` | Transport.Fleet | Extra detail for truck-type vehicles |
+| `operators` | Transport.Fleet | Bus companies / transport operator brands |
+| `operator_routes` | Transport.Fleet | Join table linking operators to routes |
+| `drivers` | HR | Driver profiles with license and pay info |
+| `operation_logs` | Administration | Daily diary of fleet events |
+| `audit_logs` | Administration | System audit trail (logins, 2FA, security events) |
+| `complaints` | Administration | Passenger complaints and suggestions |
+| `schedules` | Transport.Trips | Timetabled departures (route + vehicle + time) |
+| `minibus_trips` | Transport.Trips | Daily trip log per bus run |
+| `bookings` | Transport.Ticketing | Passenger bookings per schedule |
+| `tickets` | Transport.Ticketing | QR-code tickets per booking |
+| `bus_checkpoints` | Transport.Boarding | Live location updates from conductors |
 | `cashing_reports` | Finance | End-of-shift cash summaries |
 | `expenditures` | Finance | Operating expense records |
-| `transactions` | Payments | Financial transaction ledger |
 | `weekly_reports` | Finance | Weekly revenue summaries |
-| `vehicle_maintenances` | Fleet | Service and repair records |
-| `fuel_logs` | Fleet | Fuel fill records |
-| `freight_clients` | Freight | Haulage clients / companies |
-| `freight_orders` | Freight | Delivery orders |
-| `freight_trips` | Freight | Truck trip execution |
-| `trip_milestones` | Freight | Waypoints within a freight trip |
-| `freight_invoices` | Freight | Client invoices for freight work |
+| `transactions` | *(dead code — Payments)* | Unused; `Payments` context has zero callers anywhere |
+| `vehicle_maintenances` | Transport.Fleet | Service and repair records |
+| `fuel_logs` | Transport.Fleet | Fuel fill records |
+| `freight_clients` | Cargo | Haulage clients / companies |
+| `freight_orders` | Cargo | Delivery orders |
+| `freight_trips` | Cargo | Truck trip execution |
+| `trip_milestones` | Cargo | Waypoints within a freight trip |
+| `freight_invoices` | Cargo | Client invoices for freight work |
 
 ---
 
 ## Contexts (Business Logic)
 
-### `FleetMint.Accounts`
-Manages staff user accounts.
-- Register, login, logout
+Reorganized 2026-07-04 from a flat list of ~12 contexts into a domain-driven hierarchy — see "Platform Reorganization" below for why and how.
+
+### `FleetMint.Identity`
+Manages staff user accounts and authentication.
+- Register, login, logout; account lockout after repeated failed attempts
+- Password reset (hashed, expiring tokens) and TOTP two-factor auth
 - Track who is on duty today (`list_on_duty_staff/0`)
-- User roles: `admin`, `cashier`, `driver`, `manager`
+- User roles: `admin`, `manager`, `cashier`, `operator`
+- **`FleetMint.Identity.Guardian`** — JWT token generation/verification, used by `AuthPlug` to protect routes. Its signing secret is read from `GUARDIAN_SECRET_KEY` in production (fixed 2026-07-04 — previously hardcoded across all environments).
 
-### `FleetMint.Auth`
-Guardian JWT authentication.
-- Generates and verifies tokens
-- Used by `AuthPlug` to protect routes
-
-### `FleetMint.Fleet`
+### `FleetMint.Transport.Fleet`
 Everything related to the physical fleet.
-- **Buses** — CRUD, count
-- **Routes** — CRUD, count, stops
-- **Vehicles** — unified fleet (buses + trucks), active count
-- **Operators** — bus companies
+- **Bus** — CRUD, count (separate table from `vehicles`, bridged via `vehicle_id`, not yet wired into any form)
+- **Vehicle** — unified fleet (buses + trucks), active count
+- **Route** — CRUD, count, stops
+- **Operator** — bus company / route branding shown on the public booking portal
 - **VehicleMaintenance** — service records, count pending
 - **FuelLog** — fill records, total cost per vehicle, fuel cost today
 
-### `FleetMint.Operations`
-Driver and operational management.
-- **Driver** — CRUD, list active, count, list expiring licenses
-- **OperationLog** — CRUD, list by date, list recent
-
-### `FleetMint.Transit`
-Passenger transport operations.
-- **Schedule** — CRUD, checkpoints
-- **Booking** — CRUD, count today, revenue today
-- **Ticket** — QR code generation and validation
-- **BusCheckpoint** — live tracking updates
+### `FleetMint.Transport.Trips`
+Schedules and minibus trip logs.
+- **Schedule** — CRUD, seat inventory (`decrement_available_seat/1`, `increment_available_seat/1` — called by `Transport.Ticketing`)
 - **MinibusTrip** — daily trip log, count today, revenue today
 
-### `FleetMint.Finance`
-Financial records.
-- **CashingReport** — shift-end cash summaries
-- **Expenditure** — expense entries
-- **Report** (weekly) — management summaries
-- Stats: recent reports, recent transactions, expenditure count
+### `FleetMint.Transport.Ticketing`
+Passenger bookings and QR ticket issuance.
+- **Booking** — CRUD, count today, revenue today; creating a booking automatically issues a ticket and decrements the schedule's seat count via `Transport.Trips`
+- **Ticket** — QR payload/SVG generation, HMAC validation token
 
-### `FleetMint.Freight`
-Haulage and logistics.
+### `FleetMint.Transport.Boarding`
+Ticket validation and live location tracking.
+- `validate_ticket/2` — boards a ticket (or rejects: already boarded / expired / cancelled)
+- **BusCheckpoint** — GPS location updates posted by on-duty staff
+- `track_by_booking_reference/1` — powers the public `/track` page
+
+### `FleetMint.Cargo`
+Haulage and logistics (renamed from `Freight`).
 - **Client** — freight customers
 - **Order** — delivery jobs
 - **Trip** — execution of orders, milestone tracking, status updates
 - **Invoice** — billing for completed work
 
-### `FleetMint.Payments`
-Transaction ledger for financial records.
+### `FleetMint.Finance`
+Financial records.
+- **CashingReport** — shift-end cash summaries
+- **Expenditure** — expense entries
+- **Report** (weekly) — management summaries; also owns all Report CRUD directly now (a duplicate `FleetMint.Reports` wrapper context was deleted 2026-07-04)
+- Stats: recent reports, recent transactions, expenditure count
 
-### `FleetMint.Ticketing`
-QR ticket management and validation.
+### `FleetMint.HR`
+Driver personnel records.
+- **Driver** — CRUD, list active, count, list expiring licenses
 
-### `FleetMint.Reports`
-PDF generation for:
-- Daily summary reports
-- Weekly reports
-- Booking receipts
-- Expenditure reports
+### `FleetMint.Administration`
+Staff-facing oversight and record-keeping (folds together three formerly separate contexts — `Operations.OperationLog`, `AuditLogs`, and `Feedback`).
+- **OperationLog** — daily diary of fleet events, categorized (general/incident/maintenance/finance/staff/passenger)
+- **AuditLog** — system audit trail (login attempts, 2FA events, lockouts); write with `log/2`, read with `list_recent_audit_logs/1` and `count_audit_logs_today/0`
+- **Complaint** — passenger complaints and suggestions submitted via the public feedback form; `count_pending_complaints/0`
+
+### `FleetMint.Reporting`
+- **PdfGenerator** — renders daily summaries, weekly reports, booking receipts, and expenditure reports as PDFs via ChromicPDF
+
+### `FleetMint.Payments` and `FleetMint.Ticketing` (top-level) — dead code, not part of the domain hierarchy
+Both confirmed to have **zero callers anywhere in the app** as of 2026-07-04. `Payments.Transaction` declares a `belongs_to :ticket` needing a `ticket_id` column that no migration ever added to `transactions` — this code has never run end-to-end. `Ticketing.Ticket` (distinct from the real, active `Transport.Ticketing.Ticket`) declares columns that don't exist on the real `tickets` table. Left in place at their original paths rather than folded into `Finance`/`Transport.Ticketing`, so the new domain names don't inherit broken code. Candidates for deletion in a future pass.
 
 ---
 
@@ -474,13 +489,13 @@ Full haulage workflow:
 ## Authentication Flow
 
 1. User visits `/login`, enters credentials
-2. Guardian generates a JWT token stored in the session
+2. `FleetMint.Identity.Guardian` generates a JWT token stored in the session
 3. `AuthPlug` checks the token on every protected request
 4. If valid — request proceeds, `current_user` is set in assigns
 5. If invalid or missing — redirected to `/login`
 6. `DELETE /logout` clears the session
 
-User roles (`admin`, `cashier`, `driver`, `manager`) are stored on the user record. Role-based access control can be added per route or controller action using `current_user.role`.
+User roles (`admin`, `manager`, `cashier`, `operator`) are stored on the user record. Route-level role restriction already exists via the `require_manager` and `require_admin` pipelines in `router.ex`.
 
 ---
 
@@ -518,6 +533,8 @@ cd /home/think/Fleet_Mint_Ecosystem && mix phx.server
 
 A growth/scalability audit of the schema (29 tables at the time) found 7 issues, ranked by priority. Six are now fixed across 5 migrations; the 7th is deliberately deferred. No data migration was needed — every table was empty when these ran.
 
+> Module names below (`FleetMint.Fleet`, `FleetMint.Operations`, `FleetMint.Accounts`) reflect what they were called at the time this work happened. A platform reorganization later the same day renamed them to `FleetMint.Transport.Fleet`, `FleetMint.HR`, and `FleetMint.Identity` respectively — see "Platform Reorganization" below.
+
 **Migrations added:**
 
 | File | What it does |
@@ -546,6 +563,50 @@ A growth/scalability audit of the schema (29 tables at the time) found 7 issues,
 **6. Added GIN indexes** on `routes.stops`, `schedules.days_of_week`, `bus_profiles.amenities`/`seat_labels`, and `truck_profiles.allowed_cargo_types` so array-containment queries can use an index once they're written.
 
 **7. Partitioning — deferred on purpose.** `audit_logs`, `transactions`, `bookings`, `fuel_logs`, and `trip_milestones` are the append-heavy tables here, currently unpartitioned. Not fixed because, unlike the other six, it isn't additive: Postgres requires the partition key inside the primary key, which would force a composite key on `bookings`/`transactions` and cascade into every table referencing them (e.g. `tickets.booking_id`). Revisit once there's a real growth curve to pick the partitioning key against — almost certainly month, on `inserted_at`/`travel_date`.
+
+---
+
+## Platform Reorganization — 2026-07-04
+
+The business-logic layer (`lib/fleet_mint/**`) was restructured from a flat list of ~12 top-level contexts into a domain-driven hierarchy, so module names speak the transport business's own vocabulary instead of generic CRUD naming, and so the app can keep adding features without every new concept landing in an already-crowded file:
+
+```
+FleetMint (Platform)
+├── Identity
+├── Transport
+│     ├── Fleet
+│     ├── Trips
+│     ├── Ticketing
+│     └── Boarding
+├── Finance
+├── HR
+├── Cargo
+├── Reporting
+├── Notifications
+└── Administration
+```
+
+This was a code-organization change only — **router paths, controller file names, and the database schema are all unchanged.** Only `alias` lines, cross-context schema associations, and Guardian's config keys moved. Done in 6 phased commits, each compiled clean and manually smoke-tested (route walk + direct context calls against the dev DB) before the next:
+
+1. **`Accounts` → `Identity`** (+ `Auth.Guardian` → `Identity.Guardian`; all 4 config files' Guardian secret key updated in the same phase, so the fix below didn't silently stop applying)
+2. **`Freight` → `Cargo`** — a clean, self-contained rename (4 controllers, 5 schemas)
+3. **`Fleet` → `Transport.Fleet`** — `Operator` and `Route` stayed bundled in rather than split into their own contexts; neither has complexity driving a split yet
+4. **`Transit` split into three** — the biggest phase. The old `Transit` context (310 lines) bundled schedules, minibus trips, bookings, tickets, and GPS checkpoints into one module. Split into:
+   - **`Transport.Trips`** — Schedule + MinibusTrip CRUD, plus `decrement_available_seat/1`/`increment_available_seat/1` (promoted from private helpers so Ticketing can call them)
+   - **`Transport.Ticketing`** — Booking + Ticket CRUD, QR/token generation; calls `Trips` for seat inventory on create/cancel
+   - **`Transport.Boarding`** — ticket validation/boarding (moved out of a "Tickets" section it didn't really belong to), GPS checkpoints, reference tracking
+
+   Dependency direction is Boarding → Ticketing → Trips, no cycles.
+5. **`Operations` split into `HR` (Driver) and `Administration`** — `Administration` also absorbed `AuditLogs` (→ `Administration.AuditLog`) and `Feedback` (→ `Administration.Complaint`), since all three are staff-facing oversight/record-keeping concerns rather than distinct business domains. A few functions were renamed to avoid ambiguity now that they share a context: `AuditLogs.list_recent/1` → `list_recent_audit_logs/1`, `count_today/0` → `count_audit_logs_today/0`, `Feedback.count_pending/0` → `count_pending_complaints/0`.
+6. **Deleted `FleetMint.Reports`**, a byte-for-byte duplicate of Report CRUD already living in `FleetMint.Finance` on the same `Finance.Report` schema (a pre-existing mismatch — a context named `Reports` operating on `Finance`'s schema). Repointed its one real caller (`report_controller.ex`) straight to `Finance`, and moved the one genuinely distinct piece, `PdfGenerator`, into `FleetMint.Reporting`.
+
+**Two pre-existing bugs found and fixed while verifying the split (unrelated to the rename itself — same bugs existed in the original code, just newly exercised by smoke-testing):**
+- `Ticket.board_changeset` stored an untruncated `NaiveDateTime` (`boarded_at`), which crashed on boarding with `Ecto.Type` microsecond errors.
+- `complaint_html/new.html.heex` called `hd(@changeset.errors[:field])`, but `changeset.errors[:field]` already returns a single `{msg, opts}` tuple, not a list — `hd/1` crashed with `ArgumentError` on any blank feedback form, meaning the public `/feedback/new` page was broken before this fix.
+
+**`FleetMint.Payments` and `FleetMint.Ticketing` (top-level) were deliberately left untouched** rather than folded into the new `Finance`/`Transport.Ticketing` namespaces. Both are confirmed dead code — see the Contexts section above — and moving broken, unexercised code under a legitimate-looking new name would be misleading. They're annotated with `DEAD CODE:` moduledocs and are candidates for deletion in a future pass.
+
+**Verification:** `mix compile` clean at every phase; the full test suite's 39 pre-existing failures (traced to fixture data violating CHECK constraints from the Schema Hardening migrations above — unrelated to this reorg) are the exact same set before and after, by test name, regardless of run order; every route in `router.ex` returns the correct status code with zero server errors.
 
 ---
 
