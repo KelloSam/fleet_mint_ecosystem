@@ -21,7 +21,7 @@ defmodule FleetMint.Freight.Order do
 
     belongs_to :client, FleetMint.Freight.Client
     belongs_to :assigned_trip, FleetMint.Freight.Trip
-    belongs_to :created_by, FleetMint.Accounts.User
+    belongs_to :created_by, FleetMint.Identity.User
 
     timestamps()
   end

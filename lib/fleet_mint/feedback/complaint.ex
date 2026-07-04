@@ -14,7 +14,7 @@ defmodule FleetMint.Feedback.Complaint do
     field :status, :string, default: "pending"
     field :resolution_notes, :string
 
-    belongs_to :reviewed_by, FleetMint.Accounts.User
+    belongs_to :reviewed_by, FleetMint.Identity.User
 
     timestamps()
   end

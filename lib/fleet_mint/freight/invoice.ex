@@ -18,7 +18,7 @@ defmodule FleetMint.Freight.Invoice do
 
     belongs_to :client, FleetMint.Freight.Client
     belongs_to :trip, FleetMint.Freight.Trip
-    belongs_to :created_by, FleetMint.Accounts.User
+    belongs_to :created_by, FleetMint.Identity.User
 
     timestamps()
   end

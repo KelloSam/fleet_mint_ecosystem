@@ -69,7 +69,7 @@ if config_env() == :prod do
       Generate one with: mix phx.gen.secret
       """
 
-  config :fleet_mint, FleetMint.Auth.Guardian, secret_key: guardian_secret_key
+  config :fleet_mint, FleetMint.Identity.Guardian, secret_key: guardian_secret_key
 
   if vat = System.get_env("VAT_RATE") do
     config :fleet_mint, :vat_rate, vat

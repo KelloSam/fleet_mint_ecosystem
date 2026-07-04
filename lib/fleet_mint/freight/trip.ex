@@ -22,7 +22,7 @@ defmodule FleetMint.Freight.Trip do
     belongs_to :vehicle, FleetMint.Fleet.Vehicle
     belongs_to :driver, FleetMint.Operations.Driver
     belongs_to :co_driver, FleetMint.Operations.Driver
-    belongs_to :created_by, FleetMint.Accounts.User
+    belongs_to :created_by, FleetMint.Identity.User
 
     has_many :orders, FleetMint.Freight.Order, foreign_key: :assigned_trip_id
     has_many :milestones, FleetMint.Freight.TripMilestone

@@ -8,7 +8,7 @@ defmodule FleetMint.Operations.OperationLog do
     field :description, :string
     field :category, :string, default: "general"
 
-    belongs_to :logged_by, FleetMint.Accounts.User
+    belongs_to :logged_by, FleetMint.Identity.User
 
     timestamps()
   end

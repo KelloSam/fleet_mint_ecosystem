@@ -14,7 +14,7 @@ defmodule FleetMint.Fleet.FuelLog do
 
     belongs_to :vehicle, FleetMint.Fleet.Vehicle
     belongs_to :driver, FleetMint.Operations.Driver, foreign_key: :driver_id
-    belongs_to :recorded_by, FleetMint.Accounts.User, foreign_key: :recorded_by_id
+    belongs_to :recorded_by, FleetMint.Identity.User, foreign_key: :recorded_by_id
 
     timestamps()
   end

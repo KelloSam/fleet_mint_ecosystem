@@ -2,7 +2,7 @@ defmodule FleetMintWeb.BookingController do
   use FleetMintWeb, :controller
   alias FleetMint.Transit
   alias FleetMint.Transit.Booking
-  alias FleetMint.Accounts
+  alias FleetMint.Identity
 
   def index(conn, params) do
     page = FleetMint.Pagination.parse_page(params)
@@ -23,7 +23,7 @@ defmodule FleetMintWeb.BookingController do
   def new(conn, params) do
     changeset = Transit.change_booking(%Booking{travel_date: Date.utc_today()})
     schedules = Transit.list_schedules(status: "active")
-    staff = Accounts.list_staff_with_phone()
+    staff = Identity.list_staff_with_phone()
     render(conn, :new, changeset: changeset, schedules: schedules,
                        prefill_schedule: params["schedule_id"], staff: staff)
   end
@@ -38,7 +38,7 @@ defmodule FleetMintWeb.BookingController do
 
       {:error, %Ecto.Changeset{} = changeset} ->
         schedules = Transit.list_schedules(status: "active")
-        staff = Accounts.list_staff_with_phone()
+        staff = Identity.list_staff_with_phone()
         render(conn, :new, changeset: changeset, schedules: schedules,
                            prefill_schedule: nil, staff: staff)
     end
@@ -53,7 +53,7 @@ defmodule FleetMintWeb.BookingController do
     booking = Transit.get_booking!(id)
     changeset = Transit.change_booking(booking)
     schedules = Transit.list_schedules(status: "active")
-    staff = Accounts.list_staff_with_phone()
+    staff = Identity.list_staff_with_phone()
     render(conn, :edit, booking: booking, changeset: changeset,
                         schedules: schedules, staff: staff)
   end
@@ -65,7 +65,7 @@ defmodule FleetMintWeb.BookingController do
         conn |> put_flash(:info, "Booking updated.") |> redirect(to: ~p"/bookings/#{booking}")
       {:error, changeset} ->
         schedules = Transit.list_schedules(status: "active")
-        staff = Accounts.list_staff_with_phone()
+        staff = Identity.list_staff_with_phone()
         render(conn, :edit, booking: booking, changeset: changeset,
                             schedules: schedules, staff: staff)
     end

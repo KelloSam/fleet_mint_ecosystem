@@ -13,7 +13,7 @@ defmodule FleetMint.Operations.Driver do
     field :notes, :string
     field :archived_at, :naive_datetime
 
-    belongs_to :user, FleetMint.Accounts.User
+    belongs_to :user, FleetMint.Identity.User
 
     timestamps()
   end

@@ -3,7 +3,7 @@ defmodule FleetMintWeb.PageController do
 
   alias FleetMint.Finance
   alias FleetMint.Fleet
-  alias FleetMint.Accounts
+  alias FleetMint.Identity
   alias FleetMint.Transit
 
   def home(conn, _params) do
@@ -23,7 +23,7 @@ defmodule FleetMintWeb.PageController do
     total_routes = Fleet.count_routes()
     total_vehicles = Fleet.count_vehicles()
     total_expenditures = Finance.count_expenditures()
-    on_duty = Accounts.list_on_duty_staff()
+    on_duty = Identity.list_on_duty_staff()
     bookings_today = Transit.count_bookings_today()
     revenue_today = Transit.revenue_today()
     trips_today = Transit.count_minibus_trips_today()

@@ -1,4 +1,4 @@
-defmodule FleetMint.Accounts.User do
+defmodule FleetMint.Identity.User do
   use Ecto.Schema
   import Ecto.Changeset
 

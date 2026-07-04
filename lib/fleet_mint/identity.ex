@@ -1,7 +1,7 @@
-defmodule FleetMint.Accounts do
+defmodule FleetMint.Identity do
   @moduledoc """
-  The Accounts context.
-  
+  The Identity context.
+
   This context handles operations related to user management, authentication,
   and authorization. It provides functions to create, read, update, and delete users,
   as well as specialized functions for authentication and security.
@@ -9,7 +9,7 @@ defmodule FleetMint.Accounts do
   
   import Ecto.Query, warn: false
   alias FleetMint.Repo
-  alias FleetMint.Accounts.User
+  alias FleetMint.Identity.User
   
   @doc """
   Returns the list of users.

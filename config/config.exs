@@ -61,7 +61,7 @@ config :phoenix, :json_library, Jason
 # Configure Guardian for authentication.
 # secret_key is intentionally NOT set here — it differs per environment
 # and, for prod, is required from an env var in runtime.exs.
-config :fleet_mint, FleetMint.Auth.Guardian,
+config :fleet_mint, FleetMint.Identity.Guardian,
   issuer: "fleet_mint"
 
 # Import environment-specific config. This must remain at the bottom

@@ -3,7 +3,7 @@ defmodule FleetMintWeb.Plugs.AuthPlug do
   import Phoenix.Controller
   use FleetMintWeb, :verified_routes
 
-  alias FleetMint.Auth.Guardian
+  alias FleetMint.Identity.Guardian
 
   def init(opts), do: opts
 

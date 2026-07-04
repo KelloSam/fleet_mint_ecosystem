@@ -14,7 +14,7 @@ defmodule FleetMint.Fleet.VehicleMaintenance do
     field :status, :string, default: "completed"
 
     belongs_to :vehicle, FleetMint.Fleet.Vehicle
-    belongs_to :recorded_by, FleetMint.Accounts.User, foreign_key: :recorded_by_id
+    belongs_to :recorded_by, FleetMint.Identity.User, foreign_key: :recorded_by_id
 
     timestamps()
   end

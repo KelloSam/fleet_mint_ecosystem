@@ -31,7 +31,7 @@ config :fleet_mint, FleetMintWeb.Endpoint,
   ]
 
 # Guardian secret_key for dev only — never reused in prod.
-config :fleet_mint, FleetMint.Auth.Guardian,
+config :fleet_mint, FleetMint.Identity.Guardian,
   secret_key: "Pok4A6jLxG+B+BrFh4kFrSccAQZXOKlaAgCILyoFYhW/4uW2dVJMpous0fsKHwzj"
 
 # ## SSL Support

@@ -2,7 +2,7 @@ defmodule FleetMint.Payments.Transaction do
   use Ecto.Schema
   import Ecto.Changeset
   alias FleetMint.Ticketing.Ticket
-  alias FleetMint.Accounts.User
+  alias FleetMint.Identity.User
 
   @valid_payment_methods ["cash", "card", "mobile_money"]
   @valid_statuses ["success", "failed", "pending"]

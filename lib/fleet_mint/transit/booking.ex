@@ -19,7 +19,7 @@ defmodule FleetMint.Transit.Booking do
     field :luggage_description, :string
 
     belongs_to :schedule, FleetMint.Transit.Schedule
-    belongs_to :booked_by, FleetMint.Accounts.User
+    belongs_to :booked_by, FleetMint.Identity.User
     has_one :ticket, FleetMint.Transit.Ticket
 
     timestamps()

@@ -8,7 +8,7 @@ defmodule FleetMint.Transit.BusCheckpoint do
     field :travel_date, :date
 
     belongs_to :schedule, FleetMint.Transit.Schedule
-    belongs_to :reported_by, FleetMint.Accounts.User
+    belongs_to :reported_by, FleetMint.Identity.User
 
     timestamps(updated_at: false)
   end

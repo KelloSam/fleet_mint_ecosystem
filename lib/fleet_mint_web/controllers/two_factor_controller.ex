@@ -1,8 +1,8 @@
 defmodule FleetMintWeb.TwoFactorController do
   use FleetMintWeb, :controller
 
-  alias FleetMint.Accounts
-  alias FleetMint.Auth.Guardian
+  alias FleetMint.Identity
+  alias FleetMint.Identity.Guardian
   alias FleetMint.AuditLogs
 
   # ── 2FA verify step (after password, before full session) ──────────────────
@@ -19,8 +19,8 @@ defmodule FleetMintWeb.TwoFactorController do
     user_id = get_session(conn, :pending_2fa_user_id)
 
     with true <- not is_nil(user_id),
-         user = Accounts.get_user!(user_id),
-         true <- Accounts.valid_totp?(user, code) do
+         user = Identity.get_user!(user_id),
+         true <- Identity.valid_totp?(user, code) do
       {:ok, _user, token} = Guardian.create_token(user)
 
       AuditLogs.log("2fa_success",
@@ -48,9 +48,9 @@ defmodule FleetMintWeb.TwoFactorController do
   # ── 2FA settings (admin/manager only) ──────────────────────────────────────
 
   def setup(conn, _params) do
-    user = Accounts.get_user!(conn.assigns.current_user.id)
-    secret = Accounts.generate_totp_secret()
-    uri = Accounts.totp_uri(user, secret)
+    user = Identity.get_user!(conn.assigns.current_user.id)
+    secret = Identity.generate_totp_secret()
+    uri = Identity.totp_uri(user, secret)
     qr_svg = uri |> EQRCode.encode() |> EQRCode.svg(width: 220)
     manual_key = Base.encode32(secret, padding: false)
 
@@ -60,13 +60,13 @@ defmodule FleetMintWeb.TwoFactorController do
   end
 
   def enable(conn, %{"totp" => %{"code" => code}}) do
-    user = Accounts.get_user!(conn.assigns.current_user.id)
+    user = Identity.get_user!(conn.assigns.current_user.id)
     encoded_secret = get_session(conn, :pending_totp_secret)
 
     with true <- is_binary(encoded_secret),
          secret = Base.decode64!(encoded_secret),
-         true <- Accounts.valid_totp_for_secret?(secret, code),
-         {:ok, _} <- Accounts.enable_totp(user, secret) do
+         true <- Identity.valid_totp_for_secret?(secret, code),
+         {:ok, _} <- Identity.enable_totp(user, secret) do
       AuditLogs.log("2fa_enabled",
         actor_id: user.id,
         actor_email: user.email,
@@ -86,8 +86,8 @@ defmodule FleetMintWeb.TwoFactorController do
   end
 
   def disable(conn, _params) do
-    user = Accounts.get_user!(conn.assigns.current_user.id)
-    Accounts.disable_totp(user)
+    user = Identity.get_user!(conn.assigns.current_user.id)
+    Identity.disable_totp(user)
 
     AuditLogs.log("2fa_disabled",
       actor_id: user.id,
