@@ -30,6 +30,10 @@ config :fleet_mint, FleetMintWeb.Endpoint,
     tailwind: {Tailwind, :install_and_run, [:fleet_mint, ~w(--watch)]}
   ]
 
+# Guardian secret_key for dev only — never reused in prod.
+config :fleet_mint, FleetMint.Auth.Guardian,
+  secret_key: "Pok4A6jLxG+B+BrFh4kFrSccAQZXOKlaAgCILyoFYhW/4uW2dVJMpous0fsKHwzj"
+
 # ## SSL Support
 #
 # In order to use HTTPS in development, a self-signed

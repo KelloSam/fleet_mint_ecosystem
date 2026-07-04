@@ -58,10 +58,11 @@ config :logger, :console,
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 
-# Configure Guardian for authentication
+# Configure Guardian for authentication.
+# secret_key is intentionally NOT set here — it differs per environment
+# and, for prod, is required from an env var in runtime.exs.
 config :fleet_mint, FleetMint.Auth.Guardian,
-  issuer: "fleet_mint",
-  secret_key: "nHDcHCXpAZE/t4RKMB11xSapxxBBd6l0Zng1Xnk3LsC9VCIYoNUKfouY9Eo6cG51"
+  issuer: "fleet_mint"
 
 # Import environment-specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

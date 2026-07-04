@@ -38,3 +38,7 @@ config :phoenix_live_view,
   enable_expensive_runtime_checks: true
 
 config :fleet_mint, :qr_secret, "test_only_qr_secret"
+
+# Guardian secret_key for test only — never reused in prod.
+config :fleet_mint, FleetMint.Auth.Guardian,
+  secret_key: "QTi6LzDp6Ehl7HOVrTfie9C4M4UXb2BL29R48aK/ZS4CKcUxPyaNDBYyD2lPnzU0"

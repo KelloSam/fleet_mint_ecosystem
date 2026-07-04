@@ -62,6 +62,15 @@ if config_env() == :prod do
 
   config :fleet_mint, :qr_secret, qr_secret
 
+  guardian_secret_key =
+    System.get_env("GUARDIAN_SECRET_KEY") ||
+      raise """
+      environment variable GUARDIAN_SECRET_KEY is missing.
+      Generate one with: mix phx.gen.secret
+      """
+
+  config :fleet_mint, FleetMint.Auth.Guardian, secret_key: guardian_secret_key
+
   if vat = System.get_env("VAT_RATE") do
     config :fleet_mint, :vat_rate, vat
   end
