@@ -1,6 +1,7 @@
 defmodule FleetMint.Cargo do
   import Ecto.Query
   alias FleetMint.Repo
+  alias FleetMint.Accounting
   alias FleetMint.Cargo.{Client, Order, Trip, TripMilestone, Invoice}
 
   # ── Clients ───────────────────────────────────────────────────────────────
@@ -75,11 +76,27 @@ defmodule FleetMint.Cargo do
 
   def create_trip(attrs, user_id \\ nil) do
     attrs = if user_id, do: Map.put(attrs, "created_by_id", user_id), else: attrs
-    %Trip{} |> Trip.changeset(attrs) |> Repo.insert()
+    changeset = Trip.changeset(%Trip{}, attrs)
+
+    Ecto.Multi.new()
+    |> Ecto.Multi.insert(:trip, changeset)
+    |> Ecto.Multi.run(:expense_entry, fn _repo, %{trip: trip} ->
+      maybe_record_trip_expense(trip)
+    end)
+    |> Repo.transaction()
+    |> unwrap_multi(:trip)
   end
 
   def update_trip(%Trip{} = trip, attrs) do
-    trip |> Trip.changeset(attrs) |> Repo.update()
+    changeset = Trip.changeset(trip, attrs)
+
+    Ecto.Multi.new()
+    |> Ecto.Multi.update(:trip, changeset)
+    |> Ecto.Multi.run(:expense_entry, fn _repo, %{trip: updated} ->
+      sync_trip_expense(updated)
+    end)
+    |> Repo.transaction()
+    |> unwrap_multi(:trip)
   end
 
   def update_trip_status(%Trip{} = trip, status) do
@@ -130,14 +147,30 @@ defmodule FleetMint.Cargo do
     %Invoice{} |> Invoice.changeset(attrs) |> Repo.insert()
   end
 
+  @doc """
+  Updates an invoice. No cash has moved unless this update transitions
+  `status` into `"paid"` — in that case, and only the first time, a matching
+  revenue ledger entry is written for `total_amount`.
+  """
   def update_invoice(%Invoice{} = invoice, attrs) do
-    invoice |> Invoice.changeset(attrs) |> Repo.update()
+    was_paid = invoice.status == "paid"
+    changeset = Invoice.changeset(invoice, attrs)
+
+    Ecto.Multi.new()
+    |> Ecto.Multi.update(:invoice, changeset)
+    |> Ecto.Multi.run(:ledger_entry, fn _repo, %{invoice: updated} ->
+      maybe_record_invoice_payment(was_paid, updated)
+    end)
+    |> Repo.transaction()
+    |> unwrap_multi(:invoice)
   end
 
   def mark_invoice_paid(%Invoice{} = invoice, payment_ref) do
-    invoice
-    |> Invoice.changeset(%{status: "paid", payment_date: Date.utc_today(), payment_reference: payment_ref})
-    |> Repo.update()
+    update_invoice(invoice, %{
+      status: "paid",
+      payment_date: Date.utc_today(),
+      payment_reference: payment_ref
+    })
   end
 
   def change_invoice(%Invoice{} = invoice, attrs \\ %{}), do: Invoice.changeset(invoice, attrs)
@@ -158,4 +191,62 @@ defmodule FleetMint.Cargo do
 
   defp maybe_filter_client(query, nil), do: query
   defp maybe_filter_client(query, id), do: where(query, [x], x.client_id == ^id)
+
+  # ── Private ledger helpers ─────────────────────────────────────────────────
+
+  defp maybe_record_invoice_payment(was_paid, %Invoice{status: "paid"} = invoice) when not was_paid do
+    case Accounting.entries_for_source("Invoice", invoice.id, "revenue") do
+      [] ->
+        Accounting.record_entry(%{
+          entry_type: "revenue",
+          source_type: "Invoice",
+          source_id: invoice.id,
+          amount: invoice.total_amount,
+          reference_number: invoice.payment_reference,
+          occurred_at: DateTime.new!(invoice.payment_date || Date.utc_today(), ~T[00:00:00]),
+          description: "Payment for invoice #{invoice.invoice_number}"
+        })
+
+      [_already_recorded] ->
+        {:ok, nil}
+    end
+  end
+
+  defp maybe_record_invoice_payment(_was_paid, _invoice), do: {:ok, nil}
+
+  defp maybe_record_trip_expense(trip) do
+    total = Trip.total_expenses(trip)
+
+    if Decimal.compare(total, Decimal.new(0)) == :gt do
+      Accounting.record_entry(%{
+        entry_type: "expense",
+        source_type: "FreightTrip",
+        source_id: trip.id,
+        amount: total,
+        description: "Toll and other operating expenses for trip #{trip.trip_reference}"
+      })
+    else
+      {:ok, nil}
+    end
+  end
+
+  defp sync_trip_expense(trip) do
+    total = Trip.total_expenses(trip)
+    existing = Accounting.entries_for_source("FreightTrip", trip.id, "expense")
+    positive? = Decimal.compare(total, Decimal.new(0)) == :gt
+
+    case {existing, positive?} do
+      {[], true} -> maybe_record_trip_expense(trip)
+      {[], false} -> {:ok, nil}
+      {[entry], true} -> entry |> Accounting.change_entry(%{amount: total}) |> Repo.update()
+      {[entry], false} -> Repo.delete(entry)
+    end
+  end
+
+  defp unwrap_multi(multi_result, ok_key) do
+    case multi_result do
+      {:ok, changes} -> {:ok, Map.fetch!(changes, ok_key)}
+      {:error, _failed_step, failed_value, _changes} -> {:error, failed_value}
+    end
+  end
 end

@@ -1,6 +1,7 @@
 defmodule FleetMint.Transport.Ticketing do
   import Ecto.Query
   alias FleetMint.Repo
+  alias FleetMint.Accounting
   alias FleetMint.Transport.Ticketing.{Booking, Ticket}
   alias FleetMint.Transport.Trips
   alias FleetMint.Transport.Trips.Schedule
@@ -35,20 +36,65 @@ defmodule FleetMint.Transport.Ticketing do
       do: Booking.internal_changeset(%Booking{}, attrs),
       else: Booking.changeset(%Booking{}, attrs)
     changeset = validate_seat_against_map(changeset)
-    case Repo.insert(changeset) do
-      {:ok, booking} ->
-        booking = Repo.preload(booking, [:schedule])
-        Trips.decrement_available_seat(booking.schedule_id)
-        {:ok, ticket} = issue_ticket(booking)
-        booking = %{booking | ticket: ticket}
+
+    Ecto.Multi.new()
+    |> Ecto.Multi.insert(:booking, changeset)
+    |> Accounting.multi_insert_entry(:ledger_entry, fn %{booking: booking} ->
+      %{
+        entry_type: "revenue",
+        source_type: "Booking",
+        source_id: booking.id,
+        amount: booking.fare_paid,
+        payment_method: booking.payment_method,
+        reference_number: booking.payment_reference,
+        recorded_by_id: user_id,
+        description: "Fare for booking #{booking.booking_reference}"
+      }
+    end)
+    |> Ecto.Multi.run(:seat, fn _repo, %{booking: booking} ->
+      Trips.decrement_available_seat(booking.schedule_id)
+      {:ok, nil}
+    end)
+    |> Ecto.Multi.run(:ticket, fn _repo, %{booking: booking} ->
+      issue_ticket(booking)
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{booking: booking, ticket: ticket}} ->
+        booking = booking |> Repo.preload([:schedule]) |> Map.put(:ticket, ticket)
         Phoenix.PubSub.broadcast(FleetMint.PubSub, "bookings:new", {:new_booking, booking})
         {:ok, booking}
-      err -> err
+
+      {:error, _failed_step, failed_value, _changes} ->
+        {:error, failed_value}
     end
   end
 
   def update_booking(%Booking{} = booking, attrs) do
-    booking |> Booking.changeset(attrs) |> Repo.update()
+    changeset = Booking.changeset(booking, attrs)
+
+    Ecto.Multi.new()
+    |> Ecto.Multi.update(:booking, changeset)
+    |> Ecto.Multi.run(:ledger_entry, fn _repo, %{booking: updated} ->
+      case Accounting.entries_for_source("Booking", updated.id, "revenue") do
+        [entry] ->
+          entry
+          |> Accounting.change_entry(%{
+            amount: updated.fare_paid,
+            payment_method: updated.payment_method,
+            reference_number: updated.payment_reference
+          })
+          |> Repo.update()
+
+        [] ->
+          {:ok, nil}
+      end
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{booking: booking}} -> {:ok, booking}
+      {:error, _failed_step, failed_value, _changes} -> {:error, failed_value}
+    end
   end
 
   def list_bookings_since(%NaiveDateTime{} = since) do
@@ -82,11 +128,23 @@ defmodule FleetMint.Transport.Ticketing do
   end
 
   def cancel_booking(%Booking{} = booking) do
-    case booking |> Booking.changeset(%{status: "cancelled"}) |> Repo.update() do
-      {:ok, cancelled} ->
-        Trips.increment_available_seat(booking.schedule_id)
-        {:ok, cancelled}
-      err -> err
+    Ecto.Multi.new()
+    |> Ecto.Multi.update(:booking, Booking.changeset(booking, %{status: "cancelled"}))
+    |> Accounting.multi_reverse_entry(
+      :refund_entry,
+      fn _changes ->
+        "Booking" |> Accounting.entries_for_source(booking.id, "revenue") |> List.first()
+      end,
+      %{description: "Refund for cancelled booking #{booking.booking_reference}"}
+    )
+    |> Ecto.Multi.run(:seat, fn _repo, %{booking: cancelled} ->
+      Trips.increment_available_seat(cancelled.schedule_id)
+      {:ok, nil}
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{booking: cancelled}} -> {:ok, cancelled}
+      {:error, _failed_step, failed_value, _changes} -> {:error, failed_value}
     end
   end
 

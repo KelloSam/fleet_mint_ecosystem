@@ -9,6 +9,7 @@ defmodule FleetMint.Transport.Fleet do
   
   import Ecto.Query, warn: false
   alias FleetMint.Repo
+  alias FleetMint.Accounting
 
   alias FleetMint.Transport.Fleet.{Bus, Operator}
 
@@ -568,11 +569,27 @@ defmodule FleetMint.Transport.Fleet do
   end
 
   def create_maintenance(attrs \\ %{}) do
-    %VehicleMaintenance{} |> VehicleMaintenance.changeset(attrs) |> Repo.insert()
+    changeset = VehicleMaintenance.changeset(%VehicleMaintenance{}, attrs)
+
+    Ecto.Multi.new()
+    |> Ecto.Multi.insert(:maintenance, changeset)
+    |> Ecto.Multi.run(:expense_entry, fn _repo, %{maintenance: m} ->
+      maybe_record_amount("expense", "VehicleMaintenance", m.id, m.cost, "#{m.service_type} on #{m.service_date}")
+    end)
+    |> Repo.transaction()
+    |> unwrap_multi(:maintenance)
   end
 
   def update_maintenance(%VehicleMaintenance{} = m, attrs) do
-    m |> VehicleMaintenance.changeset(attrs) |> Repo.update()
+    changeset = VehicleMaintenance.changeset(m, attrs)
+
+    Ecto.Multi.new()
+    |> Ecto.Multi.update(:maintenance, changeset)
+    |> Ecto.Multi.run(:expense_entry, fn _repo, %{maintenance: updated} ->
+      sync_amount("expense", "VehicleMaintenance", updated.id, updated.cost, "#{updated.service_type} on #{updated.service_date}")
+    end)
+    |> Repo.transaction()
+    |> unwrap_multi(:maintenance)
   end
 
   def delete_maintenance(%VehicleMaintenance{} = m), do: Repo.delete(m)
@@ -602,11 +619,27 @@ defmodule FleetMint.Transport.Fleet do
   end
 
   def create_fuel_log(attrs \\ %{}) do
-    %FuelLog{} |> FuelLog.changeset(attrs) |> Repo.insert()
+    changeset = FuelLog.changeset(%FuelLog{}, attrs)
+
+    Ecto.Multi.new()
+    |> Ecto.Multi.insert(:fuel_log, changeset)
+    |> Ecto.Multi.run(:expense_entry, fn _repo, %{fuel_log: log} ->
+      maybe_record_amount("expense", "FuelLog", log.id, log.total_cost, "Fuel log on #{log.log_date}")
+    end)
+    |> Repo.transaction()
+    |> unwrap_multi(:fuel_log)
   end
 
   def update_fuel_log(%FuelLog{} = log, attrs) do
-    log |> FuelLog.changeset(attrs) |> Repo.update()
+    changeset = FuelLog.changeset(log, attrs)
+
+    Ecto.Multi.new()
+    |> Ecto.Multi.update(:fuel_log, changeset)
+    |> Ecto.Multi.run(:expense_entry, fn _repo, %{fuel_log: updated} ->
+      sync_amount("expense", "FuelLog", updated.id, updated.total_cost, "Fuel log on #{updated.log_date}")
+    end)
+    |> Repo.transaction()
+    |> unwrap_multi(:fuel_log)
   end
 
   def delete_fuel_log(%FuelLog{} = log), do: Repo.delete(log)
@@ -630,5 +663,40 @@ defmodule FleetMint.Transport.Fleet do
 
   def count_vehicles do
     Repo.aggregate(Vehicle, :count, :id)
+  end
+
+  # ── Private ledger helpers ─────────────────────────────────────────────────
+
+  defp maybe_record_amount(entry_type, source_type, source_id, amount, description) do
+    if amount && Decimal.compare(amount, Decimal.new(0)) == :gt do
+      Accounting.record_entry(%{
+        entry_type: entry_type,
+        source_type: source_type,
+        source_id: source_id,
+        amount: amount,
+        description: description
+      })
+    else
+      {:ok, nil}
+    end
+  end
+
+  defp sync_amount(entry_type, source_type, source_id, amount, description) do
+    existing = Accounting.entries_for_source(source_type, source_id, entry_type)
+    positive? = amount && Decimal.compare(amount, Decimal.new(0)) == :gt
+
+    case {existing, positive?} do
+      {[], true} -> maybe_record_amount(entry_type, source_type, source_id, amount, description)
+      {[], false} -> {:ok, nil}
+      {[entry], true} -> entry |> Accounting.change_entry(%{amount: amount}) |> Repo.update()
+      {[entry], false} -> Repo.delete(entry)
+    end
+  end
+
+  defp unwrap_multi(multi_result, ok_key) do
+    case multi_result do
+      {:ok, changes} -> {:ok, Map.fetch!(changes, ok_key)}
+      {:error, _failed_step, failed_value, _changes} -> {:error, failed_value}
+    end
   end
 end
