@@ -1,4 +1,4 @@
-defmodule FleetMint.Transport.Fleet.Route do
+defmodule FleetMint.Transport.Routes.Route do
   use Ecto.Schema
   import Ecto.Changeset
 
@@ -38,7 +38,7 @@ defmodule FleetMint.Transport.Fleet.Route do
     |> validate_number(:distance, greater_than: 0, message: "must be greater than 0")
     |> validate_number(:duration, greater_than: 0, message: "must be greater than 0")
     |> validate_number(:fare, greater_than: 0, message: "must be greater than 0")
-    |> validate_inclusion(:status, @valid_statuses, 
+    |> validate_inclusion(:status, @valid_statuses,
        message: "must be one of: #{Enum.join(@valid_statuses, ", ")}")
     |> unique_constraint(:name)
   end

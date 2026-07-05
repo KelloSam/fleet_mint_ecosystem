@@ -2,16 +2,17 @@ defmodule FleetMintWeb.OperatorController do
   use FleetMintWeb, :controller
   alias FleetMint.Transport.Fleet
   alias FleetMint.Transport.Fleet.Operator
+  alias FleetMint.Transport.Routes
 
   plug :require_admin when action in [:new, :create, :edit, :update, :delete]
 
   def index(conn, _params) do
-    operators = Fleet.list_operators_with_route_counts()
+    operators = Routes.list_operators_with_route_counts()
     render(conn, :index, operators: operators)
   end
 
   def show(conn, %{"id" => id}) do
-    operator = Fleet.get_operator_with_routes!(id)
+    operator = Routes.get_operator_with_routes!(id)
     render(conn, :show, operator: operator)
   end
 

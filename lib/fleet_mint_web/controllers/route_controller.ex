@@ -1,8 +1,8 @@
 defmodule FleetMintWeb.RouteController do
   use FleetMintWeb, :controller
 
-  alias FleetMint.Transport.Fleet
-  alias FleetMint.Transport.Fleet.Route
+  alias FleetMint.Transport.Routes
+  alias FleetMint.Transport.Routes.Route
 
   plug :require_admin when action in [:new, :create, :edit, :update, :delete]
 
@@ -19,17 +19,17 @@ defmodule FleetMintWeb.RouteController do
 
   def index(conn, params) do
     status = Map.get(params, "status")
-    routes = if status && status != "", do: Fleet.list_routes_by_status(status), else: Fleet.list_routes()
+    routes = if status && status != "", do: Routes.list_routes_by_status(status), else: Routes.list_routes()
     render(conn, :index, routes: routes, filter_status: status || "")
   end
 
   def new(conn, _params) do
-    changeset = Fleet.change_route(%Route{})
+    changeset = Routes.change_route(%Route{})
     render(conn, :new, changeset: changeset)
   end
 
   def create(conn, %{"route" => route_params}) do
-    case Fleet.create_route(route_params) do
+    case Routes.create_route(route_params) do
       {:ok, route} ->
         conn
         |> put_flash(:info, "Route \"#{route.name}\" created successfully.")
@@ -41,20 +41,20 @@ defmodule FleetMintWeb.RouteController do
   end
 
   def show(conn, %{"id" => id}) do
-    route = Fleet.get_route!(id)
+    route = Routes.get_route!(id)
     render(conn, :show, route: route)
   end
 
   def edit(conn, %{"id" => id}) do
-    route = Fleet.get_route!(id)
-    changeset = Fleet.change_route(route)
+    route = Routes.get_route!(id)
+    changeset = Routes.change_route(route)
     render(conn, :edit, route: route, changeset: changeset)
   end
 
   def update(conn, %{"id" => id, "route" => route_params}) do
-    route = Fleet.get_route!(id)
+    route = Routes.get_route!(id)
 
-    case Fleet.update_route(route, route_params) do
+    case Routes.update_route(route, route_params) do
       {:ok, route} ->
         conn
         |> put_flash(:info, "Route \"#{route.name}\" updated successfully.")
@@ -66,8 +66,8 @@ defmodule FleetMintWeb.RouteController do
   end
 
   def delete(conn, %{"id" => id}) do
-    route = Fleet.get_route!(id)
-    {:ok, _route} = Fleet.delete_route(route)
+    route = Routes.get_route!(id)
+    {:ok, _route} = Routes.delete_route(route)
 
     conn
     |> put_flash(:info, "Route \"#{route.name}\" archived.")

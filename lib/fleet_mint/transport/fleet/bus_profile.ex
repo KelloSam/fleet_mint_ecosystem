@@ -10,7 +10,7 @@ defmodule FleetMint.Transport.Fleet.BusProfile do
     field :seat_labels,  {:array, :string}, default: []
 
     belongs_to :vehicle, FleetMint.Transport.Fleet.Vehicle
-    belongs_to :current_route, FleetMint.Transport.Fleet.Route
+    belongs_to :current_route, FleetMint.Transport.Routes.Route
 
     timestamps()
   end

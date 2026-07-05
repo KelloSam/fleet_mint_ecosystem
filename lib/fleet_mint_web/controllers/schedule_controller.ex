@@ -4,6 +4,7 @@ defmodule FleetMintWeb.ScheduleController do
   alias FleetMint.Transport.Trips.Schedule
   alias FleetMint.Transport.Boarding
   alias FleetMint.Transport.Fleet
+  alias FleetMint.Transport.Routes
 
   def index(conn, params) do
     schedules = Trips.list_schedules(status: params["status"])
@@ -12,7 +13,7 @@ defmodule FleetMintWeb.ScheduleController do
 
   def new(conn, _params) do
     changeset = Trips.change_schedule(%Schedule{})
-    routes = Fleet.list_routes()
+    routes = Routes.list_routes()
     vehicles = Fleet.list_vehicles(type: "bus", status: "active")
     operators = Fleet.list_operators()
     render(conn, :new, changeset: changeset, routes: routes, vehicles: vehicles, operators: operators)
@@ -23,7 +24,7 @@ defmodule FleetMintWeb.ScheduleController do
       {:ok, schedule} ->
         conn |> put_flash(:info, "Schedule created.") |> redirect(to: ~p"/schedules/#{schedule}")
       {:error, changeset} ->
-        routes = Fleet.list_routes()
+        routes = Routes.list_routes()
         vehicles = Fleet.list_vehicles(type: "bus", status: "active")
         operators = Fleet.list_operators()
         render(conn, :new, changeset: changeset, routes: routes, vehicles: vehicles, operators: operators)
@@ -60,7 +61,7 @@ defmodule FleetMintWeb.ScheduleController do
   def edit(conn, %{"id" => id}) do
     schedule = Trips.get_schedule!(id)
     changeset = Trips.change_schedule(schedule)
-    routes = Fleet.list_routes()
+    routes = Routes.list_routes()
     vehicles = Fleet.list_vehicles(type: "bus", status: "active")
     operators = Fleet.list_operators()
     render(conn, :edit, schedule: schedule, changeset: changeset, routes: routes, vehicles: vehicles, operators: operators)
@@ -72,7 +73,7 @@ defmodule FleetMintWeb.ScheduleController do
       {:ok, schedule} ->
         conn |> put_flash(:info, "Schedule updated.") |> redirect(to: ~p"/schedules/#{schedule}")
       {:error, changeset} ->
-        routes = Fleet.list_routes()
+        routes = Routes.list_routes()
         vehicles = Fleet.list_vehicles(type: "bus", status: "active")
         operators = Fleet.list_operators()
         render(conn, :edit, schedule: schedule, changeset: changeset, routes: routes, vehicles: vehicles, operators: operators)

@@ -16,7 +16,7 @@ defmodule FleetMint.TicketingFixtures do
         duration: 240,
         fare: "150.00"
       })
-      |> FleetMint.Transport.Fleet.create_route()
+      |> FleetMint.Transport.Routes.create_route()
 
     route
   end

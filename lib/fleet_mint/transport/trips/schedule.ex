@@ -14,7 +14,7 @@ defmodule FleetMint.Transport.Trips.Schedule do
     field :notes, :string
 
     belongs_to :vehicle, FleetMint.Transport.Fleet.Vehicle
-    belongs_to :route, FleetMint.Transport.Fleet.Route
+    belongs_to :route, FleetMint.Transport.Routes.Route
     belongs_to :driver, FleetMint.HR.Driver
     belongs_to :conductor, FleetMint.Identity.User
     belongs_to :operator, FleetMint.Transport.Fleet.Operator

@@ -5,6 +5,7 @@ defmodule FleetMint.FleetFixtures do
   """
 
   alias FleetMint.Transport.Fleet
+  alias FleetMint.Transport.Routes
 
   def bus_fixture(attrs \\ %{}) do
     {:ok, bus} =
@@ -33,7 +34,7 @@ defmodule FleetMint.FleetFixtures do
         duration: 120,
         fare: "80.00"
       })
-      |> Fleet.create_route()
+      |> Routes.create_route()
 
     route
   end

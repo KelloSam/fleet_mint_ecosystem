@@ -3,6 +3,7 @@ defmodule FleetMintWeb.PageController do
 
   alias FleetMint.Finance
   alias FleetMint.Transport.Fleet
+  alias FleetMint.Transport.Routes
   alias FleetMint.Identity
   alias FleetMint.Transport.Trips
   alias FleetMint.Transport.Ticketing
@@ -21,7 +22,7 @@ defmodule FleetMintWeb.PageController do
     recent_reports = Finance.list_recent_reports(5)
     recent_transactions = Finance.list_recent_transactions(5)
     total_buses = Fleet.count_buses()
-    total_routes = Fleet.count_routes()
+    total_routes = Routes.count_routes()
     total_vehicles = Fleet.count_vehicles()
     total_expenditures = Finance.count_expenditures()
     on_duty = Identity.list_on_duty_staff()

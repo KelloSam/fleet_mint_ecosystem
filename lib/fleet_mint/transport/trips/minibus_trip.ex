@@ -11,7 +11,7 @@ defmodule FleetMint.Transport.Trips.MinibusTrip do
     field :notes, :string
 
     belongs_to :bus, FleetMint.Transport.Fleet.Bus
-    belongs_to :route, FleetMint.Transport.Fleet.Route
+    belongs_to :route, FleetMint.Transport.Routes.Route
     belongs_to :driver, FleetMint.HR.Driver
 
     timestamps()
