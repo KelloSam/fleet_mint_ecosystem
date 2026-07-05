@@ -1,8 +1,9 @@
 defmodule FleetMint.Identity.Guardian do
   use Guardian, otp_app: :fleet_mint
 
-  alias FleetMint.Identity
   alias FleetMint.Identity.User
+  alias FleetMint.Identity.Users
+  alias FleetMint.Identity.Authentication
 
   @doc """
   Get the subject for the token from the resource (user)
@@ -20,7 +21,7 @@ defmodule FleetMint.Identity.Guardian do
   Load the resource (user) from the claims in the token
   """
   def resource_from_claims(%{"sub" => id}) do
-    case Identity.get_user(id) do
+    case Users.get_user(id) do
       %User{active: true} = user -> {:ok, user}
       %User{active: false} -> {:error, :inactive_account}
       nil -> {:error, :resource_not_found}
@@ -35,7 +36,7 @@ defmodule FleetMint.Identity.Guardian do
   Generate an access token for a user
   """
   def authenticate(email, password) do
-    case Identity.authenticate_user(email, password) do
+    case Authentication.authenticate_user(email, password) do
       {:ok, user} -> create_token(user)
       error -> error
     end

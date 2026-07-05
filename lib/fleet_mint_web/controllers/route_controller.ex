@@ -7,7 +7,7 @@ defmodule FleetMintWeb.RouteController do
   plug :require_admin when action in [:new, :create, :edit, :update, :delete]
 
   defp require_admin(conn, _opts) do
-    if conn.assigns.current_user.role in ["admin", "manager"] do
+    if FleetMint.Identity.Authorization.authorized?(conn.assigns.current_user, ["admin", "manager"]) do
       conn
     else
       conn

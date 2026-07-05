@@ -1,6 +1,6 @@
 defmodule FleetMintWeb.PasswordResetController do
   use FleetMintWeb, :controller
-  alias FleetMint.Identity
+  alias FleetMint.Identity.Authentication
   alias FleetMint.Notifications
 
   def new(conn, _params) do
@@ -8,7 +8,7 @@ defmodule FleetMintWeb.PasswordResetController do
   end
 
   def create(conn, %{"email" => email}) do
-    case Identity.request_password_reset(email) do
+    case Authentication.request_password_reset(email) do
       {:ok, user, token} ->
         Notifications.password_reset_email(user, token)
         conn
@@ -26,7 +26,7 @@ defmodule FleetMintWeb.PasswordResetController do
   end
 
   def update(conn, %{"token" => token, "password" => password}) do
-    case Identity.reset_password_by_token(token, password) do
+    case Authentication.reset_password_by_token(token, password) do
       {:ok, _user} ->
         conn
         |> put_flash(:info, "Password updated. Please sign in.")

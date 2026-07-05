@@ -3,7 +3,7 @@ defmodule FleetMintWeb.BookingController do
   alias FleetMint.Transport.Trips
   alias FleetMint.Transport.Ticketing
   alias FleetMint.Transport.Ticketing.Booking
-  alias FleetMint.Identity
+  alias FleetMint.Identity.Users
 
   def index(conn, params) do
     page = FleetMint.Pagination.parse_page(params)
@@ -24,7 +24,7 @@ defmodule FleetMintWeb.BookingController do
   def new(conn, params) do
     changeset = Ticketing.change_booking(%Booking{travel_date: Date.utc_today()})
     schedules = Trips.list_schedules(status: "active")
-    staff = Identity.list_staff_with_phone()
+    staff = Users.list_staff_with_phone()
     render(conn, :new, changeset: changeset, schedules: schedules,
                        prefill_schedule: params["schedule_id"], staff: staff)
   end
@@ -39,7 +39,7 @@ defmodule FleetMintWeb.BookingController do
 
       {:error, %Ecto.Changeset{} = changeset} ->
         schedules = Trips.list_schedules(status: "active")
-        staff = Identity.list_staff_with_phone()
+        staff = Users.list_staff_with_phone()
         render(conn, :new, changeset: changeset, schedules: schedules,
                            prefill_schedule: nil, staff: staff)
     end
@@ -54,7 +54,7 @@ defmodule FleetMintWeb.BookingController do
     booking = Ticketing.get_booking!(id)
     changeset = Ticketing.change_booking(booking)
     schedules = Trips.list_schedules(status: "active")
-    staff = Identity.list_staff_with_phone()
+    staff = Users.list_staff_with_phone()
     render(conn, :edit, booking: booking, changeset: changeset,
                         schedules: schedules, staff: staff)
   end
@@ -66,7 +66,7 @@ defmodule FleetMintWeb.BookingController do
         conn |> put_flash(:info, "Booking updated.") |> redirect(to: ~p"/bookings/#{booking}")
       {:error, changeset} ->
         schedules = Trips.list_schedules(status: "active")
-        staff = Identity.list_staff_with_phone()
+        staff = Users.list_staff_with_phone()
         render(conn, :edit, booking: booking, changeset: changeset,
                             schedules: schedules, staff: staff)
     end

@@ -1,13 +1,13 @@
 defmodule FleetMintWeb.AuthController do
   use FleetMintWeb, :controller
 
-  alias FleetMint.Identity
   alias FleetMint.Identity.User
+  alias FleetMint.Identity.Users
   alias FleetMint.Identity.Guardian
   alias FleetMint.Administration
 
   def register(conn, _params) do
-    changeset = Identity.change_user(%User{})
+    changeset = Users.change_user(%User{})
     render(conn, :register, changeset: changeset)
   end
 
@@ -19,7 +19,7 @@ defmodule FleetMintWeb.AuthController do
       |> Map.put("role", "staff")
       |> Map.put("active", false)
 
-    case Identity.create_user(user_params) do
+    case Users.create_user(user_params) do
       {:ok, _user} ->
         conn
         |> put_flash(:info, "Account created. An administrator must activate it before you can log in.")

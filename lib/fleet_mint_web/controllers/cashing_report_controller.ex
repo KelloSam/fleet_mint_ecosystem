@@ -3,6 +3,7 @@ defmodule FleetMintWeb.CashingReportController do
 
   alias FleetMint.Finance
   alias FleetMint.Finance.CashingReport
+  alias FleetMint.Transport.Fleet
 
   plug :require_admin_or_manager when action in [:edit, :update, :delete]
 
@@ -13,7 +14,7 @@ defmodule FleetMintWeb.CashingReportController do
 
   def new(conn, _params) do
     changeset = Finance.change_cashing_report(%CashingReport{report_date: Date.utc_today()})
-    render(conn, :new, changeset: changeset)
+    render(conn, :new, changeset: changeset, buses: Fleet.list_buses())
   end
 
   def create(conn, %{"cashing_report" => cashing_report_params}) do
@@ -24,7 +25,7 @@ defmodule FleetMintWeb.CashingReportController do
         |> redirect(to: ~p"/cashing_reports/#{cashing_report}")
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        render(conn, :new, changeset: changeset)
+        render(conn, :new, changeset: changeset, buses: Fleet.list_buses())
     end
   end
 
@@ -36,7 +37,7 @@ defmodule FleetMintWeb.CashingReportController do
   def edit(conn, %{"id" => id}) do
     cashing_report = Finance.get_cashing_report!(id)
     changeset = Finance.change_cashing_report(cashing_report)
-    render(conn, :edit, cashing_report: cashing_report, changeset: changeset)
+    render(conn, :edit, cashing_report: cashing_report, changeset: changeset, buses: Fleet.list_buses())
   end
 
   def update(conn, %{"id" => id, "cashing_report" => cashing_report_params}) do
@@ -49,7 +50,7 @@ defmodule FleetMintWeb.CashingReportController do
         |> redirect(to: ~p"/cashing_reports/#{cashing_report}")
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        render(conn, :edit, cashing_report: cashing_report, changeset: changeset)
+        render(conn, :edit, cashing_report: cashing_report, changeset: changeset, buses: Fleet.list_buses())
     end
   end
 
@@ -63,7 +64,7 @@ defmodule FleetMintWeb.CashingReportController do
   end
 
   defp require_admin_or_manager(conn, _opts) do
-    if conn.assigns.current_user.role in ["admin", "manager"] do
+    if FleetMint.Identity.Authorization.authorized?(conn.assigns.current_user, ["admin", "manager"]) do
       conn
     else
       conn

@@ -2,7 +2,7 @@ defmodule FleetMintWeb.Plugs.RateLimitPlug do
   use PlugAttack
 
   # Allow 10 POST /login attempts per IP per minute.
-  # The account-level lockout in Identity.authenticate_user/2 guards individual
+  # The account-level lockout in Identity.Authentication.authenticate_user/2 guards individual
   # accounts; this guards against credential-stuffing across many accounts.
   rule "login by ip", conn do
     if conn.method == "POST" and conn.request_path == "/login" do

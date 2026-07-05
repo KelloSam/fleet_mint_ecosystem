@@ -1,21 +1,21 @@
 defmodule FleetMintWeb.UserController do
   use FleetMintWeb, :controller
-  alias FleetMint.Identity
+  alias FleetMint.Identity.Users
   alias FleetMint.Identity.User
 
   def index(conn, params) do
     page = FleetMint.Pagination.parse_page(params)
-    paged = Identity.list_users_paginated(page)
+    paged = Users.list_users_paginated(page)
     render(conn, :index, paged: paged)
   end
 
   def new(conn, _params) do
-    changeset = Identity.change_user_registration(%User{})
+    changeset = Users.change_user_registration(%User{})
     render(conn, :new, changeset: changeset)
   end
 
   def create(conn, %{"user" => user_params}) do
-    case Identity.create_user(user_params) do
+    case Users.create_user(user_params) do
       {:ok, user} ->
         conn
         |> put_flash(:info, "User #{user.full_name} created.")
@@ -26,19 +26,19 @@ defmodule FleetMintWeb.UserController do
   end
 
   def show(conn, %{"id" => id}) do
-    user = Identity.get_user!(id)
+    user = Users.get_user!(id)
     render(conn, :show, user: user)
   end
 
   def edit(conn, %{"id" => id}) do
-    user = Identity.get_user!(id)
-    changeset = Identity.change_user(user)
+    user = Users.get_user!(id)
+    changeset = Users.change_user(user)
     render(conn, :edit, user: user, changeset: changeset)
   end
 
   def update(conn, %{"id" => id, "user" => user_params}) do
-    user = Identity.get_user!(id)
-    case Identity.update_user(user, user_params) do
+    user = Users.get_user!(id)
+    case Users.update_user(user, user_params) do
       {:ok, updated} ->
         conn
         |> put_flash(:info, "#{updated.full_name} updated.")
@@ -49,14 +49,14 @@ defmodule FleetMintWeb.UserController do
   end
 
   def activate(conn, %{"id" => id}) do
-    user = Identity.get_user!(id)
-    {:ok, _} = Identity.activate_user(user)
+    user = Users.get_user!(id)
+    {:ok, _} = Users.activate_user(user)
     conn |> put_flash(:info, "#{user.full_name} activated.") |> redirect(to: ~p"/users")
   end
 
   def deactivate(conn, %{"id" => id}) do
-    user = Identity.get_user!(id)
-    {:ok, _} = Identity.deactivate_user(user)
+    user = Users.get_user!(id)
+    {:ok, _} = Users.deactivate_user(user)
     conn |> put_flash(:info, "#{user.full_name} deactivated.") |> redirect(to: ~p"/users")
   end
 end
