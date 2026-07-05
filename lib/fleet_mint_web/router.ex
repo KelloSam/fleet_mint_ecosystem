@@ -84,6 +84,50 @@ defmodule FleetMintWeb.Router do
     get  "/feedback/thank_you",            ComplaintController, :thank_you
   end
   
+  # Manager and admin — fleet management, freight, financial reports
+  #
+  # Declared BEFORE the "all authenticated users" scope below on purpose:
+  # Phoenix matches routes in file-declaration order across all scopes, and
+  # several resources here are split into a manager+ write half (this scope,
+  # `except: [:index, :show]`) and a cashier+ read-only half (`only: [:index,
+  # :show]`, next scope). If the read-only `/:id` route were declared first,
+  # it would swallow `/new` (id="new") before reaching this scope's `new`
+  # action — reordering the scopes fixes that for every split resource at
+  # once without changing any pipeline/permission behavior.
+  scope "/", FleetMintWeb do
+    pipe_through [:browser, :auth, :require_manager]
+
+    resources "/reports", ReportController
+    get "/reconciliation", ReconciliationController, :index
+
+    # Fleet write access (create, edit, update, delete)
+    resources "/vehicles", VehicleController, except: [:index, :show]
+    resources "/maintenances", VehicleMaintenanceController, except: [:index, :show]
+    resources "/drivers", DriverController, except: [:index, :show]
+    resources "/routes", RouteController, except: [:index, :show]
+    resources "/schedules", ScheduleController, except: [:index, :show]
+    resources "/operators", OperatorController, except: [:index, :show]
+    resources "/buses", BusController, except: [:index, :show]
+
+    # Freight management
+    scope "/freight" do
+      resources "/clients", FreightClientController
+      resources "/orders", FreightOrderController
+      resources "/trips", FreightTripController do
+        post "/milestones", FreightTripController, :add_milestone
+        patch "/status", FreightTripController, :update_status
+      end
+      resources "/invoices", FreightInvoiceController
+    end
+
+    # PDF and financial reports
+    get "/admin/reports",    PdfReportController, :index
+    get "/pdf/daily",        PdfReportController, :daily
+    get "/pdf/weekly/:id",   PdfReportController, :weekly
+    get "/pdf/receipt/:id",  PdfReportController, :receipt
+    get "/pdf/expenditures", PdfReportController, :expenditures
+  end
+
   # All authenticated users (cashier and above)
   scope "/", FleetMintWeb do
     pipe_through [:browser, :auth]
@@ -125,40 +169,6 @@ defmodule FleetMintWeb.Router do
     get    "/settings/2fa",         TwoFactorController, :setup
     post   "/settings/2fa/enable",  TwoFactorController, :enable
     delete "/settings/2fa/disable", TwoFactorController, :disable
-  end
-
-  # Manager and admin — fleet management, freight, financial reports
-  scope "/", FleetMintWeb do
-    pipe_through [:browser, :auth, :require_manager]
-
-    resources "/reports", ReportController
-
-    # Fleet write access (create, edit, update, delete)
-    resources "/vehicles", VehicleController, except: [:index, :show]
-    resources "/maintenances", VehicleMaintenanceController, except: [:index, :show]
-    resources "/drivers", DriverController, except: [:index, :show]
-    resources "/routes", RouteController, except: [:index, :show]
-    resources "/schedules", ScheduleController, except: [:index, :show]
-    resources "/operators", OperatorController, except: [:index, :show]
-    resources "/buses", BusController, except: [:index, :show]
-
-    # Freight management
-    scope "/freight" do
-      resources "/clients", FreightClientController
-      resources "/orders", FreightOrderController
-      resources "/trips", FreightTripController do
-        post "/milestones", FreightTripController, :add_milestone
-        patch "/status", FreightTripController, :update_status
-      end
-      resources "/invoices", FreightInvoiceController
-    end
-
-    # PDF and financial reports
-    get "/admin/reports",    PdfReportController, :index
-    get "/pdf/daily",        PdfReportController, :daily
-    get "/pdf/weekly/:id",   PdfReportController, :weekly
-    get "/pdf/receipt/:id",  PdfReportController, :receipt
-    get "/pdf/expenditures", PdfReportController, :expenditures
   end
 
   # Admin only
