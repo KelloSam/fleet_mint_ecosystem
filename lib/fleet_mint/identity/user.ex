@@ -22,22 +22,27 @@ defmodule FleetMint.Identity.User do
     field :reset_token_hash,       :string
     field :reset_token_expires_at, :naive_datetime
 
+    # nil = platform-level (Miway staff, sees every operator). Set = tenant
+    # staff, scoped to that operator's own data only.
+    belongs_to :operator, FleetMint.Transport.Fleet.Operator
+
     timestamps(type: :utc_datetime)
   end
 
   def changeset(user, attrs) do
     user
-    |> cast(attrs, [:username, :email, :role, :full_name, :phone, :active, :last_login])
+    |> cast(attrs, [:username, :email, :role, :full_name, :phone, :active, :last_login, :operator_id])
     |> validate_required([:username, :email, :role, :full_name, :active])
     |> validate_format(:email, @email_regex, message: "must have the @ sign and no spaces")
     |> validate_inclusion(:role, @valid_roles, message: "must be one of: #{Enum.join(@valid_roles, ", ")}")
     |> unique_constraint(:email)
     |> unique_constraint(:username)
+    |> foreign_key_constraint(:operator_id)
   end
 
   def registration_changeset(user, attrs) do
     user
-    |> cast(attrs, [:username, :email, :password, :role, :full_name, :active])
+    |> cast(attrs, [:username, :email, :password, :role, :full_name, :active, :operator_id])
     |> validate_required([:username, :email, :password, :role, :full_name])
     |> validate_format(:email, @email_regex, message: "must have the @ sign and no spaces")
     |> validate_inclusion(:role, @valid_roles, message: "must be one of: #{Enum.join(@valid_roles, ", ")}")
@@ -47,6 +52,7 @@ defmodule FleetMint.Identity.User do
     |> validate_format(:password, ~r/[0-9]/, message: "must contain at least one number")
     |> unique_constraint(:email)
     |> unique_constraint(:username)
+    |> foreign_key_constraint(:operator_id)
     |> put_password_hash()
   end
 

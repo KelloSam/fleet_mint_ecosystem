@@ -12,6 +12,7 @@ defmodule FleetMint.Transport.Ticketing do
     Booking
     |> maybe_filter_date(opts[:travel_date])
     |> maybe_filter_status(opts[:status])
+    |> maybe_filter_operator(opts[:operator_id])
     |> preload([:schedule, :booked_by, ticket: []])
     |> order_by([b], [desc: b.inserted_at])
     |> Repo.all()
@@ -22,6 +23,7 @@ defmodule FleetMint.Transport.Ticketing do
       Booking
       |> maybe_filter_date(opts[:travel_date])
       |> maybe_filter_status(opts[:status])
+      |> maybe_filter_operator(opts[:operator_id])
       |> preload([:schedule, :booked_by, ticket: []])
       |> order_by([b], desc: b.inserted_at)
     FleetMint.Pagination.paginate(query, page)
@@ -241,4 +243,12 @@ defmodule FleetMint.Transport.Ticketing do
 
   defp maybe_filter_date(query, nil), do: query
   defp maybe_filter_date(query, date), do: where(query, [b], b.travel_date == ^date)
+
+  defp maybe_filter_operator(query, nil), do: query
+  defp maybe_filter_operator(query, :all), do: query
+  defp maybe_filter_operator(query, operator_id) do
+    query
+    |> join(:inner, [b], s in assoc(b, :schedule), as: :schedule)
+    |> where([schedule: s], s.operator_id == ^operator_id)
+  end
 end

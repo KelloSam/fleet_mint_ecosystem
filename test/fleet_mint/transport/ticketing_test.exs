@@ -5,6 +5,7 @@ defmodule FleetMint.Transport.TicketingTest do
   alias FleetMint.Transport.Ticketing
 
   import FleetMint.TicketingFixtures
+  import FleetMint.FleetFixtures
 
   describe "create_booking/2" do
     test "writes a matching revenue ledger entry" do
@@ -70,6 +71,32 @@ defmodule FleetMint.Transport.TicketingTest do
 
       reloaded = FleetMint.Transport.Trips.get_schedule!(schedule.id)
       assert reloaded.available_seats == 0
+    end
+  end
+
+  describe "list_bookings/1 tenant scoping" do
+    test "operator_id filters to bookings on that operator's schedules only" do
+      operator_a = operator_fixture()
+      operator_b = operator_fixture()
+
+      booking_a = booking_fixture(schedule: schedule_fixture(operator_id: operator_a.id))
+      _booking_b = booking_fixture(schedule: schedule_fixture(operator_id: operator_b.id))
+
+      result = Ticketing.list_bookings(operator_id: operator_a.id)
+
+      assert Enum.map(result, & &1.id) == [booking_a.id]
+    end
+
+    test ":all bypasses the operator filter" do
+      operator_a = operator_fixture()
+      operator_b = operator_fixture()
+
+      booking_fixture(schedule: schedule_fixture(operator_id: operator_a.id))
+      booking_fixture(schedule: schedule_fixture(operator_id: operator_b.id))
+
+      result = Ticketing.list_bookings(operator_id: :all)
+
+      assert length(result) >= 2
     end
   end
 

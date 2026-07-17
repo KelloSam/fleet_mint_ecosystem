@@ -28,4 +28,42 @@ defmodule FleetMint.Identity.Authorization do
   def authorized?(%User{role: role}, allowed_roles) when is_list(allowed_roles) do
     role in allowed_roles
   end
+
+  @doc """
+  Platform-level users (`operator_id` is nil — Miway's own staff) are not
+  tied to a single tenant and see across every operator. Tenant staff are
+  scoped to their own operator's data only.
+
+  ## Examples
+
+      iex> platform_level?(%User{operator_id: nil})
+      true
+
+      iex> platform_level?(%User{operator_id: 7})
+      false
+
+  """
+  def platform_level?(%User{operator_id: nil}), do: true
+  def platform_level?(%User{}), do: false
+
+  @doc """
+  Returns true if `user` may access a record belonging to `operator_id` —
+  either the user is platform-level, or the record's operator matches
+  their own.
+
+  ## Examples
+
+      iex> can_access_operator?(%User{operator_id: nil}, 7)
+      true
+
+      iex> can_access_operator?(%User{operator_id: 7}, 7)
+      true
+
+      iex> can_access_operator?(%User{operator_id: 3}, 7)
+      false
+
+  """
+  def can_access_operator?(%User{} = user, operator_id) do
+    platform_level?(user) or user.operator_id == operator_id
+  end
 end

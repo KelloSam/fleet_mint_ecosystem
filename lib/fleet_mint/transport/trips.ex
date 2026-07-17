@@ -68,6 +68,7 @@ defmodule FleetMint.Transport.Trips do
   def list_schedules(opts \\ []) do
     Schedule
     |> maybe_filter_status(opts[:status])
+    |> maybe_filter_operator(opts[:operator_id])
     |> preload([:route, :vehicle, :driver, :conductor, :operator])
     |> order_by([s], s.departure_time)
     |> Repo.all()
@@ -109,6 +110,10 @@ defmodule FleetMint.Transport.Trips do
 
   defp maybe_filter_status(query, nil), do: query
   defp maybe_filter_status(query, status), do: where(query, [s], s.status == ^status)
+
+  defp maybe_filter_operator(query, nil), do: query
+  defp maybe_filter_operator(query, :all), do: query
+  defp maybe_filter_operator(query, operator_id), do: where(query, [s], s.operator_id == ^operator_id)
 
   # ── Private ledger helpers ─────────────────────────────────────────────────
 

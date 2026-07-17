@@ -22,6 +22,7 @@ defmodule FleetMintWeb.Router do
   
   pipeline :auth do
     plug FleetMintWeb.Plugs.AuthPlug
+    plug FleetMintWeb.Plugs.TenantScopePlug
   end
 
   pipeline :api do
