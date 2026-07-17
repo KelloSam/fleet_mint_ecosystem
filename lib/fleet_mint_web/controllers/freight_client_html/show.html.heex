@@ -1,3 +1,100 @@
-<div class="max-w-2xl mx-auto">
-  <p class="text-gray-500">This module is under construction.</p>
+<div class="max-w-4xl mx-auto">
+  <div class="mb-6 flex items-start justify-between">
+    <div>
+      <.link navigate={~p"/freight/clients"} class="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1">
+        <.icon name="hero-arrow-left-solid" class="h-3 w-3" /> Clients
+      </.link>
+      <h1 class="text-2xl font-bold text-gray-800 mt-2"><%= @client.company_name %></h1>
+      <div class="mt-1"><.status_badge status={@client.status} /></div>
+    </div>
+    <.link navigate={~p"/freight/clients/#{@client}/edit"} class="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-3 py-2 rounded-lg">
+      Edit
+    </.link>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+    <div class="bg-white rounded-lg shadow p-5">
+      <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Contact</h2>
+      <dl class="divide-y divide-gray-100 text-sm">
+        <div class="py-2 flex justify-between">
+          <dt class="text-gray-500">Type</dt>
+          <dd class="font-medium"><%= FleetMintWeb.FreightClientHTML.type_label(@client.client_type) %></dd>
+        </div>
+        <div class="py-2 flex justify-between">
+          <dt class="text-gray-500">Contact Person</dt>
+          <dd class="font-medium"><%= @client.contact_person || "—" %></dd>
+        </div>
+        <div class="py-2 flex justify-between">
+          <dt class="text-gray-500">Phone</dt>
+          <dd class="font-medium"><%= @client.phone || "—" %></dd>
+        </div>
+        <div class="py-2 flex justify-between">
+          <dt class="text-gray-500">Email</dt>
+          <dd class="font-medium"><%= @client.email || "—" %></dd>
+        </div>
+        <div class="py-2 flex justify-between">
+          <dt class="text-gray-500">City</dt>
+          <dd class="font-medium"><%= @client.city || "—" %></dd>
+        </div>
+        <div class="py-2 flex justify-between">
+          <dt class="text-gray-500">TPIN</dt>
+          <dd class="font-medium"><%= @client.tpin || "—" %></dd>
+        </div>
+      </dl>
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-5">
+      <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Credit</h2>
+      <dl class="divide-y divide-gray-100 text-sm">
+        <div class="py-2 flex justify-between">
+          <dt class="text-gray-500">Credit Limit</dt>
+          <dd class="font-medium"><%= FleetMintWeb.FreightClientHTML.format_money(@client.credit_limit) %></dd>
+        </div>
+        <div class="py-2 flex justify-between">
+          <dt class="text-gray-500">Credit Balance</dt>
+          <dd class="font-medium"><%= FleetMintWeb.FreightClientHTML.format_money(@client.credit_balance) %></dd>
+        </div>
+      </dl>
+      <%= if @client.address do %>
+        <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mt-4 mb-2">Address</h2>
+        <p class="text-sm text-gray-700"><%= @client.address %></p>
+      <% end %>
+    </div>
+  </div>
+
+  <%= if @client.notes && @client.notes != "" do %>
+    <div class="bg-gray-50 border border-gray-200 rounded-lg p-5 mt-5">
+      <h2 class="text-xs font-semibold text-gray-600 uppercase tracking-wider mb-2">Notes</h2>
+      <p class="text-sm text-gray-700"><%= @client.notes %></p>
+    </div>
+  <% end %>
+
+  <div class="bg-white rounded-lg shadow mt-5">
+    <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+      <h2 class="text-sm font-semibold text-gray-700">Orders (<%= length(@client.orders) %>)</h2>
+      <.link navigate={~p"/freight/orders/new?client_id=#{@client.id}"} class="text-sm text-emerald-600 hover:text-emerald-700 font-medium">
+        + New Order
+      </.link>
+    </div>
+    <%= if @client.orders == [] do %>
+      <p class="p-5 text-sm text-gray-400 italic">No orders yet.</p>
+    <% else %>
+      <table class="min-w-full divide-y divide-gray-100">
+        <tbody class="divide-y divide-gray-100">
+          <%= for o <- @client.orders do %>
+            <tr class="hover:bg-gray-50">
+              <td class="px-5 py-3 text-sm font-mono font-semibold text-gray-800">
+                <.link navigate={~p"/freight/orders/#{o}"} class="hover:underline"><%= o.order_reference %></.link>
+              </td>
+              <td class="px-5 py-3 text-sm text-gray-700"><%= o.origin %> → <%= o.destination %></td>
+              <td class="px-5 py-3 text-sm text-gray-500 capitalize"><%= String.replace(o.status, "_", " ") %></td>
+              <td class="px-5 py-3 text-sm text-gray-500">
+                <%= if o.assigned_trip, do: o.assigned_trip.trip_reference, else: "Unassigned" %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% end %>
+  </div>
 </div>

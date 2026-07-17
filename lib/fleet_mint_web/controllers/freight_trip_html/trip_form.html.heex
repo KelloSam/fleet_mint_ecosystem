@@ -1,0 +1,32 @@
+<.simple_form :let={f} for={@changeset} action={@action}>
+  <.error :if={@changeset.action}>
+    Oops, something went wrong! Please check the errors below.
+  </.error>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <.input field={f[:vehicle_id]} type="select" label="Truck" options={FleetMintWeb.FreightTripHTML.vehicle_options(@vehicles)} />
+    <.input field={f[:status]} type="select" label="Status" options={FleetMintWeb.FreightTripHTML.status_options()} />
+    <.input field={f[:origin]} type="text" label="Origin" placeholder="e.g. Kitwe" />
+    <.input field={f[:destination]} type="text" label="Destination" placeholder="e.g. Durban" />
+    <.input field={f[:driver_id]} type="select" label="Driver" options={FleetMintWeb.FreightTripHTML.driver_options(@drivers)} />
+    <.input field={f[:co_driver_id]} type="select" label="Co-Driver (optional)" options={FleetMintWeb.FreightTripHTML.driver_options(@drivers)} />
+    <.input field={f[:planned_departure]} type="datetime-local" label="Planned Departure" />
+    <.input field={f[:planned_arrival]} type="datetime-local" label="Planned Arrival" />
+    <.input field={f[:actual_departure]} type="datetime-local" label="Actual Departure" />
+    <.input field={f[:actual_arrival]} type="datetime-local" label="Actual Arrival" />
+    <.input field={f[:current_location]} type="text" label="Current Location" placeholder="optional" />
+    <.input field={f[:odometer_start]} type="number" label="Odometer Start (km)" min="0" />
+    <.input field={f[:odometer_end]} type="number" label="Odometer End (km)" min="0" />
+    <.input field={f[:fuel_used_liters]} type="number" label="Fuel Used (liters)" step="0.01" min="0" />
+    <.input field={f[:toll_fees]} type="number" label="Toll Fees (ZMW)" step="0.01" min="0" />
+    <.input field={f[:other_expenses]} type="number" label="Other Expenses (ZMW)" step="0.01" min="0" />
+  </div>
+
+  <.input field={f[:notes]} type="textarea" label="Notes (optional)" />
+
+  <:actions>
+    <.button class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg">
+      Save Trip
+    </.button>
+  </:actions>
+</.simple_form>

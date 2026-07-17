@@ -1,0 +1,28 @@
+<.simple_form :let={f} for={@changeset} action={@action}>
+  <.error :if={@changeset.action}>
+    Oops, something went wrong! Please check the errors below.
+  </.error>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div class="sm:col-span-2">
+      <.input field={f[:company_name]} type="text" label="Company Name" placeholder="e.g. Copperbelt Mining Ltd" />
+    </div>
+    <.input field={f[:client_type]} type="select" label="Client Type" options={FleetMint.Cargo.Client.type_options()} />
+    <.input field={f[:status]} type="select" label="Status" options={FleetMintWeb.FreightClientHTML.status_options()} />
+    <.input field={f[:contact_person]} type="text" label="Contact Person" placeholder="e.g. Mwansa Banda" />
+    <.input field={f[:phone]} type="tel" label="Phone" placeholder="+260 97x xxx xxx" />
+    <.input field={f[:email]} type="email" label="Email" placeholder="optional" />
+    <.input field={f[:tpin]} type="text" label="TPIN" placeholder="Tax ID (optional)" />
+    <.input field={f[:city]} type="text" label="City" placeholder="e.g. Kitwe" />
+    <.input field={f[:credit_limit]} type="number" label="Credit Limit (ZMW)" step="0.01" min="0" />
+  </div>
+
+  <.input field={f[:address]} type="textarea" label="Address" placeholder="Physical address" />
+  <.input field={f[:notes]} type="textarea" label="Notes (optional)" />
+
+  <:actions>
+    <.button class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg">
+      Save Client
+    </.button>
+  </:actions>
+</.simple_form>

@@ -1,3 +1,167 @@
-<div class="max-w-2xl mx-auto">
-  <p class="text-gray-500">This module is under construction.</p>
+<div class="max-w-4xl mx-auto">
+  <div class="mb-6 flex items-start justify-between">
+    <div>
+      <.link navigate={~p"/freight/trips"} class="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1">
+        <.icon name="hero-arrow-left-solid" class="h-3 w-3" /> Trips
+      </.link>
+      <h1 class="text-2xl font-bold text-gray-800 mt-2"><%= @trip.trip_reference %></h1>
+      <div class="mt-1"><.status_badge status={@trip.status} /></div>
+    </div>
+    <.link navigate={~p"/freight/trips/#{@trip}/edit"} class="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-3 py-2 rounded-lg">
+      Edit
+    </.link>
+  </div>
+
+  <%# Status advance actions %>
+  <%= if FleetMintWeb.FreightTripHTML.next_statuses(@trip.status) != [] do %>
+    <div class="bg-white rounded-lg shadow p-4 mb-5 flex items-center gap-3">
+      <span class="text-sm text-gray-500">Advance status:</span>
+      <%= for next <- FleetMintWeb.FreightTripHTML.next_statuses(@trip.status) do %>
+        <.link href={~p"/freight/trips/#{@trip}/status?status=#{next}"} method="patch"
+               class={["px-3 py-1.5 rounded-lg text-xs font-semibold",
+                 if(next == "cancelled", do: "bg-red-50 text-red-700 hover:bg-red-100", else: "bg-blue-50 text-blue-700 hover:bg-blue-100")]}
+               data-confirm={"Mark trip as #{String.replace(next, "_", " ")}?"}>
+          <%= String.replace(next, "_", " ") |> String.capitalize() %>
+        </.link>
+      <% end %>
+    </div>
+  <% end %>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+    <div class="bg-white rounded-lg shadow p-5">
+      <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Route &amp; Vehicle</h2>
+      <dl class="divide-y divide-gray-100 text-sm">
+        <div class="py-2 flex justify-between">
+          <dt class="text-gray-500">Route</dt>
+          <dd class="font-medium"><%= @trip.origin %> → <%= @trip.destination %></dd>
+        </div>
+        <div class="py-2 flex justify-between">
+          <dt class="text-gray-500">Truck</dt>
+          <dd class="font-medium"><%= if @trip.vehicle, do: @trip.vehicle.registration_number, else: "—" %></dd>
+        </div>
+        <div class="py-2 flex justify-between">
+          <dt class="text-gray-500">Driver</dt>
+          <dd class="font-medium"><%= if @trip.driver, do: @trip.driver.name, else: "—" %></dd>
+        </div>
+        <div class="py-2 flex justify-between">
+          <dt class="text-gray-500">Co-Driver</dt>
+          <dd class="font-medium"><%= if @trip.co_driver, do: @trip.co_driver.name, else: "—" %></dd>
+        </div>
+        <div class="py-2 flex justify-between">
+          <dt class="text-gray-500">Current Location</dt>
+          <dd class="font-medium"><%= @trip.current_location || "—" %></dd>
+        </div>
+      </dl>
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-5">
+      <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Schedule &amp; Costs</h2>
+      <dl class="divide-y divide-gray-100 text-sm">
+        <div class="py-2 flex justify-between">
+          <dt class="text-gray-500">Planned Departure</dt>
+          <dd class="font-medium"><%= FleetMintWeb.FreightTripHTML.format_datetime(@trip.planned_departure) %></dd>
+        </div>
+        <div class="py-2 flex justify-between">
+          <dt class="text-gray-500">Actual Departure</dt>
+          <dd class="font-medium"><%= FleetMintWeb.FreightTripHTML.format_datetime(@trip.actual_departure) %></dd>
+        </div>
+        <div class="py-2 flex justify-between">
+          <dt class="text-gray-500">Planned Arrival</dt>
+          <dd class="font-medium"><%= FleetMintWeb.FreightTripHTML.format_datetime(@trip.planned_arrival) %></dd>
+        </div>
+        <div class="py-2 flex justify-between">
+          <dt class="text-gray-500">Actual Arrival</dt>
+          <dd class="font-medium"><%= FleetMintWeb.FreightTripHTML.format_datetime(@trip.actual_arrival) %></dd>
+        </div>
+        <div class="py-2 flex justify-between">
+          <dt class="text-gray-500">Toll + Other Expenses</dt>
+          <dd class="font-bold text-red-600">
+            <%= FleetMintWeb.FreightTripHTML.format_money(FleetMint.Cargo.Trip.total_expenses(@trip)) %>
+          </dd>
+        </div>
+      </dl>
+    </div>
+  </div>
+
+  <%# Orders on this trip %>
+  <div class="bg-white rounded-lg shadow mt-5">
+    <div class="px-5 py-4 border-b border-gray-100">
+      <h2 class="text-sm font-semibold text-gray-700">Orders (<%= length(@trip.orders) %>)</h2>
+    </div>
+    <%= if @trip.orders == [] do %>
+      <p class="p-5 text-sm text-gray-400 italic">No orders assigned to this trip yet.</p>
+    <% else %>
+      <table class="min-w-full divide-y divide-gray-100">
+        <tbody class="divide-y divide-gray-100">
+          <%= for o <- @trip.orders do %>
+            <tr class="hover:bg-gray-50">
+              <td class="px-5 py-3 text-sm font-mono font-semibold text-gray-800">
+                <.link navigate={~p"/freight/orders/#{o}"} class="hover:underline"><%= o.order_reference %></.link>
+              </td>
+              <td class="px-5 py-3 text-sm text-gray-700"><%= if o.client, do: o.client.company_name, else: "—" %></td>
+              <td class="px-5 py-3 text-sm text-gray-500 capitalize"><%= String.replace(o.status, "_", " ") %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% end %>
+  </div>
+
+  <%# Milestones / tracking log %>
+  <div class="bg-white rounded-lg shadow mt-5">
+    <div class="px-5 py-4 border-b border-gray-100">
+      <h2 class="text-sm font-semibold text-gray-700">Tracking Log</h2>
+    </div>
+    <%= if @trip.milestones == [] do %>
+      <p class="p-5 text-sm text-gray-400 italic">No milestones recorded yet.</p>
+    <% else %>
+      <ul class="divide-y divide-gray-100">
+        <%= for m <- Enum.sort_by(@trip.milestones, & &1.event_time, {:desc, NaiveDateTime}) do %>
+          <li class="px-5 py-3 flex items-start justify-between text-sm">
+            <div>
+              <span class="font-semibold text-gray-800"><%= FleetMintWeb.FreightTripHTML.event_type_label(m.event_type) %></span>
+              <span class="text-gray-500"> — <%= m.location %></span>
+              <%= if m.notes && m.notes != "" do %>
+                <p class="text-xs text-gray-400 mt-0.5"><%= m.notes %></p>
+              <% end %>
+            </div>
+            <span class="text-xs text-gray-400 whitespace-nowrap ml-3">
+              <%= FleetMintWeb.FreightTripHTML.format_datetime(m.event_time) %>
+            </span>
+          </li>
+        <% end %>
+      </ul>
+    <% end %>
+
+    <form action={~p"/freight/trips/#{@trip}/milestones"} method="post" class="p-5 border-t border-gray-100 bg-gray-50">
+      <input type="hidden" name="_csrf_token" value={Plug.CSRFProtection.get_csrf_token()} />
+      <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Record Milestone</h3>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <select name="milestone[event_type]" class="rounded-md border-gray-300 shadow-sm text-sm py-2 px-3 border" required>
+          <option value="">— Event type —</option>
+          <%= for {label, value} <- FleetMint.Cargo.TripMilestone.event_type_options() do %>
+            <option value={value}><%= label %></option>
+          <% end %>
+        </select>
+        <input type="text" name="milestone[location]" placeholder="Location" required
+               class="rounded-md border-gray-300 shadow-sm text-sm py-2 px-3 border" />
+        <input type="datetime-local" name="milestone[event_time]" required
+               class="rounded-md border-gray-300 shadow-sm text-sm py-2 px-3 border" />
+        <input type="number" name="milestone[odometer_reading]" placeholder="Odometer (km, optional)"
+               class="rounded-md border-gray-300 shadow-sm text-sm py-2 px-3 border" />
+        <input type="text" name="milestone[notes]" placeholder="Notes (optional)"
+               class="rounded-md border-gray-300 shadow-sm text-sm py-2 px-3 border sm:col-span-2" />
+      </div>
+      <button type="submit" class="mt-3 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg">
+        Add Milestone
+      </button>
+    </form>
+  </div>
+
+  <%= if @trip.notes && @trip.notes != "" do %>
+    <div class="bg-gray-50 border border-gray-200 rounded-lg p-5 mt-5">
+      <h2 class="text-xs font-semibold text-gray-600 uppercase tracking-wider mb-2">Notes</h2>
+      <p class="text-sm text-gray-700"><%= @trip.notes %></p>
+    </div>
+  <% end %>
 </div>

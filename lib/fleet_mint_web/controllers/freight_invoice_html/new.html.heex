@@ -1,3 +1,12 @@
 <div class="max-w-2xl mx-auto">
-  <p class="text-gray-500">This module is under construction.</p>
+  <div class="mb-6">
+    <.link navigate={~p"/freight/invoices"} class="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1">
+      <.icon name="hero-arrow-left-solid" class="h-3 w-3" /> Back to Invoices
+    </.link>
+    <h1 class="text-2xl font-bold text-gray-800 mt-2">New Freight Invoice</h1>
+  </div>
+
+  <div class="bg-white rounded-lg shadow p-6">
+    <.invoice_form changeset={@changeset} action={~p"/freight/invoices"} clients={@clients} trips={@trips} />
+  </div>
 </div>

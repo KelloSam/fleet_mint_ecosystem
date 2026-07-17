@@ -1,0 +1,69 @@
+<.simple_form :let={f} for={@changeset} action={@action}>
+  <.error :if={@changeset.action}>
+    Oops, something went wrong! Please check the errors below.
+  </.error>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div>
+      <label class="block text-sm font-medium text-gray-700">Client</label>
+      <div class="mt-1">
+        <select name={f[:client_id].name} id={f[:client_id].id}
+                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+          <option value="">— Select client —</option>
+          <%= for client <- @clients do %>
+            <option value={client.id}
+              selected={to_string(client.id) == to_string(f[:client_id].value || assigns[:prefill_client] || "")}>
+              <%= client.company_name %>
+            </option>
+          <% end %>
+        </select>
+      </div>
+    </div>
+
+    <%= if assigns[:trips] do %>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Assigned Trip</label>
+        <div class="mt-1">
+          <select name={f[:assigned_trip_id].name} id={f[:assigned_trip_id].id}
+                  class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+            <option value="">— Unassigned —</option>
+            <%= for trip <- @trips do %>
+              <option value={trip.id} selected={to_string(trip.id) == to_string(f[:assigned_trip_id].value || "")}>
+                <%= trip.trip_reference %> (<%= trip.origin %> → <%= trip.destination %>)
+              </option>
+            <% end %>
+          </select>
+        </div>
+      </div>
+    <% end %>
+
+    <.input field={f[:cargo_type]} type="select" label="Cargo Type" options={FleetMint.Cargo.Order.cargo_type_options()} />
+    <.input field={f[:status]} type="select" label="Status" options={FleetMintWeb.FreightOrderHTML.status_options()} />
+    <.input field={f[:origin]} type="text" label="Origin" placeholder="e.g. Kitwe" />
+    <.input field={f[:destination]} type="text" label="Destination" placeholder="e.g. Durban" />
+    <.input field={f[:weight_tons]} type="number" label="Weight (tons)" step="0.01" min="0.01" />
+    <.input field={f[:volume_cbm]} type="number" label="Volume (cbm)" step="0.01" min="0" />
+    <.input field={f[:declared_value]} type="number" label="Declared Value (ZMW)" step="0.01" min="0" />
+    <.input field={f[:agreed_rate]} type="number" label="Agreed Rate (ZMW)" step="0.01" min="0" />
+    <.input field={f[:pickup_date]} type="date" label="Pickup Date" />
+    <.input field={f[:delivery_deadline]} type="date" label="Delivery Deadline" />
+    <.input field={f[:hazmat_class]} type="text" label="Hazmat Class (if any)" placeholder="optional" />
+  </div>
+
+  <label class="flex items-center gap-3 cursor-pointer mt-2">
+    <input type="hidden" name={f[:requires_refrigeration].name} value="false" />
+    <input type="checkbox" name={f[:requires_refrigeration].name} value="true"
+           checked={f[:requires_refrigeration].value in [true, "true"]}
+           class="h-5 w-5 rounded border-gray-300 text-amber-500 focus:ring-amber-400" />
+    <span class="text-sm font-medium text-gray-800">Requires refrigeration</span>
+  </label>
+
+  <.input field={f[:cargo_description]} type="textarea" label="Cargo Description" placeholder="What's being shipped" />
+  <.input field={f[:special_instructions]} type="textarea" label="Special Instructions (optional)" />
+
+  <:actions>
+    <.button class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg">
+      Save Order
+    </.button>
+  </:actions>
+</.simple_form>

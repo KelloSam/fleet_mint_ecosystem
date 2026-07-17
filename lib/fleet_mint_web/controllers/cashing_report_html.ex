@@ -9,12 +9,17 @@ defmodule FleetMintWeb.CashingReportHTML do
   """
   attr :changeset, Ecto.Changeset, required: true
   attr :action, :string, required: true
+  attr :buses, :list, default: []
   def cashing_report_form(assigns) do
     ~H"""
     <.simple_form :let={f} for={@changeset} action={@action}>
       <.error :if={@changeset.action}>
         Oops, something went wrong! Please check the errors below.
       </.error>
+      <.input field={f[:report_date]} type="date" label="Report date" />
+      <.input field={f[:bus_id]} type="select" label="Bus"
+        options={Enum.map(@buses, &{&1.registration_number, &1.id})}
+        prompt="Select bus" />
       <.input field={f[:days_worked]} type="number" label="Days worked" />
       <.input field={f[:expected_cashing]} type="number" label="Expected cashing" step="any" />
       <.input field={f[:received_cashing]} type="number" label="Received cashing" step="any" />

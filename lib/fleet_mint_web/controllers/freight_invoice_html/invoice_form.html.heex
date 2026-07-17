@@ -1,0 +1,61 @@
+<.simple_form :let={f} for={@changeset} action={@action}>
+  <.error :if={@changeset.action}>
+    Oops, something went wrong! Please check the errors below.
+  </.error>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div>
+      <label class="block text-sm font-medium text-gray-700">Client</label>
+      <div class="mt-1">
+        <select name={f[:client_id].name} id={f[:client_id].id}
+                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+          <option value="">— Select client —</option>
+          <%= for client <- @clients do %>
+            <option value={client.id} selected={to_string(client.id) == to_string(f[:client_id].value || "")}>
+              <%= client.company_name %>
+            </option>
+          <% end %>
+        </select>
+      </div>
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium text-gray-700">Delivered Trip</label>
+      <div class="mt-1">
+        <select name={f[:trip_id].name} id={f[:trip_id].id}
+                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+          <option value="">— Select trip —</option>
+          <%= for trip <- @trips do %>
+            <option value={trip.id} selected={to_string(trip.id) == to_string(f[:trip_id].value || "")}>
+              <%= trip.trip_reference %> (<%= trip.origin %> → <%= trip.destination %>)
+            </option>
+          <% end %>
+        </select>
+      </div>
+      <%= if @trips == [] do %>
+        <p class="text-xs text-amber-600 mt-1">No delivered trips available yet — an invoice needs a completed trip.</p>
+      <% end %>
+    </div>
+
+    <.input field={f[:status]} type="select" label="Status" options={FleetMintWeb.FreightInvoiceHTML.status_options()} />
+    <.input field={f[:invoice_date]} type="date" label="Invoice Date" />
+    <.input field={f[:due_date]} type="date" label="Due Date" />
+    <.input field={f[:base_amount]} type="number" label="Base Amount (ZMW)" step="0.01" min="0.01" />
+    <.input field={f[:fuel_surcharge]} type="number" label="Fuel Surcharge (ZMW)" step="0.01" min="0" />
+    <.input field={f[:toll_surcharge]} type="number" label="Toll Surcharge (ZMW)" step="0.01" min="0" />
+    <.input field={f[:payment_date]} type="date" label="Payment Date (if paid)" />
+    <.input field={f[:payment_reference]} type="text" label="Payment Reference" placeholder="optional" />
+  </div>
+
+  <p class="text-xs text-gray-400 -mt-2">
+    VAT and total are calculated automatically from base amount + surcharges when you save.
+  </p>
+
+  <.input field={f[:notes]} type="textarea" label="Notes (optional)" />
+
+  <:actions>
+    <.button class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg">
+      Save Invoice
+    </.button>
+  </:actions>
+</.simple_form>
