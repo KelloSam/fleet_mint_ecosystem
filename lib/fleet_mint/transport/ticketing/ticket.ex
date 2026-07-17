@@ -33,6 +33,10 @@ defmodule FleetMint.Transport.Ticketing.Ticket do
     change(ticket, status: "boarded", boarded_at: NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second))
   end
 
+  def cancel_changeset(ticket) do
+    change(ticket, status: "cancelled")
+  end
+
   defp generate_ticket_number(%Ecto.Changeset{data: %{id: nil}} = changeset) do
     num = "TKT-#{:rand.uniform(999999999) |> Integer.to_string() |> String.pad_leading(9, "0")}"
     put_change(changeset, :ticket_number, num)

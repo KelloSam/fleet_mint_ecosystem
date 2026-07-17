@@ -52,8 +52,17 @@ defmodule FleetMint.Transport.Ticketing do
       }
     end)
     |> Ecto.Multi.run(:seat, fn _repo, %{booking: booking} ->
-      Trips.decrement_available_seat(booking.schedule_id)
-      {:ok, nil}
+      case Trips.decrement_available_seat(booking.schedule_id) do
+        {1, _} ->
+          {:ok, nil}
+
+        {0, _} ->
+          {:error,
+           booking
+           |> Ecto.Changeset.change()
+           |> Ecto.Changeset.add_error(:schedule_id, "no seats available on this schedule")
+           |> Map.put(:action, :insert)}
+      end
     end)
     |> Ecto.Multi.run(:ticket, fn _repo, %{booking: booking} ->
       issue_ticket(booking)
@@ -128,6 +137,8 @@ defmodule FleetMint.Transport.Ticketing do
   end
 
   def cancel_booking(%Booking{} = booking) do
+    booking = Repo.preload(booking, :ticket)
+
     Ecto.Multi.new()
     |> Ecto.Multi.update(:booking, Booking.changeset(booking, %{status: "cancelled"}))
     |> Accounting.multi_reverse_entry(
@@ -140,6 +151,12 @@ defmodule FleetMint.Transport.Ticketing do
     |> Ecto.Multi.run(:seat, fn _repo, %{booking: cancelled} ->
       Trips.increment_available_seat(cancelled.schedule_id)
       {:ok, nil}
+    end)
+    |> Ecto.Multi.run(:ticket, fn _repo, _changes ->
+      case booking.ticket do
+        nil -> {:ok, nil}
+        ticket -> ticket |> Ticket.cancel_changeset() |> Repo.update()
+      end
     end)
     |> Repo.transaction()
     |> case do

@@ -53,6 +53,24 @@ defmodule FleetMint.Transport.TicketingTest do
 
       assert Accounting.list_entries(source_type: "Booking") == []
     end
+
+    test "refuses to overbook once a schedule has no seats left" do
+      schedule = schedule_fixture(available_seats: 0)
+
+      assert {:error, %Ecto.Changeset{} = changeset} =
+               Ticketing.create_booking(%{
+                 "passenger_name" => "Jane Doe",
+                 "travel_date" => Date.utc_today(),
+                 "fare_paid" => schedule.fare,
+                 "schedule_id" => schedule.id
+               })
+
+      assert "no seats available on this schedule" in errors_on(changeset).schedule_id
+      assert Accounting.list_entries(source_type: "Booking") == []
+
+      reloaded = FleetMint.Transport.Trips.get_schedule!(schedule.id)
+      assert reloaded.available_seats == 0
+    end
   end
 
   describe "update_booking/2" do
@@ -91,6 +109,14 @@ defmodule FleetMint.Transport.TicketingTest do
 
       assert {:ok, _cancelled} = Ticketing.cancel_booking(booking)
       assert %{available_seats: 10} = FleetMint.Transport.Trips.get_schedule!(schedule.id)
+    end
+
+    test "cancels the linked ticket so it can no longer board" do
+      booking = booking_fixture()
+      assert {:ok, cancelled} = Ticketing.cancel_booking(booking)
+
+      ticket = FleetMint.Repo.get_by!(FleetMint.Transport.Ticketing.Ticket, booking_id: cancelled.id)
+      assert ticket.status == "cancelled"
     end
 
     test "no-ops the reversal safely when the booking has no linked ledger entry" do

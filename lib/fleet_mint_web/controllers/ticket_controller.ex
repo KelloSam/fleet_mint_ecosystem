@@ -25,6 +25,7 @@ defmodule FleetMintWeb.TicketController do
             :already_boarded -> "Ticket already used — duplicate boarding attempt."
             :expired -> "Ticket has expired."
             :cancelled -> "Ticket was cancelled."
+            :booking_cancelled -> "Booking was cancelled — ticket is not valid for boarding."
             :not_found -> "Ticket not found."
           end
           conn |> put_flash(:error, msg) |> redirect(to: ~p"/tickets/#{booking}")

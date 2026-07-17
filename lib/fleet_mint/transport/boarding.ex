@@ -11,6 +11,7 @@ defmodule FleetMint.Transport.Boarding do
       nil -> {:error, :not_found}
       %Ticket{status: "boarded"} -> {:error, :already_boarded}
       %Ticket{status: "cancelled"} -> {:error, :cancelled}
+      %Ticket{booking: %Booking{status: "cancelled"}} -> {:error, :booking_cancelled}
       %Ticket{expires_at: exp} = ticket when not is_nil(exp) ->
         if NaiveDateTime.compare(exp, NaiveDateTime.utc_now()) == :lt do
           {:error, :expired}
