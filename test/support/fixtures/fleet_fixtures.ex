@@ -22,6 +22,43 @@ defmodule FleetMint.FleetFixtures do
     bus
   end
 
+  def operator_fixture(attrs \\ %{}) do
+    n = System.unique_integer([:positive])
+
+    {:ok, operator} =
+      attrs
+      |> Enum.into(%{name: "Test Bus Services #{n}", slug: "test-bus-#{n}"})
+      |> Fleet.create_operator()
+
+    operator
+  end
+
+  def branch_fixture(attrs \\ %{}) do
+    attrs = Map.new(attrs)
+    operator = attrs[:operator] || operator_fixture()
+
+    {:ok, branch} =
+      attrs
+      |> Map.delete(:operator)
+      |> Enum.into(%{name: "Head Office", operator_id: operator.id})
+      |> Fleet.create_branch()
+
+    branch
+  end
+
+  def terminal_fixture(attrs \\ %{}) do
+    attrs = Map.new(attrs)
+    branch = attrs[:branch] || branch_fixture()
+
+    {:ok, terminal} =
+      attrs
+      |> Map.delete(:branch)
+      |> Enum.into(%{name: "Main Terminal", branch_id: branch.id, operator_id: branch.operator_id})
+      |> Fleet.create_terminal()
+
+    terminal
+  end
+
   def route_fixture(attrs \\ %{}) do
     {:ok, route} =
       attrs

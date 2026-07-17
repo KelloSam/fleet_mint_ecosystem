@@ -20,6 +20,7 @@ defmodule FleetMint.Transport.Ticketing.Booking do
 
     belongs_to :schedule, FleetMint.Transport.Trips.Schedule
     belongs_to :booked_by, FleetMint.Identity.User
+    belongs_to :terminal, FleetMint.Transport.Fleet.Terminal
     has_one :ticket, FleetMint.Transport.Ticketing.Ticket
 
     timestamps()
@@ -33,7 +34,7 @@ defmodule FleetMint.Transport.Ticketing.Booking do
     |> cast(attrs, [:passenger_name, :passenger_phone, :passenger_email, :seat_number,
                     :travel_date, :status, :fare_paid, :payment_method, :payment_reference,
                     :notes, :pickup_station, :has_luggage, :luggage_description,
-                    :schedule_id, :booked_by_id])
+                    :schedule_id, :booked_by_id, :terminal_id])
     |> validate_required([:passenger_name, :travel_date, :fare_paid, :schedule_id])
     |> validate_number(:fare_paid, greater_than_or_equal_to: 0)
     |> validate_inclusion(:status, @statuses)
@@ -44,6 +45,7 @@ defmodule FleetMint.Transport.Ticketing.Booking do
       name: :bookings_active_seat_unique,
       message: "seat is already booked for this schedule and date"
     )
+    |> foreign_key_constraint(:terminal_id)
   end
 
   def internal_changeset(booking, attrs) do

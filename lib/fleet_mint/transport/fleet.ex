@@ -13,7 +13,7 @@ defmodule FleetMint.Transport.Fleet do
   alias FleetMint.Repo
   alias FleetMint.Accounting
 
-  alias FleetMint.Transport.Fleet.{Bus, Operator}
+  alias FleetMint.Transport.Fleet.{Bus, Operator, Branch, Terminal}
 
   # ── Operators (bus companies) ──────────────────────────────────────────────
 
@@ -55,7 +55,50 @@ defmodule FleetMint.Transport.Fleet do
     from(o in Operator, where: o.active == false and is_nil(o.archived_at), order_by: o.name)
     |> Repo.all()
   end
-  
+
+  # ── Branches and Terminals (tenant org hierarchy) ───────────────────────────
+
+  def list_branches(operator_id) do
+    from(b in Branch, where: b.operator_id == ^operator_id, order_by: b.name) |> Repo.all()
+  end
+
+  def get_branch!(id), do: Repo.get!(Branch, id)
+
+  def create_branch(attrs \\ %{}) do
+    %Branch{} |> Branch.changeset(attrs) |> Repo.insert()
+  end
+
+  def update_branch(%Branch{} = branch, attrs) do
+    branch |> Branch.changeset(attrs) |> Repo.update()
+  end
+
+  def delete_branch(%Branch{} = branch), do: Repo.delete(branch)
+
+  def change_branch(%Branch{} = branch, attrs \\ %{}), do: Branch.changeset(branch, attrs)
+
+  def list_terminals(operator_id) do
+    from(t in Terminal, where: t.operator_id == ^operator_id, order_by: t.name) |> Repo.all()
+  end
+
+  def list_terminals_for_branch(branch_id) do
+    from(t in Terminal, where: t.branch_id == ^branch_id, order_by: t.name) |> Repo.all()
+  end
+
+  def get_terminal!(id), do: Repo.get!(Terminal, id)
+
+  def create_terminal(attrs \\ %{}) do
+    %Terminal{} |> Terminal.changeset(attrs) |> Repo.insert()
+  end
+
+  def update_terminal(%Terminal{} = terminal, attrs) do
+    terminal |> Terminal.changeset(attrs) |> Repo.update()
+  end
+
+  def delete_terminal(%Terminal{} = terminal), do: Repo.delete(terminal)
+
+  def change_terminal(%Terminal{} = terminal, attrs \\ %{}), do: Terminal.changeset(terminal, attrs)
+
+
   @doc """
   Returns the list of buses.
   
