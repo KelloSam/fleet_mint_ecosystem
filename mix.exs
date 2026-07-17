@@ -57,7 +57,8 @@ defmodule FleetMint.MixProject do
       {:chromic_pdf, "~> 1.17"},
       {:eqrcode, "~> 0.2"},
       {:nimble_totp, "~> 1.0"},
-      {:plug_attack, "~> 0.4"}
+      {:plug_attack, "~> 0.4"},
+      {:gen_smtp, "~> 1.2"}
     ]
   end
 
