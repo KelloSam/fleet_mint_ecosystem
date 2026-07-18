@@ -6,8 +6,10 @@ defmodule FleetMint.Finance do
   import Ecto.Query, warn: false
   alias FleetMint.Repo
   alias FleetMint.Accounting
+  alias FleetMint.Transport.Fleet.Bus
+  alias FleetMint.Transport.Trips.{Schedule, Trip}
 
-  alias FleetMint.Finance.CashingReport
+  alias FleetMint.Finance.{CashingReport, CashingReportTrip}
 
   @doc """
   Returns the list of cashing_reports.
@@ -65,8 +67,172 @@ defmodule FleetMint.Finance do
         description: "Cash received for report #{cashing_report.report_date}"
       }
     end)
+    |> Ecto.Multi.merge(fn %{cashing_report: cashing_report} -> trip_match_multi(cashing_report) end)
     |> Repo.transaction()
-    |> unwrap_multi(:cashing_report)
+    |> unwrap_multi(:cashing_report_reconciled)
+  end
+
+  @doc """
+  Attempts to attribute a CashingReport's cash to a single Trip, without
+  ever fabricating one. Only classifies — inserting the resulting
+  cashing_report_trips row (for `:automatically_matched`) and updating the
+  report's `trip_mapping_status` is the caller's job (see `create_cashing_report/1`
+  and `trip_match_multi/1`).
+
+  Returns one of:
+
+    * `{:automatically_matched, %Trip{}, organisation_id}` — exactly one
+      same-organisation schedule has ever used this bus's vehicle, and a
+      Trip already exists for that schedule on this report's date.
+    * `{:ambiguous, notes}` — more than one same-organisation schedule
+      shares the vehicle; a human has to pick.
+    * `{:unmappable, notes}` — no candidate exists at all (missing bus,
+      missing vehicle assignment, no schedule, cross-organisation vehicle
+      sharing, or no Trip recorded yet for that date).
+  """
+  def attempt_trip_match(%CashingReport{bus_id: nil}) do
+    {:unmappable, "No bus recorded on this report."}
+  end
+
+  def attempt_trip_match(%CashingReport{} = cashing_report) do
+    bus = Repo.get!(Bus, cashing_report.bus_id)
+
+    cond do
+      is_nil(bus.vehicle_id) ->
+        {:unmappable, "Bus has no vehicle assignment recorded."}
+
+      true ->
+        classify_by_candidate_schedules(cashing_report, bus)
+    end
+  end
+
+  defp classify_by_candidate_schedules(cashing_report, bus) do
+    candidates =
+      from(s in Schedule,
+        join: op in assoc(s, :operator),
+        where: s.vehicle_id == ^bus.vehicle_id,
+        select: {s.id, op.organisation_id}
+      )
+      |> Repo.all()
+
+    same_org_candidates = Enum.filter(candidates, fn {_schedule_id, org_id} -> org_id == bus.organisation_id end)
+
+    case {candidates, same_org_candidates} do
+      {[], _} ->
+        {:unmappable, "No schedule has ever been assigned this vehicle."}
+
+      {_, []} ->
+        {:unmappable,
+         "Vehicle is only used on schedules belonging to a different organisation than the bus record - data integrity issue, flagged for manual review."}
+
+      {_, [{schedule_id, organisation_id}]} ->
+        case Repo.get_by(Trip, schedule_id: schedule_id, travel_date: cashing_report.report_date) do
+          nil ->
+            {:unmappable,
+             "A single schedule was found for this vehicle, but no trip is recorded for that schedule on this report date."}
+
+          %Trip{} = trip ->
+            {:automatically_matched, trip, organisation_id}
+        end
+
+      {_, _multiple} ->
+        {:ambiguous,
+         "Vehicle is assigned to more than one schedule in this organisation; automatic matching cannot determine which trip this cash belongs to. Needs manual reconciliation."}
+    end
+  end
+
+  defp trip_match_multi(cashing_report) do
+    case attempt_trip_match(cashing_report) do
+      {:automatically_matched, trip, organisation_id} ->
+        allocation_changeset =
+          CashingReportTrip.changeset(%CashingReportTrip{}, %{
+            cashing_report_id: cashing_report.id,
+            trip_id: trip.id,
+            organisation_id: organisation_id,
+            allocated_amount: cashing_report.received_cashing,
+            match_method: "automatic",
+            matched_at: DateTime.utc_now() |> DateTime.truncate(:second)
+          })
+
+        Ecto.Multi.new()
+        |> Ecto.Multi.insert(:trip_allocation, allocation_changeset)
+        |> Ecto.Multi.update(
+          :cashing_report_reconciled,
+          CashingReport.mapping_status_changeset(cashing_report, %{
+            trip_mapping_status: "automatically_matched",
+            trip_mapping_notes: "Matched to a single trip via bus/vehicle/schedule chain."
+          })
+        )
+
+      {status, notes} ->
+        Ecto.Multi.new()
+        |> Ecto.Multi.update(
+          :cashing_report_reconciled,
+          CashingReport.mapping_status_changeset(cashing_report, %{
+            trip_mapping_status: Atom.to_string(status),
+            trip_mapping_notes: notes
+          })
+        )
+    end
+  end
+
+  @doc """
+  Manually attributes a CashingReport's cash to a Trip — the reconciliation
+  path for reports `attempt_trip_match/1` classified as `:ambiguous` or
+  `:unmappable`. Rejects the match (without touching either record) if the
+  report's bus and the Trip belong to different organisations; this can't
+  be a database-level composite FK the way Trip's own children can, since
+  CashingReport has no organisation_id column of its own, so it's enforced
+  here instead.
+  """
+  def match_cashing_report_to_trip(%CashingReport{} = cashing_report, %Trip{} = trip, matched_by_user, opts \\ []) do
+    bus = cashing_report.bus_id && Repo.get(Bus, cashing_report.bus_id)
+
+    cond do
+      is_nil(bus) ->
+        {:error, :no_bus_on_report}
+
+      bus.organisation_id != trip.organisation_id ->
+        {:error, :organisation_mismatch}
+
+      true ->
+        amount = Keyword.get(opts, :allocated_amount, cashing_report.received_cashing)
+
+        allocation_changeset =
+          CashingReportTrip.changeset(%CashingReportTrip{}, %{
+            cashing_report_id: cashing_report.id,
+            trip_id: trip.id,
+            organisation_id: trip.organisation_id,
+            allocated_amount: amount,
+            match_method: "manual",
+            matched_at: DateTime.utc_now() |> DateTime.truncate(:second),
+            matched_by_id: matched_by_user.id
+          })
+
+        Ecto.Multi.new()
+        |> Ecto.Multi.insert(:trip_allocation, allocation_changeset)
+        |> Ecto.Multi.update(
+          :cashing_report_reconciled,
+          CashingReport.mapping_status_changeset(cashing_report, %{
+            trip_mapping_status: "manually_matched",
+            trip_mapping_notes: "Manually matched by user ##{matched_by_user.id}."
+          })
+        )
+        |> Repo.transaction()
+        |> unwrap_multi(:cashing_report_reconciled)
+    end
+  end
+
+  @doc """
+  Reports not yet attributed to a Trip — `:pending` (not yet attempted),
+  `:ambiguous`, or `:unmappable`. This is the reconciliation work queue;
+  `:automatically_matched` and `:manually_matched` reports are excluded.
+  """
+  def list_unreconciled_cashing_reports(opts \\ []) do
+    CashingReport
+    |> where([c], c.trip_mapping_status in ["pending", "ambiguous", "unmappable"])
+    |> maybe_filter_cashing_report_organisation(opts[:organisation_id])
+    |> Repo.all()
   end
 
   @doc """

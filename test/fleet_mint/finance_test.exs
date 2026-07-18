@@ -3,6 +3,205 @@ defmodule FleetMint.FinanceTest do
 
   alias FleetMint.Finance
   alias FleetMint.Accounting
+  alias FleetMint.Finance.CashingReportTrip
+  alias FleetMint.Repo
+  alias FleetMint.Transport.Trips
+
+  describe "attempt_trip_match/1 (Phase 2b cashing_report <-> Trip reconciliation)" do
+    import FleetMint.FinanceFixtures
+    import FleetMint.FleetFixtures
+    import FleetMint.TicketingFixtures
+
+    test "unmappable: no bus on the report" do
+      cashing_report = cashing_report_fixture()
+      assert {:unmappable, "No bus recorded on this report."} = Finance.attempt_trip_match(cashing_report)
+    end
+
+    test "unmappable: bus has no vehicle assignment" do
+      operator = operator_fixture()
+      bus = bus_fixture(organisation_id: operator.organisation_id)
+      cashing_report = cashing_report_fixture(%{bus_id: bus.id})
+
+      assert {:unmappable, "Bus has no vehicle assignment recorded."} = Finance.attempt_trip_match(cashing_report)
+    end
+
+    test "unmappable: vehicle has never been assigned to any schedule" do
+      operator = operator_fixture()
+      vehicle = vehicle_fixture()
+      bus = bus_fixture(organisation_id: operator.organisation_id, vehicle_id: vehicle.id)
+      cashing_report = cashing_report_fixture(%{bus_id: bus.id})
+
+      assert {:unmappable, "No schedule has ever been assigned this vehicle."} =
+               Finance.attempt_trip_match(cashing_report)
+    end
+
+    test "unmappable: matching schedule exists but no Trip is recorded for that date" do
+      operator = operator_fixture()
+      vehicle = vehicle_fixture()
+      bus = bus_fixture(organisation_id: operator.organisation_id, vehicle_id: vehicle.id)
+      schedule_fixture(operator_id: operator.id, vehicle_id: vehicle.id)
+
+      cashing_report = cashing_report_fixture(%{bus_id: bus.id, report_date: ~D[2026-08-01]})
+
+      assert {:unmappable, notes} = Finance.attempt_trip_match(cashing_report)
+      assert notes =~ "no trip is recorded"
+    end
+
+    test "unmappable: vehicle only used on a schedule belonging to a different organisation" do
+      operator_a = operator_fixture()
+      operator_b = operator_fixture()
+      vehicle = vehicle_fixture()
+      bus = bus_fixture(organisation_id: operator_a.organisation_id, vehicle_id: vehicle.id)
+      schedule_fixture(operator_id: operator_b.id, vehicle_id: vehicle.id)
+
+      cashing_report = cashing_report_fixture(%{bus_id: bus.id})
+
+      assert {:unmappable, notes} = Finance.attempt_trip_match(cashing_report)
+      assert notes =~ "different organisation"
+    end
+
+    test "ambiguous: vehicle is assigned to more than one schedule in the same organisation" do
+      operator = operator_fixture()
+      vehicle = vehicle_fixture()
+      bus = bus_fixture(organisation_id: operator.organisation_id, vehicle_id: vehicle.id)
+      schedule_fixture(operator_id: operator.id, vehicle_id: vehicle.id)
+      schedule_fixture(operator_id: operator.id, vehicle_id: vehicle.id)
+
+      cashing_report = cashing_report_fixture(%{bus_id: bus.id})
+
+      assert {:ambiguous, notes} = Finance.attempt_trip_match(cashing_report)
+      assert notes =~ "more than one schedule"
+    end
+
+    test "automatically_matched: exactly one same-organisation schedule, with a Trip on that date" do
+      operator = operator_fixture()
+      vehicle = vehicle_fixture()
+      bus = bus_fixture(organisation_id: operator.organisation_id, vehicle_id: vehicle.id)
+      schedule = schedule_fixture(operator_id: operator.id, vehicle_id: vehicle.id)
+      {:ok, trip} = Trips.get_or_create_trip(schedule.id, ~D[2026-08-01])
+
+      cashing_report = cashing_report_fixture(%{bus_id: bus.id, report_date: ~D[2026-08-01]})
+
+      assert {:automatically_matched, matched_trip, organisation_id} = Finance.attempt_trip_match(cashing_report)
+      assert matched_trip.id == trip.id
+      assert organisation_id == operator.organisation_id
+    end
+
+    test "create_cashing_report/1 automatically allocates cash to the matched Trip and records the reconciliation state" do
+      operator = operator_fixture()
+      vehicle = vehicle_fixture()
+      bus = bus_fixture(organisation_id: operator.organisation_id, vehicle_id: vehicle.id)
+      schedule = schedule_fixture(operator_id: operator.id, vehicle_id: vehicle.id)
+      {:ok, trip} = Trips.get_or_create_trip(schedule.id, ~D[2026-08-01])
+
+      cashing_report = cashing_report_fixture(%{bus_id: bus.id, report_date: ~D[2026-08-01], received_cashing: "300.00"})
+
+      assert cashing_report.trip_mapping_status == "automatically_matched"
+
+      assert [allocation] = Repo.all(CashingReportTrip)
+      assert allocation.cashing_report_id == cashing_report.id
+      assert allocation.trip_id == trip.id
+      assert allocation.match_method == "automatic"
+      assert Decimal.equal?(allocation.allocated_amount, Decimal.new("300.00"))
+    end
+
+    test "create_cashing_report/1 leaves an unmatchable report unmappable without inventing a Trip" do
+      cashing_report = cashing_report_fixture()
+
+      assert cashing_report.trip_mapping_status == "unmappable"
+      assert Repo.all(CashingReportTrip) == []
+    end
+  end
+
+  describe "match_cashing_report_to_trip/4 (manual reconciliation)" do
+    import FleetMint.FinanceFixtures
+    import FleetMint.FleetFixtures
+    import FleetMint.TicketingFixtures
+    import FleetMint.IdentityFixtures
+
+    test "manually matches an ambiguous report to a chosen Trip" do
+      operator = operator_fixture()
+      vehicle = vehicle_fixture()
+      bus = bus_fixture(organisation_id: operator.organisation_id, vehicle_id: vehicle.id)
+      schedule = schedule_fixture(operator_id: operator.id, vehicle_id: vehicle.id)
+      {:ok, trip} = Trips.get_or_create_trip(schedule.id, ~D[2026-08-01])
+      staff = user_fixture()
+
+      cashing_report = cashing_report_fixture(%{bus_id: bus.id})
+      assert cashing_report.trip_mapping_status == "unmappable"
+
+      assert {:ok, matched} = Finance.match_cashing_report_to_trip(cashing_report, trip, staff)
+      assert matched.trip_mapping_status == "manually_matched"
+
+      assert [allocation] = Repo.all(CashingReportTrip)
+      assert allocation.trip_id == trip.id
+      assert allocation.match_method == "manual"
+      assert allocation.matched_by_id == staff.id
+    end
+
+    test "rejects a manual match across organisations without touching either record" do
+      operator_a = operator_fixture()
+      operator_b = operator_fixture()
+      vehicle_a = vehicle_fixture()
+      bus_a = bus_fixture(organisation_id: operator_a.organisation_id, vehicle_id: vehicle_a.id)
+      schedule_b = schedule_fixture(operator_id: operator_b.id)
+      {:ok, trip_b} = Trips.get_or_create_trip(schedule_b.id, ~D[2026-08-01])
+      staff = user_fixture()
+
+      cashing_report = cashing_report_fixture(%{bus_id: bus_a.id})
+
+      assert {:error, :organisation_mismatch} = Finance.match_cashing_report_to_trip(cashing_report, trip_b, staff)
+      assert Repo.all(CashingReportTrip) == []
+
+      reloaded = Finance.get_cashing_report!(cashing_report.id)
+      assert reloaded.trip_mapping_status == cashing_report.trip_mapping_status
+    end
+
+    test "rejects a manual match when the report has no bus at all" do
+      staff = user_fixture()
+      operator = operator_fixture()
+      schedule = schedule_fixture(operator_id: operator.id)
+      {:ok, trip} = Trips.get_or_create_trip(schedule.id, ~D[2026-08-01])
+
+      cashing_report = cashing_report_fixture()
+
+      assert {:error, :no_bus_on_report} = Finance.match_cashing_report_to_trip(cashing_report, trip, staff)
+    end
+  end
+
+  describe "cashing_report_trips tenant isolation at the database level" do
+    import FleetMint.FinanceFixtures
+    import FleetMint.FleetFixtures
+    import FleetMint.TicketingFixtures
+
+    test "an allocation cannot be inserted with a trip_id/organisation_id mismatch" do
+      operator_a = operator_fixture()
+      operator_b = operator_fixture()
+      schedule = schedule_fixture(operator_id: operator_a.id)
+      {:ok, trip} = Trips.get_or_create_trip(schedule.id, ~D[2026-08-01])
+
+      # Bus-less on purpose: attempt_trip_match/1 leaves this unmappable
+      # (no auto-allocation), so the row this test inserts is the only
+      # one that will exist for this cashing_report/trip pair — the point
+      # is proving the database itself rejects the mismatch, independent
+      # of whatever reconciliation state the report happens to be in.
+      cashing_report = cashing_report_fixture()
+
+      changeset =
+        CashingReportTrip.changeset(%CashingReportTrip{}, %{
+          cashing_report_id: cashing_report.id,
+          trip_id: trip.id,
+          # Wrong organisation on purpose — trip_id alone points at a real
+          # Trip, but the pair must not be accepted.
+          organisation_id: operator_b.organisation_id,
+          allocated_amount: "50.00",
+          match_method: "manual",
+          matched_at: DateTime.utc_now() |> DateTime.truncate(:second)
+        })
+
+      assert_raise Ecto.ConstraintError, fn -> Repo.insert(changeset) end
+    end
+  end
 
   describe "list_cashing_reports/1 tenant scoping" do
     import FleetMint.FinanceFixtures
