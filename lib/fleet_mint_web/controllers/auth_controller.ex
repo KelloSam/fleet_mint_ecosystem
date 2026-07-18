@@ -40,7 +40,7 @@ defmodule FleetMintWeb.AuthController do
         Administration.log("login_success",
           actor_id: user.id,
           actor_email: user.email,
-          ip_address: get_ip(conn)
+          ip_address: client_ip(conn)
         )
 
         conn = configure_session(conn, renew: true)
@@ -61,7 +61,7 @@ defmodule FleetMintWeb.AuthController do
 
         Administration.log("login_blocked_lockout",
           actor_email: email,
-          ip_address: get_ip(conn),
+          ip_address: client_ip(conn),
           metadata: %{attempted_email: email}
         )
 
@@ -77,7 +77,7 @@ defmodule FleetMintWeb.AuthController do
       {:error, _} ->
         Administration.log("login_failure",
           actor_email: email,
-          ip_address: get_ip(conn),
+          ip_address: client_ip(conn),
           metadata: %{attempted_email: email}
         )
 
@@ -91,12 +91,5 @@ defmodule FleetMintWeb.AuthController do
     conn
     |> configure_session(drop: true)
     |> redirect(to: ~p"/login")
-  end
-
-  defp get_ip(conn) do
-    case Plug.Conn.get_req_header(conn, "x-forwarded-for") do
-      [ip | _] -> ip
-      [] -> to_string(:inet.ntoa(conn.remote_ip))
-    end
   end
 end

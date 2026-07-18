@@ -44,6 +44,7 @@ defmodule FleetMintWeb do
 
       import Plug.Conn
       import FleetMintWeb.Gettext
+      import FleetMintWeb.ControllerHelpers
 
       unquote(verified_routes())
     end

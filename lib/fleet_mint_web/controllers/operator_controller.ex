@@ -4,6 +4,7 @@ defmodule FleetMintWeb.OperatorController do
   alias FleetMint.Transport.Fleet.Operator
   alias FleetMint.Transport.Routes
   alias FleetMint.Identity.Authorization
+  alias FleetMint.Administration
 
   # Creating an Operator (Fleet.create_operator/1 creates its Organisation
   # too - see identity/organisation.ex) is onboarding a brand new tenant,
@@ -20,7 +21,7 @@ defmodule FleetMintWeb.OperatorController do
   def show(conn, %{"id" => id}) do
     operator = Routes.get_operator_with_routes!(id)
 
-    with_organisation_access(conn, operator.organisation_id, ~p"/operators", fn conn ->
+    with_organisation_access(conn, operator, fn conn ->
       render(conn, :show, operator: operator)
     end)
   end
@@ -33,7 +34,17 @@ defmodule FleetMintWeb.OperatorController do
   def create(conn, %{"operator" => params}) do
     case Fleet.create_operator(params) do
       {:ok, op} ->
+        Administration.log("operator_created",
+          actor_id: conn.assigns.current_user.id,
+          actor_email: conn.assigns.current_user.email,
+          target_type: "Operator",
+          target_id: op.id,
+          metadata: %{name: op.name, organisation_id: op.organisation_id},
+          ip_address: client_ip(conn)
+        )
+
         conn |> put_flash(:info, "#{op.name} added.") |> redirect(to: ~p"/operators")
+
       {:error, changeset} ->
         render(conn, :new, changeset: changeset)
     end
@@ -42,7 +53,7 @@ defmodule FleetMintWeb.OperatorController do
   def edit(conn, %{"id" => id}) do
     op = Fleet.get_operator!(id)
 
-    with_organisation_access(conn, op.organisation_id, ~p"/operators", fn conn ->
+    with_organisation_access(conn, op, fn conn ->
       changeset = Fleet.change_operator(op)
       render(conn, :edit, operator: op, changeset: changeset)
     end)
@@ -51,7 +62,7 @@ defmodule FleetMintWeb.OperatorController do
   def update(conn, %{"id" => id, "operator" => params}) do
     op = Fleet.get_operator!(id)
 
-    with_organisation_access(conn, op.organisation_id, ~p"/operators", fn conn ->
+    with_organisation_access(conn, op, fn conn ->
       case Fleet.update_operator(op, params) do
         {:ok, op} ->
           conn |> put_flash(:info, "#{op.name} updated.") |> redirect(to: ~p"/operators")
@@ -64,8 +75,18 @@ defmodule FleetMintWeb.OperatorController do
   def delete(conn, %{"id" => id}) do
     op = Fleet.get_operator!(id)
 
-    with_organisation_access(conn, op.organisation_id, ~p"/operators", fn conn ->
+    with_organisation_access(conn, op, fn conn ->
       {:ok, _} = Fleet.delete_operator(op)
+
+      Administration.log("operator_archived",
+        actor_id: conn.assigns.current_user.id,
+        actor_email: conn.assigns.current_user.email,
+        target_type: "Operator",
+        target_id: op.id,
+        metadata: %{name: op.name},
+        ip_address: client_ip(conn)
+      )
+
       conn |> put_flash(:info, "#{op.name} archived.") |> redirect(to: ~p"/operators")
     end)
   end
@@ -74,6 +95,14 @@ defmodule FleetMintWeb.OperatorController do
     if Authorization.platform_admin?(conn.assigns.current_user) do
       conn
     else
+      Administration.log("platform_only_action_denied",
+        actor_id: conn.assigns.current_user.id,
+        actor_email: conn.assigns.current_user.email,
+        target_type: "Operator",
+        metadata: %{action: action_name(conn)},
+        ip_address: client_ip(conn)
+      )
+
       conn |> put_flash(:error, "Only Miway platform administrators can register a new organisation.") |> redirect(to: ~p"/operators") |> halt()
     end
   end
@@ -86,13 +115,22 @@ defmodule FleetMintWeb.OperatorController do
     end
   end
 
-  defp with_organisation_access(conn, organisation_id, fallback_path, fun) do
-    if Authorization.can_access_organisation?(conn.assigns.current_user, organisation_id) do
+  defp with_organisation_access(conn, %Operator{} = target_operator, fun) do
+    if Authorization.can_access_organisation?(conn.assigns.current_user, target_operator.organisation_id) do
       fun.(conn)
     else
+      Administration.log("cross_tenant_access_denied",
+        actor_id: conn.assigns.current_user.id,
+        actor_email: conn.assigns.current_user.email,
+        target_type: "Operator",
+        target_id: target_operator.id,
+        metadata: %{target_organisation_id: target_operator.organisation_id},
+        ip_address: client_ip(conn)
+      )
+
       conn
       |> put_flash(:error, "That operator belongs to a different organisation.")
-      |> redirect(to: fallback_path)
+      |> redirect(to: ~p"/operators")
     end
   end
 end

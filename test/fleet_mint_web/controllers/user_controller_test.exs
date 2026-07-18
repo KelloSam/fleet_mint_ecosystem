@@ -175,4 +175,101 @@ defmodule FleetMintWeb.UserControllerTest do
       assert user.role == "tenant_admin"
     end
   end
+
+  describe "audit logging" do
+    setup do
+      org_a = operator_fixture()
+      org_b = operator_fixture()
+
+      tenant_admin_a = user_fixture(role: "tenant_admin", organisation_id: org_a.organisation_id)
+      staff_a = user_fixture(role: "cashier", organisation_id: org_a.organisation_id)
+      staff_b = user_fixture(role: "cashier", organisation_id: org_b.organisation_id)
+
+      %{org_a: org_a, tenant_admin_a: tenant_admin_a, staff_a: staff_a, staff_b: staff_b}
+    end
+
+    test "user_created is logged with the creator and the new user's role/organisation", %{
+      conn: conn,
+      tenant_admin_a: tenant_admin_a,
+      org_a: org_a
+    } do
+      conn
+      |> log_in_user(tenant_admin_a)
+      |> post(~p"/users", %{
+        "user" => %{
+          "username" => "audited_user",
+          "email" => "audited_user@example.com",
+          "password" => "Password123!secure",
+          "full_name" => "Audited User",
+          "role" => "cashier",
+          "active" => "true"
+        }
+      })
+
+      user = Users.get_user_by_username("audited_user")
+      [log] = FleetMint.Administration.list_recent_audit_logs(1, organisation_id: org_a.organisation_id)
+
+      assert log.event == "user_created"
+      assert log.actor_id == tenant_admin_a.id
+      assert log.target_id == to_string(user.id)
+      assert log.metadata["role"] == "cashier"
+    end
+
+    test "user_activated and user_deactivated are logged", %{conn: conn, tenant_admin_a: tenant_admin_a, staff_a: staff_a} do
+      conn |> log_in_user(tenant_admin_a) |> post(~p"/users/#{staff_a}/deactivate")
+      conn |> log_in_user(tenant_admin_a) |> post(~p"/users/#{staff_a}/activate")
+
+      events =
+        FleetMint.Administration.list_recent_audit_logs(10)
+        |> Enum.filter(&(&1.target_id == to_string(staff_a.id)))
+        |> Enum.map(& &1.event)
+
+      assert "user_deactivated" in events
+      assert "user_activated" in events
+    end
+
+    test "user_role_changed is logged with the before/after role", %{conn: conn, tenant_admin_a: tenant_admin_a, staff_a: staff_a} do
+      conn
+      |> log_in_user(tenant_admin_a)
+      |> put(~p"/users/#{staff_a}", %{"user" => %{"role" => "manager", "active" => "true"}})
+
+      [log] =
+        FleetMint.Administration.list_recent_audit_logs(10)
+        |> Enum.filter(&(&1.event == "user_role_changed" and &1.target_id == to_string(staff_a.id)))
+
+      assert log.metadata["from"] == "cashier"
+      assert log.metadata["to"] == "manager"
+    end
+
+    test "cross_tenant_access_denied is logged when a tenant_admin is blocked from another organisation's user", %{
+      conn: conn,
+      tenant_admin_a: tenant_admin_a,
+      staff_b: staff_b
+    } do
+      conn |> log_in_user(tenant_admin_a) |> get(~p"/users/#{staff_b}")
+
+      [log] =
+        FleetMint.Administration.list_recent_audit_logs(10)
+        |> Enum.filter(&(&1.event == "cross_tenant_access_denied" and &1.target_id == to_string(staff_b.id)))
+
+      assert log.actor_id == tenant_admin_a.id
+    end
+
+    test "role_escalation_attempt_blocked is logged when a tenant_admin submits role: platform_admin", %{
+      conn: conn,
+      tenant_admin_a: tenant_admin_a,
+      staff_a: staff_a
+    } do
+      conn
+      |> log_in_user(tenant_admin_a)
+      |> put(~p"/users/#{staff_a}", %{"user" => %{"role" => "platform_admin", "active" => "true"}})
+
+      [log] =
+        FleetMint.Administration.list_recent_audit_logs(10)
+        |> Enum.filter(&(&1.event == "role_escalation_attempt_blocked"))
+
+      assert log.actor_id == tenant_admin_a.id
+      assert log.target_id == to_string(staff_a.id)
+    end
+  end
 end

@@ -27,7 +27,7 @@ defmodule FleetMintWeb.TwoFactorController do
       Administration.log("2fa_success",
         actor_id: user.id,
         actor_email: user.email,
-        ip_address: get_ip(conn)
+        ip_address: client_ip(conn)
       )
 
       conn
@@ -38,7 +38,7 @@ defmodule FleetMintWeb.TwoFactorController do
       |> redirect(to: ~p"/dashboard")
     else
       _ ->
-        Administration.log("2fa_failure", ip_address: get_ip(conn))
+        Administration.log("2fa_failure", ip_address: client_ip(conn))
 
         conn
         |> put_flash(:error, "Invalid or expired code. Please try again.")
@@ -71,7 +71,7 @@ defmodule FleetMintWeb.TwoFactorController do
       Administration.log("2fa_enabled",
         actor_id: user.id,
         actor_email: user.email,
-        ip_address: get_ip(conn)
+        ip_address: client_ip(conn)
       )
 
       conn
@@ -93,18 +93,11 @@ defmodule FleetMintWeb.TwoFactorController do
     Administration.log("2fa_disabled",
       actor_id: user.id,
       actor_email: user.email,
-      ip_address: get_ip(conn)
+      ip_address: client_ip(conn)
     )
 
     conn
     |> put_flash(:info, "Two-factor authentication disabled.")
     |> redirect(to: ~p"/settings/2fa")
-  end
-
-  defp get_ip(conn) do
-    case Plug.Conn.get_req_header(conn, "x-forwarded-for") do
-      [ip | _] -> ip
-      [] -> to_string(:inet.ntoa(conn.remote_ip))
-    end
   end
 end
