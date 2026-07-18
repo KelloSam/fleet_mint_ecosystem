@@ -9,6 +9,7 @@ defmodule FleetMint.Cargo do
   def list_clients(opts \\ []) do
     Client
     |> maybe_filter_status(opts[:status])
+    |> maybe_filter_organisation(opts[:organisation_id])
     |> order_by([c], c.company_name)
     |> Repo.all()
   end
@@ -33,6 +34,7 @@ defmodule FleetMint.Cargo do
     Order
     |> maybe_filter_status(opts[:status])
     |> maybe_filter_client(opts[:client_id])
+    |> maybe_filter_order_organisation(opts[:organisation_id])
     |> preload([:client, :assigned_trip, :created_by])
     |> order_by([o], [desc: o.inserted_at])
     |> Repo.all()
@@ -66,6 +68,7 @@ defmodule FleetMint.Cargo do
   def list_trips(opts \\ []) do
     Trip
     |> maybe_filter_status(opts[:status])
+    |> maybe_filter_trip_organisation(opts[:organisation_id])
     |> preload([:vehicle, :driver, :co_driver, orders: [:client]])
     |> order_by([t], [desc: t.planned_departure])
     |> Repo.all()
@@ -135,6 +138,7 @@ defmodule FleetMint.Cargo do
     Invoice
     |> maybe_filter_status(opts[:status])
     |> maybe_filter_client(opts[:client_id])
+    |> maybe_filter_invoice_organisation(opts[:organisation_id])
     |> preload([:client, :trip])
     |> order_by([i], [desc: i.invoice_date])
     |> Repo.all()
@@ -191,6 +195,34 @@ defmodule FleetMint.Cargo do
 
   defp maybe_filter_client(query, nil), do: query
   defp maybe_filter_client(query, id), do: where(query, [x], x.client_id == ^id)
+
+  defp maybe_filter_organisation(query, nil), do: query
+  defp maybe_filter_organisation(query, :all), do: query
+  defp maybe_filter_organisation(query, organisation_id), do: where(query, [c], c.organisation_id == ^organisation_id)
+
+  defp maybe_filter_order_organisation(query, nil), do: query
+  defp maybe_filter_order_organisation(query, :all), do: query
+  defp maybe_filter_order_organisation(query, organisation_id) do
+    query
+    |> join(:inner, [o], c in assoc(o, :client), as: :client)
+    |> where([client: c], c.organisation_id == ^organisation_id)
+  end
+
+  defp maybe_filter_trip_organisation(query, nil), do: query
+  defp maybe_filter_trip_organisation(query, :all), do: query
+  defp maybe_filter_trip_organisation(query, organisation_id) do
+    query
+    |> join(:inner, [t], v in assoc(t, :vehicle), as: :vehicle)
+    |> where([vehicle: v], v.organisation_id == ^organisation_id)
+  end
+
+  defp maybe_filter_invoice_organisation(query, nil), do: query
+  defp maybe_filter_invoice_organisation(query, :all), do: query
+  defp maybe_filter_invoice_organisation(query, organisation_id) do
+    query
+    |> join(:inner, [i], c in assoc(i, :client), as: :client)
+    |> where([client: c], c.organisation_id == ^organisation_id)
+  end
 
   # ── Private ledger helpers ─────────────────────────────────────────────────
 

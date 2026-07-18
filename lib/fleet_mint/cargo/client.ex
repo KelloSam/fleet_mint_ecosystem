@@ -16,6 +16,8 @@ defmodule FleetMint.Cargo.Client do
     field :status, :string, default: "active"
     field :notes, :string
 
+    belongs_to :organisation, FleetMint.Identity.Organisation
+
     has_many :orders, FleetMint.Cargo.Order
     has_many :invoices, FleetMint.Cargo.Invoice
 
@@ -28,11 +30,13 @@ defmodule FleetMint.Cargo.Client do
   def changeset(client, attrs) do
     client
     |> cast(attrs, [:company_name, :contact_person, :phone, :email, :address, :city,
-                    :client_type, :tpin, :credit_limit, :credit_balance, :status, :notes])
+                    :client_type, :tpin, :credit_limit, :credit_balance, :status, :notes,
+                    :organisation_id])
     |> validate_required([:company_name, :client_type])
     |> validate_inclusion(:client_type, @client_types)
     |> validate_inclusion(:status, @statuses)
     |> validate_number(:credit_limit, greater_than_or_equal_to: 0)
+    |> foreign_key_constraint(:organisation_id)
   end
 
   def type_options do

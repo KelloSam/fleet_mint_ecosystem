@@ -31,6 +31,24 @@ defmodule FleetMint.CargoFixtures do
     vehicle
   end
 
+  def order_fixture(attrs \\ %{}) do
+    attrs = Map.new(attrs)
+    client = attrs[:client] || client_fixture()
+
+    {:ok, order} =
+      attrs
+      |> Map.delete(:client)
+      |> Enum.into(%{
+        cargo_type: "general_cargo",
+        origin: "Lusaka",
+        destination: "Ndola",
+        client_id: client.id
+      })
+      |> FleetMint.Cargo.create_order()
+
+    order
+  end
+
   def trip_fixture(attrs \\ %{}) do
     attrs = Map.new(attrs)
     vehicle = attrs[:vehicle] || vehicle_fixture()

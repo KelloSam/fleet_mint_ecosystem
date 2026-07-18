@@ -6,6 +6,58 @@ defmodule FleetMint.CargoTest do
 
   import FleetMint.CargoFixtures
 
+  alias FleetMint.FleetFixtures
+
+  describe "tenant scoping" do
+    test "list_clients/1 organisation_id filters to that organisation's clients only" do
+      org_a = FleetFixtures.operator_fixture()
+      org_b = FleetFixtures.operator_fixture()
+
+      client_a = client_fixture(organisation_id: org_a.organisation_id)
+      client_fixture(organisation_id: org_b.organisation_id)
+
+      result = Cargo.list_clients(organisation_id: org_a.organisation_id)
+
+      assert Enum.map(result, & &1.id) == [client_a.id]
+    end
+
+    test "list_orders/1 organisation_id filters through the order's client" do
+      org_a = FleetFixtures.operator_fixture()
+      org_b = FleetFixtures.operator_fixture()
+
+      order_a = order_fixture(client: client_fixture(organisation_id: org_a.organisation_id))
+      order_fixture(client: client_fixture(organisation_id: org_b.organisation_id))
+
+      result = Cargo.list_orders(organisation_id: org_a.organisation_id)
+
+      assert Enum.map(result, & &1.id) == [order_a.id]
+    end
+
+    test "list_trips/1 organisation_id filters through the trip's vehicle" do
+      org_a = FleetFixtures.operator_fixture()
+      org_b = FleetFixtures.operator_fixture()
+
+      trip_a = trip_fixture(vehicle: vehicle_fixture(%{"organisation_id" => org_a.organisation_id}))
+      trip_fixture(vehicle: vehicle_fixture(%{"organisation_id" => org_b.organisation_id}))
+
+      result = Cargo.list_trips(organisation_id: org_a.organisation_id)
+
+      assert Enum.map(result, & &1.id) == [trip_a.id]
+    end
+
+    test "list_invoices/1 organisation_id filters through the invoice's client" do
+      org_a = FleetFixtures.operator_fixture()
+      org_b = FleetFixtures.operator_fixture()
+
+      invoice_a = invoice_fixture(client: client_fixture(organisation_id: org_a.organisation_id))
+      invoice_fixture(client: client_fixture(organisation_id: org_b.organisation_id))
+
+      result = Cargo.list_invoices(organisation_id: org_a.organisation_id)
+
+      assert Enum.map(result, & &1.id) == [invoice_a.id]
+    end
+  end
+
   describe "invoices" do
     test "create_invoice/2 writes no ledger entry (no cash has moved)" do
       invoice = invoice_fixture(base_amount: "500.00")
