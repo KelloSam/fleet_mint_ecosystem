@@ -63,4 +63,22 @@
     <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Notes</h2>
     <p class="text-sm text-gray-700 leading-relaxed"><%= @cashing_report.description || "No description." %></p>
   </div>
+
+  <div class="bg-white rounded-lg shadow p-6 lg:col-span-2">
+    <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Record History</h2>
+    <dl class="divide-y divide-gray-100">
+      <div class="py-3 flex justify-between text-sm">
+        <dt class="text-gray-500 font-medium">Created by</dt>
+        <dd class="text-gray-900">
+          <%= if @cashing_report.created_by, do: "#{@cashing_report.created_by.full_name} (#{@cashing_report.created_by.email})", else: "—" %>
+        </dd>
+      </div>
+      <div class="py-3 flex justify-between text-sm">
+        <dt class="text-gray-500 font-medium">Last edited by</dt>
+        <dd class="text-gray-900">
+          <%= if @cashing_report.updated_by, do: "#{@cashing_report.updated_by.full_name} (#{@cashing_report.updated_by.email})", else: "—" %>
+        </dd>
+      </div>
+    </dl>
+  </div>
 </div>

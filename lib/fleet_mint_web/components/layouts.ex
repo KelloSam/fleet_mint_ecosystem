@@ -11,4 +11,15 @@ defmodule FleetMintWeb.Layouts do
   use FleetMintWeb, :html
 
   embed_templates "layouts/*"
+
+  # Mirrors the role groupings the router pipelines enforce server-side
+  # (:require_manager / :require_admin / :require_platform_admin in
+  # router.ex) so the sidebar only advertises links a role can actually
+  # open. The router remains the real authorization boundary — these only
+  # keep the menu from lying about it. `role` may be nil (unauthenticated
+  # pages share this layout), which each clause below handles by simply
+  # not matching.
+  def manager_or_above?(role), do: role in ["platform_admin", "tenant_admin", "manager"]
+  def admin_tier?(role), do: role in ["platform_admin", "tenant_admin"]
+  def platform_admin_only?(role), do: role == "platform_admin"
 end

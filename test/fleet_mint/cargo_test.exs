@@ -119,4 +119,122 @@ defmodule FleetMint.CargoTest do
       assert Accounting.entries_for_source("FreightTrip", updated.id) == []
     end
   end
+
+  describe "order/trip assignment safety" do
+    test "assigning an order to a trip in a different organisation is rejected" do
+      org_a = FleetFixtures.operator_fixture()
+      org_b = FleetFixtures.operator_fixture()
+
+      order = order_fixture(client: client_fixture(organisation_id: org_a.organisation_id))
+      trip = trip_fixture(vehicle: vehicle_fixture(%{"organisation_id" => org_b.organisation_id}))
+
+      assert {:error, changeset} = Cargo.update_order(order, %{assigned_trip_id: trip.id})
+      assert "belongs to a different organisation than this order's client" in errors_on(changeset).assigned_trip_id
+
+      reloaded = Cargo.get_order!(order.id)
+      assert reloaded.assigned_trip_id == nil
+    end
+
+    test "assigning an order that would exceed the vehicle's remaining payload capacity is rejected" do
+      org = FleetFixtures.operator_fixture()
+      client = client_fixture(organisation_id: org.organisation_id)
+      vehicle = vehicle_fixture(%{"organisation_id" => org.organisation_id, "truck_profile" => %{"payload_capacity_tons" => "10.0"}})
+      trip = trip_fixture(vehicle: vehicle)
+
+      order_a = order_fixture(client: client, weight_tons: "7.0")
+      assert {:ok, _} = Cargo.update_order(order_a, %{assigned_trip_id: trip.id})
+
+      order_b = order_fixture(client: client, weight_tons: "5.0")
+      assert {:error, changeset} = Cargo.update_order(order_b, %{assigned_trip_id: trip.id})
+      assert Enum.any?(errors_on(changeset).assigned_trip_id, &(&1 =~ "payload capacity"))
+    end
+
+    test "an order already assigned to a trip can be re-saved without tripping its own weight against itself" do
+      org = FleetFixtures.operator_fixture()
+      client = client_fixture(organisation_id: org.organisation_id)
+      vehicle = vehicle_fixture(%{"organisation_id" => org.organisation_id, "truck_profile" => %{"payload_capacity_tons" => "10.0"}})
+      trip = trip_fixture(vehicle: vehicle)
+
+      order = order_fixture(client: client, weight_tons: "9.0")
+      assert {:ok, assigned} = Cargo.update_order(order, %{assigned_trip_id: trip.id})
+
+      assert {:ok, _} = Cargo.update_order(assigned, %{special_instructions: "handle with care"})
+    end
+
+    test "unassigning an order (nil trip) is always allowed regardless of capacity" do
+      org = FleetFixtures.operator_fixture()
+      client = client_fixture(organisation_id: org.organisation_id)
+      vehicle = vehicle_fixture(%{"organisation_id" => org.organisation_id})
+      trip = trip_fixture(vehicle: vehicle)
+
+      order = order_fixture(client: client, weight_tons: "1.0")
+      assert {:ok, assigned} = Cargo.update_order(order, %{assigned_trip_id: trip.id})
+      assert {:ok, unassigned} = Cargo.update_order(assigned, %{assigned_trip_id: nil})
+      assert unassigned.assigned_trip_id == nil
+    end
+  end
+
+  describe "update_trip_status/2 cascades to assigned orders" do
+    test "moving a trip to in_transit carries its still-open assigned orders along" do
+      org = FleetFixtures.operator_fixture()
+      client = client_fixture(organisation_id: org.organisation_id)
+      vehicle = vehicle_fixture(%{"organisation_id" => org.organisation_id})
+      trip = trip_fixture(vehicle: vehicle)
+
+      order = order_fixture(client: client, weight_tons: "1.0")
+      {:ok, order} = Cargo.update_order(order, %{assigned_trip_id: trip.id, status: "assigned"})
+
+      assert {:ok, _trip} = Cargo.update_trip_status(trip, "in_transit")
+
+      reloaded = Cargo.get_order!(order.id)
+      assert reloaded.status == "in_transit"
+    end
+
+    test "delivering a trip marks its assigned orders delivered" do
+      org = FleetFixtures.operator_fixture()
+      client = client_fixture(organisation_id: org.organisation_id)
+      vehicle = vehicle_fixture(%{"organisation_id" => org.organisation_id})
+      trip = trip_fixture(vehicle: vehicle)
+
+      order = order_fixture(client: client, weight_tons: "1.0")
+      {:ok, order} = Cargo.update_order(order, %{assigned_trip_id: trip.id, status: "assigned"})
+
+      assert {:ok, _trip} = Cargo.update_trip_status(trip, "delivered")
+
+      reloaded = Cargo.get_order!(order.id)
+      assert reloaded.status == "delivered"
+    end
+
+    test "cancelling a trip releases its still-open orders back to pending, unassigned" do
+      org = FleetFixtures.operator_fixture()
+      client = client_fixture(organisation_id: org.organisation_id)
+      vehicle = vehicle_fixture(%{"organisation_id" => org.organisation_id})
+      trip = trip_fixture(vehicle: vehicle)
+
+      order = order_fixture(client: client, weight_tons: "1.0")
+      {:ok, order} = Cargo.update_order(order, %{assigned_trip_id: trip.id, status: "assigned"})
+
+      assert {:ok, _trip} = Cargo.update_trip_status(trip, "cancelled")
+
+      reloaded = Cargo.get_order!(order.id)
+      assert reloaded.status == "pending"
+      assert reloaded.assigned_trip_id == nil
+    end
+
+    test "cancelling a trip does not touch an order that was already delivered" do
+      org = FleetFixtures.operator_fixture()
+      client = client_fixture(organisation_id: org.organisation_id)
+      vehicle = vehicle_fixture(%{"organisation_id" => org.organisation_id})
+      trip = trip_fixture(vehicle: vehicle)
+
+      order = order_fixture(client: client, weight_tons: "1.0")
+      {:ok, order} = Cargo.update_order(order, %{assigned_trip_id: trip.id, status: "delivered"})
+
+      assert {:ok, _trip} = Cargo.update_trip_status(trip, "cancelled")
+
+      reloaded = Cargo.get_order!(order.id)
+      assert reloaded.status == "delivered"
+      assert reloaded.assigned_trip_id == trip.id
+    end
+  end
 end

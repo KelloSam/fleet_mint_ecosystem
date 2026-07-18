@@ -9,6 +9,19 @@ defmodule FleetMint.Identity.Users do
   import Ecto.Query, warn: false
   alias FleetMint.Repo
   alias FleetMint.Identity.User
+  alias FleetMint.Identity.Organisation
+
+  @doc """
+  Returns active organisations as `{name, id}` pairs for the user-form
+  organisation picker.
+  """
+  def list_organisations do
+    Organisation
+    |> where([o], o.active == true)
+    |> order_by([o], asc: o.name)
+    |> select([o], {o.name, o.id})
+    |> Repo.all()
+  end
 
   @doc """
   Returns the list of users.

@@ -22,6 +22,7 @@ defmodule FleetMint.Finance do
   """
   def list_cashing_reports(opts \\ []) do
     CashingReport
+    |> where([c], is_nil(c.archived_at))
     |> maybe_filter_cashing_report_organisation(opts[:organisation_id])
     |> Repo.all()
   end
@@ -51,8 +52,11 @@ defmodule FleetMint.Finance do
       {:error, ...}
 
   """
-  def create_cashing_report(attrs \\ %{}) do
-    changeset = CashingReport.changeset(%CashingReport{}, attrs)
+  def create_cashing_report(attrs \\ %{}, actor_id \\ nil) do
+    changeset =
+      %CashingReport{}
+      |> CashingReport.changeset(attrs)
+      |> Ecto.Changeset.put_change(:created_by_id, actor_id)
 
     Ecto.Multi.new()
     |> Ecto.Multi.insert(:cashing_report, changeset)
@@ -231,6 +235,7 @@ defmodule FleetMint.Finance do
   def list_unreconciled_cashing_reports(opts \\ []) do
     CashingReport
     |> where([c], c.trip_mapping_status in ["pending", "ambiguous", "unmappable"])
+    |> where([c], is_nil(c.archived_at))
     |> maybe_filter_cashing_report_organisation(opts[:organisation_id])
     |> Repo.all()
     |> Repo.preload(:bus)
@@ -248,8 +253,11 @@ defmodule FleetMint.Finance do
       {:error, ...}
 
   """
-  def update_cashing_report(%CashingReport{} = cashing_report, attrs) do
-    changeset = CashingReport.changeset(cashing_report, attrs)
+  def update_cashing_report(%CashingReport{} = cashing_report, attrs, actor_id \\ nil) do
+    changeset =
+      cashing_report
+      |> CashingReport.changeset(attrs)
+      |> Ecto.Changeset.put_change(:updated_by_id, actor_id)
 
     Ecto.Multi.new()
     |> Ecto.Multi.update(:cashing_report, changeset)
@@ -273,19 +281,15 @@ defmodule FleetMint.Finance do
   end
 
   @doc """
-  Deletes a CashingReport.
-
-  ## Examples
-
-      iex> delete_cashing_report(cashing_report)
-      {:ok, %CashingReport{}}
-
-      iex> delete_cashing_report(cashing_report)
-      {:error, ...}
-
+  Archives a CashingReport (soft delete) — the row and its history stay in
+  place, just hidden from normal views, so a fabricated report can't be
+  erased by the same person who created it.
   """
-  def delete_cashing_report(%CashingReport{} = cashing_report) do
-    Repo.delete(cashing_report)
+  def delete_cashing_report(%CashingReport{} = cashing_report, actor_id \\ nil) do
+    cashing_report
+    |> Ecto.Changeset.change(archived_at: NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second))
+    |> Ecto.Changeset.put_change(:updated_by_id, actor_id)
+    |> Repo.update()
   end
 
   @doc """
@@ -312,7 +316,7 @@ defmodule FleetMint.Finance do
   """
   def get_cashing_reports_by_report(report_id) do
     query = from cr in CashingReport,
-            where: cr.report_id == ^report_id,
+            where: cr.report_id == ^report_id and is_nil(cr.archived_at),
             order_by: [desc: cr.inserted_at]
     Repo.all(query)
   end
@@ -422,7 +426,7 @@ defmodule FleetMint.Finance do
 
   """
   def list_expenditures(opts \\ []) do
-    from(e in Expenditure, order_by: [desc: e.date])
+    from(e in Expenditure, where: is_nil(e.archived_at), order_by: [desc: e.date])
     |> maybe_filter_expenditure_organisation(opts[:organisation_id])
     |> Repo.all()
   end
@@ -452,8 +456,11 @@ defmodule FleetMint.Finance do
       {:error, ...}
 
   """
-  def create_expenditure(attrs \\ %{}) do
-    changeset = Expenditure.changeset(%Expenditure{}, attrs)
+  def create_expenditure(attrs \\ %{}, actor_id \\ nil) do
+    changeset =
+      %Expenditure{}
+      |> Expenditure.changeset(attrs)
+      |> Ecto.Changeset.put_change(:created_by_id, actor_id)
 
     Ecto.Multi.new()
     |> Ecto.Multi.insert(:expenditure, changeset)
@@ -463,6 +470,7 @@ defmodule FleetMint.Finance do
         source_type: "Expenditure",
         source_id: expenditure.id,
         amount: expenditure.amount,
+        recorded_by_id: actor_id,
         occurred_at: DateTime.from_naive!(expenditure.date, "Etc/UTC"),
         description: expenditure.description
       }
@@ -483,8 +491,11 @@ defmodule FleetMint.Finance do
       {:error, ...}
 
   """
-  def update_expenditure(%Expenditure{} = expenditure, attrs) do
-    changeset = Expenditure.changeset(expenditure, attrs)
+  def update_expenditure(%Expenditure{} = expenditure, attrs, actor_id \\ nil) do
+    changeset =
+      expenditure
+      |> Expenditure.changeset(attrs)
+      |> Ecto.Changeset.put_change(:updated_by_id, actor_id)
 
     Ecto.Multi.new()
     |> Ecto.Multi.update(:expenditure, changeset)
@@ -508,19 +519,15 @@ defmodule FleetMint.Finance do
   end
 
   @doc """
-  Deletes a Expenditure.
-
-  ## Examples
-
-      iex> delete_expenditure(expenditure)
-      {:ok, %Expenditure{}}
-
-      iex> delete_expenditure(expenditure)
-      {:error, ...}
-
+  Archives an Expenditure (soft delete) — same reasoning as
+  delete_cashing_report/2: the row survives so a padded or fabricated
+  expense can't be erased by the person who entered it.
   """
-  def delete_expenditure(%Expenditure{} = expenditure) do
-    Repo.delete(expenditure)
+  def delete_expenditure(%Expenditure{} = expenditure, actor_id \\ nil) do
+    expenditure
+    |> Ecto.Changeset.change(archived_at: NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second))
+    |> Ecto.Changeset.put_change(:updated_by_id, actor_id)
+    |> Repo.update()
   end
 
   @doc """
@@ -547,7 +554,7 @@ defmodule FleetMint.Finance do
   """
   def get_expenditures_by_cashing_report(cashing_report_id) do
     query = from e in Expenditure,
-            where: e.cashing_report_id == ^cashing_report_id,
+            where: e.cashing_report_id == ^cashing_report_id and is_nil(e.archived_at),
             order_by: [desc: e.inserted_at]
     Repo.all(query)
   end
@@ -563,7 +570,7 @@ defmodule FleetMint.Finance do
   """
   def calculate_total_expenditures(cashing_report_id) do
     query = from e in Expenditure,
-            where: e.cashing_report_id == ^cashing_report_id,
+            where: e.cashing_report_id == ^cashing_report_id and is_nil(e.archived_at),
             select: sum(e.amount)
     Repo.one(query) || Decimal.new("0.00")
   end
@@ -582,9 +589,9 @@ defmodule FleetMint.Finance do
     end_datetime = end_date |> NaiveDateTime.new!(~T[23:59:59.999]) |> NaiveDateTime.truncate(:second)
     
     query = from e in Expenditure,
-            where: e.date >= ^start_datetime and e.date <= ^end_datetime,
+            where: e.date >= ^start_datetime and e.date <= ^end_datetime and is_nil(e.archived_at),
             order_by: [asc: e.date]
-    
+
     Repo.all(query)
   end
 
@@ -602,9 +609,9 @@ defmodule FleetMint.Finance do
     end_datetime = end_date |> NaiveDateTime.new!(~T[23:59:59.999]) |> NaiveDateTime.truncate(:second)
     
     query = from e in Expenditure,
-            where: e.date >= ^start_datetime and e.date <= ^end_datetime,
+            where: e.date >= ^start_datetime and e.date <= ^end_datetime and is_nil(e.archived_at),
             select: sum(e.amount)
-    
+
     Repo.one(query) || Decimal.new("0.00")
   end
 
@@ -650,9 +657,9 @@ defmodule FleetMint.Finance do
         end_datetime = date |> NaiveDateTime.new!(~T[23:59:59.999]) |> NaiveDateTime.truncate(:second)
         
         query = from e in Expenditure,
-                where: e.date >= ^start_datetime and e.date <= ^end_datetime,
+                where: e.date >= ^start_datetime and e.date <= ^end_datetime and is_nil(e.archived_at),
                 order_by: [asc: e.date]
-        
+
         Repo.all(query)
       end)
 
@@ -799,7 +806,7 @@ defmodule FleetMint.Finance do
   
   """
   def count_expenditures do
-    Repo.aggregate(Expenditure, :count, :id)
+    Expenditure |> where([e], is_nil(e.archived_at)) |> Repo.aggregate(:count, :id)
   end
 
   # ── PDF Report Queries ────────────────────────────────────────────────────
@@ -807,22 +814,32 @@ defmodule FleetMint.Finance do
   def list_cashing_reports_for_date(date) do
     query =
       from cr in CashingReport,
-        where: cr.report_date == ^date,
+        where: cr.report_date == ^date and is_nil(cr.archived_at),
         order_by: [asc: cr.inserted_at],
-        preload: [:bus, :conductor, :expenditures]
+        preload: [:bus, :conductor, expenditures: ^active_expenditures_query()]
 
     Repo.all(query)
   end
 
   def get_report_with_cashing_details!(id) do
-    cashing_preload = [cashing_reports: [:bus, :conductor, :expenditures]]
+    cashing_preload = [
+      cashing_reports: {active_cashing_reports_query(), [:bus, :conductor, expenditures: active_expenditures_query()]}
+    ]
 
     Repo.get!(Report, id) |> Repo.preload(cashing_preload)
   end
 
   def get_cashing_report_with_details!(id) do
-    Repo.get!(CashingReport, id) |> Repo.preload([:bus, :conductor, :expenditures, :report])
+    Repo.get!(CashingReport, id)
+    |> Repo.preload([:bus, :conductor, :report, expenditures: active_expenditures_query()])
   end
+
+  # Archived (soft-deleted) rows stay in the database for audit purposes
+  # but must never surface in reports, totals, or listings — these scope
+  # the has_many preloads above the same way the top-level list/get
+  # functions already filter.
+  defp active_expenditures_query, do: from(e in Expenditure, where: is_nil(e.archived_at))
+  defp active_cashing_reports_query, do: from(cr in CashingReport, where: is_nil(cr.archived_at))
 
   def get_expenditures_report(start_date, end_date) do
     expenditures = list_expenditures_by_date_range(start_date, end_date) |> Repo.preload(:cashing_report)

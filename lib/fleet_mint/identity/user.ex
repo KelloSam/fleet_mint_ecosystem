@@ -20,6 +20,10 @@ defmodule FleetMint.Identity.User do
     field :password_hash,   :string
     field :password,        :string, virtual: true
     field :full_name,       :string
+    # Job title, e.g. "Director" or "Accountant" — cosmetic only, distinct
+    # from :role. Never gate authorization on this field; role is the only
+    # source of truth for what a user can access.
+    field :title,           :string
     field :phone,           :string
     field :last_login,      :naive_datetime
     field :totp_secret,     :string
@@ -38,7 +42,7 @@ defmodule FleetMint.Identity.User do
 
   def changeset(user, attrs) do
     user
-    |> cast(attrs, [:username, :email, :role, :full_name, :phone, :active, :last_login, :organisation_id])
+    |> cast(attrs, [:username, :email, :role, :full_name, :title, :phone, :active, :last_login, :organisation_id])
     |> validate_required([:username, :email, :role, :full_name, :active])
     |> validate_format(:email, @email_regex, message: "must have the @ sign and no spaces")
     |> validate_inclusion(:role, @valid_roles, message: "must be one of: #{Enum.join(@valid_roles, ", ")}")
@@ -50,7 +54,7 @@ defmodule FleetMint.Identity.User do
 
   def registration_changeset(user, attrs) do
     user
-    |> cast(attrs, [:username, :email, :password, :role, :full_name, :active, :organisation_id])
+    |> cast(attrs, [:username, :email, :password, :role, :full_name, :title, :active, :organisation_id])
     |> validate_required([:username, :email, :password, :role, :full_name])
     |> validate_format(:email, @email_regex, message: "must have the @ sign and no spaces")
     |> validate_inclusion(:role, @valid_roles, message: "must be one of: #{Enum.join(@valid_roles, ", ")}")

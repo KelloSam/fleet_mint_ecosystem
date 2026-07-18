@@ -6,6 +6,7 @@ defmodule FleetMintWeb.CashingReportController do
   alias FleetMint.Transport.Fleet
   alias FleetMint.Transport.Trips
   alias FleetMint.Identity.Authorization
+  alias FleetMint.Administration
 
   plug :require_admin_or_manager when action in [:edit, :update, :delete, :edit_trip_match, :match_trip]
 
@@ -21,10 +22,25 @@ defmodule FleetMintWeb.CashingReportController do
 
   def create(conn, %{"cashing_report" => cashing_report_params}) do
     buses = allowed_buses(conn)
+    actor = conn.assigns.current_user
 
     if bus_allowed?(buses, cashing_report_params["bus_id"]) do
-      case Finance.create_cashing_report(cashing_report_params) do
+      case Finance.create_cashing_report(cashing_report_params, actor.id) do
         {:ok, cashing_report} ->
+          Administration.log("cashing_report_created",
+            actor_id: actor.id,
+            actor_email: actor.email,
+            target_type: "CashingReport",
+            target_id: cashing_report.id,
+            metadata: %{
+              received_cashing: cashing_report.received_cashing,
+              expected_cashing: cashing_report.expected_cashing,
+              bus_id: cashing_report.bus_id,
+              report_date: cashing_report.report_date
+            },
+            ip_address: client_ip(conn)
+          )
+
           conn
           |> put_flash(:info, "Cashing report created successfully.")
           |> redirect(to: ~p"/cashing_reports/#{cashing_report}")
@@ -41,7 +57,7 @@ defmodule FleetMintWeb.CashingReportController do
   end
 
   def show(conn, %{"id" => id}) do
-    cashing_report = Finance.get_cashing_report!(id)
+    cashing_report = Finance.get_cashing_report!(id) |> FleetMint.Repo.preload([:created_by, :updated_by])
 
     with_organisation_access(conn, cashing_report.bus, ~p"/cashing_reports", fn conn ->
       render(conn, :show, cashing_report: cashing_report)
@@ -59,10 +75,28 @@ defmodule FleetMintWeb.CashingReportController do
 
   def update(conn, %{"id" => id, "cashing_report" => cashing_report_params}) do
     cashing_report = Finance.get_cashing_report!(id)
+    actor = conn.assigns.current_user
+    before = %{received_cashing: cashing_report.received_cashing, expected_cashing: cashing_report.expected_cashing, debt_balance: cashing_report.debt_balance}
 
     with_organisation_access(conn, cashing_report.bus, ~p"/cashing_reports", fn conn ->
-      case Finance.update_cashing_report(cashing_report, cashing_report_params) do
+      case Finance.update_cashing_report(cashing_report, cashing_report_params, actor.id) do
         {:ok, cashing_report} ->
+          Administration.log("cashing_report_updated",
+            actor_id: actor.id,
+            actor_email: actor.email,
+            target_type: "CashingReport",
+            target_id: cashing_report.id,
+            metadata: %{
+              from: before,
+              to: %{
+                received_cashing: cashing_report.received_cashing,
+                expected_cashing: cashing_report.expected_cashing,
+                debt_balance: cashing_report.debt_balance
+              }
+            },
+            ip_address: client_ip(conn)
+          )
+
           conn
           |> put_flash(:info, "Cashing report updated successfully.")
           |> redirect(to: ~p"/cashing_reports/#{cashing_report}")
@@ -75,9 +109,25 @@ defmodule FleetMintWeb.CashingReportController do
 
   def delete(conn, %{"id" => id}) do
     cashing_report = Finance.get_cashing_report!(id)
+    actor = conn.assigns.current_user
 
     with_organisation_access(conn, cashing_report.bus, ~p"/cashing_reports", fn conn ->
-      {:ok, _cashing_report} = Finance.delete_cashing_report(cashing_report)
+      {:ok, _cashing_report} = Finance.delete_cashing_report(cashing_report, actor.id)
+
+      Administration.log("cashing_report_deleted",
+        actor_id: actor.id,
+        actor_email: actor.email,
+        target_type: "CashingReport",
+        target_id: cashing_report.id,
+        metadata: %{
+          received_cashing: cashing_report.received_cashing,
+          expected_cashing: cashing_report.expected_cashing,
+          debt_balance: cashing_report.debt_balance,
+          bus_id: cashing_report.bus_id,
+          report_date: cashing_report.report_date
+        },
+        ip_address: client_ip(conn)
+      )
 
       conn
       |> put_flash(:info, "Cashing report deleted successfully.")

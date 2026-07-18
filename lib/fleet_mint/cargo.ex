@@ -45,15 +45,89 @@ defmodule FleetMint.Cargo do
 
   def create_order(attrs, user_id \\ nil) do
     attrs = if user_id, do: Map.put(attrs, "created_by_id", user_id), else: attrs
-    %Order{} |> Order.changeset(attrs) |> Repo.insert()
+    %Order{} |> Order.changeset(attrs) |> validate_trip_assignment() |> Repo.insert()
   end
 
   def update_order(%Order{} = order, attrs) do
-    order |> Order.changeset(attrs) |> Repo.update()
+    order |> Order.changeset(attrs) |> validate_trip_assignment() |> Repo.update()
   end
 
   def assign_order_to_trip(%Order{} = order, trip_id) do
-    order |> Order.changeset(%{assigned_trip_id: trip_id, status: "assigned"}) |> Repo.update()
+    order
+    |> Order.changeset(%{assigned_trip_id: trip_id, status: "assigned"})
+    |> validate_trip_assignment()
+    |> Repo.update()
+  end
+
+  # Guards against two ways an order/trip assignment can be wrong even
+  # though both records individually validate fine: the trip's vehicle
+  # belongs to a different organisation than the order's own client (the
+  # order-edit form's trip dropdown is already organisation-scoped, so
+  # this only fires against a tampered request), or the trip's vehicle
+  # doesn't have enough remaining payload capacity for this order on top
+  # of what's already assigned to it. Runs on every create/update path
+  # (including assign_order_to_trip/2) rather than only the controller's
+  # usual entry point, so it can't be bypassed by calling a different
+  # function.
+  defp validate_trip_assignment(changeset) do
+    case Ecto.Changeset.get_field(changeset, :assigned_trip_id) do
+      nil ->
+        changeset
+
+      trip_id ->
+        trip = Trip |> Repo.get(trip_id) |> Repo.preload(vehicle: [:truck_profile])
+        client_id = Ecto.Changeset.get_field(changeset, :client_id)
+        client = client_id && Repo.get(Client, client_id)
+
+        cond do
+          is_nil(trip) ->
+            Ecto.Changeset.add_error(changeset, :assigned_trip_id, "does not exist")
+
+          is_nil(client) ->
+            changeset
+
+          is_nil(trip.vehicle) or is_nil(trip.vehicle.organisation_id) ->
+            Ecto.Changeset.add_error(changeset, :assigned_trip_id, "cannot be assigned - the trip's vehicle has no organisation on record")
+
+          trip.vehicle.organisation_id != client.organisation_id ->
+            Ecto.Changeset.add_error(changeset, :assigned_trip_id, "belongs to a different organisation than this order's client")
+
+          true ->
+            validate_trip_capacity(changeset, trip)
+        end
+    end
+  end
+
+  defp validate_trip_capacity(changeset, %Trip{} = trip) do
+    capacity = trip.vehicle && trip.vehicle.truck_profile && trip.vehicle.truck_profile.payload_capacity_tons
+
+    if is_nil(capacity) do
+      # No capacity on record for this vehicle - nothing to check against,
+      # so don't block on data that was never captured.
+      changeset
+    else
+      order_id = Ecto.Changeset.get_field(changeset, :id)
+      this_weight = Ecto.Changeset.get_field(changeset, :weight_tons) || Decimal.new(0)
+
+      already_assigned =
+        Order
+        |> where([o], o.assigned_trip_id == ^trip.id and o.status not in ["delivered", "cancelled"])
+        |> Repo.all()
+        |> Enum.reject(&(&1.id == order_id))
+        |> Enum.reduce(Decimal.new(0), fn o, acc -> Decimal.add(acc, o.weight_tons || Decimal.new(0)) end)
+
+      total = Decimal.add(already_assigned, this_weight)
+
+      if Decimal.compare(total, capacity) == :gt do
+        Ecto.Changeset.add_error(
+          changeset,
+          :assigned_trip_id,
+          "would exceed the vehicle's payload capacity of #{capacity} tons (#{already_assigned} tons already assigned to this trip)"
+        )
+      else
+        changeset
+      end
+    end
   end
 
   def delete_order(%Order{} = order), do: Repo.delete(order)
@@ -102,14 +176,51 @@ defmodule FleetMint.Cargo do
     |> unwrap_multi(:trip)
   end
 
+  @doc """
+  Moving a trip forward doesn't just change the trip's own status - its
+  assigned orders were silently left behind before this: a trip could go
+  all the way to "delivered" while every order riding on it still showed
+  "assigned" forever. Cancelling a trip releases its still-open orders
+  (unassigned, back to "pending") rather than cancelling them outright -
+  the truck may have broken down, but the cargo usually still needs to
+  move on a different trip. Orders already "delivered" or "cancelled" are
+  left alone either way.
+  """
   def update_trip_status(%Trip{} = trip, status) do
     extra = case status do
       "in_transit" -> %{actual_departure: NaiveDateTime.utc_now()}
       "delivered" -> %{actual_arrival: NaiveDateTime.utc_now()}
       _ -> %{}
     end
-    trip |> Trip.changeset(Map.merge(%{status: status}, extra)) |> Repo.update()
+
+    changeset = Trip.changeset(trip, Map.merge(%{status: status}, extra))
+
+    Ecto.Multi.new()
+    |> Ecto.Multi.update(:trip, changeset)
+    |> Ecto.Multi.run(:cascade_order_status, fn _repo, %{trip: updated} -> cascade_order_status(updated) end)
+    |> Repo.transaction()
+    |> unwrap_multi(:trip)
   end
+
+  defp cascade_order_status(%Trip{status: "cancelled"} = trip) do
+    {count, _} =
+      Order
+      |> where([o], o.assigned_trip_id == ^trip.id and o.status not in ["delivered", "cancelled"])
+      |> Repo.update_all(set: [assigned_trip_id: nil, status: "pending"])
+
+    {:ok, count}
+  end
+
+  defp cascade_order_status(%Trip{status: status} = trip) when status in ~w(loading in_transit delivered) do
+    {count, _} =
+      Order
+      |> where([o], o.assigned_trip_id == ^trip.id and o.status not in ["delivered", "cancelled"])
+      |> Repo.update_all(set: [status: status])
+
+    {:ok, count}
+  end
+
+  defp cascade_order_status(_trip), do: {:ok, 0}
 
   def delete_trip(%Trip{} = trip), do: Repo.delete(trip)
   def change_trip(%Trip{} = trip, attrs \\ %{}), do: Trip.changeset(trip, attrs)

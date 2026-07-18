@@ -12,18 +12,21 @@
   <:col :let={expenditure} label="Cashing Report">
     <%= if expenditure.cashing_report, do: "Report ##{expenditure.cashing_report.id}", else: "N/A" %>
   </:col>
+  <:col :let={expenditure} label="Created by">
+    <%= if expenditure.created_by, do: expenditure.created_by.full_name, else: "—" %>
+  </:col>
   <:action :let={expenditure}>
     <div class="sr-only">
       <.link navigate={~p"/expenditures/#{expenditure}"}>Show</.link>
     </div>
   </:action>
   <:action :let={expenditure}>
-    <.link navigate={~p"/expenditures/#{expenditure}/edit"} class="text-zinc-500 hover:text-zinc-700">
+    <.link :if={Authorization.authorized?(@current_user, ["platform_admin", "tenant_admin", "manager"])} navigate={~p"/expenditures/#{expenditure}/edit"} class="text-zinc-500 hover:text-zinc-700">
       Edit
     </.link>
   </:action>
   <:action :let={expenditure}>
-    <.link href={~p"/expenditures/#{expenditure}"} method="delete" data-confirm="Are you sure?" class="text-zinc-500 hover:text-zinc-700">
+    <.link :if={Authorization.authorized?(@current_user, ["platform_admin", "tenant_admin", "manager"])} href={~p"/expenditures/#{expenditure}"} method="delete" data-confirm="Are you sure?" class="text-zinc-500 hover:text-zinc-700">
       Delete
     </.link>
   </:action>

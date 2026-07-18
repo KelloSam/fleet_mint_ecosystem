@@ -1,6 +1,8 @@
 defmodule FleetMintWeb.ExpenditureHTML do
   use FleetMintWeb, :html
-  
+
+  alias FleetMint.Identity.Authorization
+
   # Import core components
   import FleetMintWeb.CoreComponents
 

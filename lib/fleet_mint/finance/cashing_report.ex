@@ -21,9 +21,16 @@ defmodule FleetMint.Finance.CashingReport do
     field :trip_mapping_status, :string, default: "pending"
     field :trip_mapping_notes, :string
 
+    field :archived_at, :naive_datetime
+
     belongs_to :report, FleetMint.Finance.Report
     belongs_to :bus, FleetMint.Transport.Fleet.Bus
     belongs_to :conductor, FleetMint.Identity.User, foreign_key: :conductor_id
+    # Who performed the write — set by the Finance context from the
+    # logged-in actor, never from client params (kept out of changeset/2's
+    # cast list on purpose, same reasoning as trip_mapping_status above).
+    belongs_to :created_by, FleetMint.Identity.User
+    belongs_to :updated_by, FleetMint.Identity.User
     has_many :expenditures, FleetMint.Finance.Expenditure, foreign_key: :cashing_report_id
     has_many :cashing_report_trips, FleetMint.Finance.CashingReportTrip
     has_many :trips, through: [:cashing_report_trips, :trip]

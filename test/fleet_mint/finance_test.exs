@@ -311,10 +311,11 @@ defmodule FleetMint.FinanceTest do
       assert cashing_report == Finance.get_cashing_report!(cashing_report.id)
     end
 
-    test "delete_cashing_report/1 deletes the cashing_report" do
+    test "delete_cashing_report/1 archives (soft-deletes) the cashing_report" do
       cashing_report = cashing_report_fixture()
-      assert {:ok, %CashingReport{}} = Finance.delete_cashing_report(cashing_report)
-      assert_raise Ecto.NoResultsError, fn -> Finance.get_cashing_report!(cashing_report.id) end
+      assert {:ok, %CashingReport{archived_at: %NaiveDateTime{}}} = Finance.delete_cashing_report(cashing_report)
+      refute cashing_report.id in Enum.map(Finance.list_cashing_reports(), & &1.id)
+      assert %CashingReport{} = Finance.get_cashing_report!(cashing_report.id)
     end
 
     test "change_cashing_report/1 returns a cashing_report changeset" do
@@ -413,10 +414,11 @@ defmodule FleetMint.FinanceTest do
       assert expenditure == Finance.get_expenditure!(expenditure.id)
     end
 
-    test "delete_expenditure/1 deletes the expenditure" do
+    test "delete_expenditure/1 archives (soft-deletes) the expenditure" do
       expenditure = expenditure_fixture()
-      assert {:ok, %Expenditure{}} = Finance.delete_expenditure(expenditure)
-      assert_raise Ecto.NoResultsError, fn -> Finance.get_expenditure!(expenditure.id) end
+      assert {:ok, %Expenditure{archived_at: %NaiveDateTime{}}} = Finance.delete_expenditure(expenditure)
+      refute expenditure.id in Enum.map(Finance.list_expenditures(), & &1.id)
+      assert %Expenditure{} = Finance.get_expenditure!(expenditure.id)
     end
 
     test "change_expenditure/1 returns a expenditure changeset" do

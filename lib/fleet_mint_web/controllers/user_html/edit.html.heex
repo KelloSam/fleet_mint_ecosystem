@@ -12,6 +12,14 @@
       <.input field={f[:email]} type="email" label="Email" />
       <.input field={f[:phone]} label="Phone" />
       <.input field={f[:role]} type="select" label="Role" options={role_options(@current_user)} />
+      <.input
+        :if={@current_user.role == "platform_admin"}
+        field={f[:organisation_id]}
+        type="select"
+        label="Organisation"
+        prompt="— Platform-wide (no organisation) —"
+        options={@organisations}
+      />
       <.input field={f[:active]} type="checkbox" label="Active" />
       <:actions>
         <.button>Save Changes</.button>

@@ -34,6 +34,11 @@
             <% end %>
           </select>
         </div>
+        <div class="mt-1 text-sm text-red-600">
+          <%= for {msg, _opts} <- f[:assigned_trip_id].errors do %>
+            <div><%= msg %></div>
+          <% end %>
+        </div>
       </div>
     <% end %>
 

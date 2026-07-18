@@ -13,7 +13,7 @@ defmodule FleetMintWeb.UserController do
 
   def new(conn, _params) do
     changeset = Users.change_user_registration(%User{})
-    render(conn, :new, changeset: changeset)
+    render(conn, :new, changeset: changeset, organisations: Users.list_organisations())
   end
 
   def create(conn, %{"user" => user_params}) do
@@ -36,7 +36,7 @@ defmodule FleetMintWeb.UserController do
         |> redirect(to: ~p"/users/#{user}")
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        render(conn, :new, changeset: changeset)
+        render(conn, :new, changeset: changeset, organisations: Users.list_organisations())
     end
   end
 
@@ -53,7 +53,7 @@ defmodule FleetMintWeb.UserController do
 
     with_organisation_access(conn, user, fn conn ->
       changeset = Users.change_user(user)
-      render(conn, :edit, user: user, changeset: changeset)
+      render(conn, :edit, user: user, changeset: changeset, organisations: Users.list_organisations())
     end)
   end
 
@@ -83,7 +83,7 @@ defmodule FleetMintWeb.UserController do
           |> redirect(to: ~p"/users/#{updated}")
 
         {:error, %Ecto.Changeset{} = changeset} ->
-          render(conn, :edit, user: user, changeset: changeset)
+          render(conn, :edit, user: user, changeset: changeset, organisations: Users.list_organisations())
       end
     end)
   end
