@@ -1,10 +1,10 @@
 defmodule FleetMintWeb.Plugs.TenantScopePlug do
   @moduledoc """
-  Runs after `AuthPlug` and assigns `:operator_scope` from the current
-  user — `:all` for platform-level staff (`operator_id` nil), or that
-  user's `operator_id` for tenant staff. Controllers and contexts filter
-  queries against this instead of trusting the client or skipping the
-  filter by convention.
+  Runs after `AuthPlug` and assigns `:organisation_scope` from the current
+  user — `:all` for platform-level staff (`organisation_id` nil), or that
+  user's `organisation_id` for tenant staff. Controllers and contexts
+  filter queries against this instead of trusting the client or skipping
+  the filter by convention.
   """
 
   import Plug.Conn
@@ -16,8 +16,8 @@ defmodule FleetMintWeb.Plugs.TenantScopePlug do
   def call(conn, _opts) do
     user = conn.assigns.current_user
 
-    scope = if Authorization.platform_level?(user), do: :all, else: user.operator_id
+    scope = if Authorization.platform_level?(user), do: :all, else: user.organisation_id
 
-    assign(conn, :operator_scope, scope)
+    assign(conn, :organisation_scope, scope)
   end
 end

@@ -12,6 +12,7 @@ defmodule FleetMint.Transport.Fleet do
   import Ecto.Query, warn: false
   alias FleetMint.Repo
   alias FleetMint.Accounting
+  alias FleetMint.Identity.Organisation
 
   alias FleetMint.Transport.Fleet.{Bus, Operator, Branch, Terminal}
 
@@ -34,9 +35,27 @@ defmodule FleetMint.Transport.Fleet do
 
   def get_operator!(id), do: Repo.get!(Operator, id)
   def get_operator_by_slug!(slug), do: Repo.get_by!(Operator, slug: slug, active: true)
+  def get_operator_by_organisation(organisation_id), do: Repo.get_by(Operator, organisation_id: organisation_id)
 
+  @doc """
+  Onboards a new operator (bus company). Every operator is one tenant's
+  passenger-transport brand, so this also creates that tenant's
+  Organisation in the same transaction — callers only fill in the
+  operator form, not two separate records.
+  """
   def create_operator(attrs \\ %{}) do
-    %Operator{} |> Operator.changeset(attrs) |> Repo.insert()
+    attrs = Map.new(attrs, fn {k, v} -> {to_string(k), v} end)
+
+    Ecto.Multi.new()
+    |> Ecto.Multi.insert(:organisation, Organisation.changeset(%Organisation{}, attrs))
+    |> Ecto.Multi.insert(:operator, fn %{organisation: organisation} ->
+      Operator.changeset(%Operator{}, Map.put(attrs, "organisation_id", organisation.id))
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{operator: operator}} -> {:ok, operator}
+      {:error, _step, failed_value, _changes} -> {:error, failed_value}
+    end
   end
 
   def update_operator(%Operator{} = op, attrs) do

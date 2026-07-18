@@ -12,7 +12,7 @@ defmodule FleetMint.Transport.Ticketing do
     Booking
     |> maybe_filter_date(opts[:travel_date])
     |> maybe_filter_status(opts[:status])
-    |> maybe_filter_operator(opts[:operator_id])
+    |> maybe_filter_organisation(opts[:organisation_id])
     |> preload([:schedule, :booked_by, ticket: []])
     |> order_by([b], [desc: b.inserted_at])
     |> Repo.all()
@@ -23,13 +23,13 @@ defmodule FleetMint.Transport.Ticketing do
       Booking
       |> maybe_filter_date(opts[:travel_date])
       |> maybe_filter_status(opts[:status])
-      |> maybe_filter_operator(opts[:operator_id])
+      |> maybe_filter_organisation(opts[:organisation_id])
       |> preload([:schedule, :booked_by, ticket: []])
       |> order_by([b], desc: b.inserted_at)
     FleetMint.Pagination.paginate(query, page)
   end
 
-  def get_booking!(id), do: Repo.get!(Booking, id) |> Repo.preload([:schedule, :booked_by, :ticket])
+  def get_booking!(id), do: Repo.get!(Booking, id) |> Repo.preload([:booked_by, :ticket, schedule: :operator])
   def get_booking_by_reference!(ref), do: Repo.get_by!(Booking, booking_reference: ref) |> Repo.preload([:schedule, :ticket])
 
   def create_booking(attrs, user_id \\ nil) do
@@ -244,11 +244,12 @@ defmodule FleetMint.Transport.Ticketing do
   defp maybe_filter_date(query, nil), do: query
   defp maybe_filter_date(query, date), do: where(query, [b], b.travel_date == ^date)
 
-  defp maybe_filter_operator(query, nil), do: query
-  defp maybe_filter_operator(query, :all), do: query
-  defp maybe_filter_operator(query, operator_id) do
+  defp maybe_filter_organisation(query, nil), do: query
+  defp maybe_filter_organisation(query, :all), do: query
+  defp maybe_filter_organisation(query, organisation_id) do
     query
     |> join(:inner, [b], s in assoc(b, :schedule), as: :schedule)
-    |> where([schedule: s], s.operator_id == ^operator_id)
+    |> join(:inner, [schedule: s], o in assoc(s, :operator), as: :operator)
+    |> where([operator: o], o.organisation_id == ^organisation_id)
   end
 end

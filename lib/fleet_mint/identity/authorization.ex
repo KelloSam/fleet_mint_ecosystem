@@ -30,40 +30,40 @@ defmodule FleetMint.Identity.Authorization do
   end
 
   @doc """
-  Platform-level users (`operator_id` is nil — Miway's own staff) are not
-  tied to a single tenant and see across every operator. Tenant staff are
-  scoped to their own operator's data only.
+  Platform-level users (`organisation_id` is nil — Miway's own staff) are
+  not tied to a single tenant and see across every organisation. Tenant
+  staff are scoped to their own organisation's data only.
 
   ## Examples
 
-      iex> platform_level?(%User{operator_id: nil})
+      iex> platform_level?(%User{organisation_id: nil})
       true
 
-      iex> platform_level?(%User{operator_id: 7})
+      iex> platform_level?(%User{organisation_id: 7})
       false
 
   """
-  def platform_level?(%User{operator_id: nil}), do: true
+  def platform_level?(%User{organisation_id: nil}), do: true
   def platform_level?(%User{}), do: false
 
   @doc """
-  Returns true if `user` may access a record belonging to `operator_id` —
-  either the user is platform-level, or the record's operator matches
-  their own.
+  Returns true if `user` may access a record belonging to `organisation_id`
+  — either the user is platform-level, or the record's organisation
+  matches their own.
 
   ## Examples
 
-      iex> can_access_operator?(%User{operator_id: nil}, 7)
+      iex> can_access_organisation?(%User{organisation_id: nil}, 7)
       true
 
-      iex> can_access_operator?(%User{operator_id: 7}, 7)
+      iex> can_access_organisation?(%User{organisation_id: 7}, 7)
       true
 
-      iex> can_access_operator?(%User{operator_id: 3}, 7)
+      iex> can_access_organisation?(%User{organisation_id: 3}, 7)
       false
 
   """
-  def can_access_operator?(%User{} = user, operator_id) do
-    platform_level?(user) or user.operator_id == operator_id
+  def can_access_organisation?(%User{} = user, organisation_id) do
+    platform_level?(user) or user.organisation_id == organisation_id
   end
 end

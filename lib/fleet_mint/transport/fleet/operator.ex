@@ -14,6 +14,8 @@ defmodule FleetMint.Transport.Fleet.Operator do
 
     field :schedule_count, :integer, virtual: true
 
+    belongs_to :organisation, FleetMint.Identity.Organisation
+
     has_many :schedules, FleetMint.Transport.Trips.Schedule
     has_many :branches, FleetMint.Transport.Fleet.Branch
     many_to_many :routes, FleetMint.Transport.Routes.Route,
@@ -25,11 +27,12 @@ defmodule FleetMint.Transport.Fleet.Operator do
 
   def changeset(operator, attrs) do
     operator
-    |> cast(attrs, [:name, :slug, :tagline, :contact_phone, :contact_email, :color, :active])
-    |> validate_required([:name, :slug])
+    |> cast(attrs, [:name, :slug, :tagline, :contact_phone, :contact_email, :color, :active, :organisation_id])
+    |> validate_required([:name, :slug, :organisation_id])
     |> update_change(:slug, &slugify/1)
     |> unique_constraint(:name)
     |> unique_constraint(:slug)
+    |> foreign_key_constraint(:organisation_id)
   end
 
   defp slugify(str) do

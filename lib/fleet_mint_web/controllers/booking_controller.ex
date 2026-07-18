@@ -22,14 +22,14 @@ defmodule FleetMintWeb.BookingController do
       Ticketing.list_bookings_paginated(page,
         travel_date: travel_date,
         status: params["status"],
-        operator_id: conn.assigns.operator_scope
+        organisation_id: conn.assigns.organisation_scope
       )
     render(conn, :index, bookings: paged.entries, paged: paged)
   end
 
   def new(conn, params) do
     changeset = Ticketing.change_booking(%Booking{travel_date: Date.utc_today()})
-    schedules = Trips.list_schedules(status: "active", operator_id: conn.assigns.operator_scope)
+    schedules = Trips.list_schedules(status: "active", organisation_id: conn.assigns.organisation_scope)
     staff = Users.list_staff_with_phone()
     render(conn, :new, changeset: changeset, schedules: schedules,
                        prefill_schedule: params["schedule_id"], staff: staff)
@@ -37,7 +37,7 @@ defmodule FleetMintWeb.BookingController do
 
   def create(conn, %{"booking" => booking_params}) do
     user_id = conn.assigns[:current_user].id
-    schedules = Trips.list_schedules(status: "active", operator_id: conn.assigns.operator_scope)
+    schedules = Trips.list_schedules(status: "active", organisation_id: conn.assigns.organisation_scope)
 
     if schedule_allowed?(schedules, booking_params["schedule_id"]) do
       case Ticketing.create_booking(booking_params, user_id) do
@@ -63,7 +63,7 @@ defmodule FleetMintWeb.BookingController do
   def show(conn, %{"id" => id}) do
     booking = Ticketing.get_booking!(id)
 
-    with_operator_access(conn, booking.schedule.operator_id, ~p"/bookings", fn conn ->
+    with_organisation_access(conn, booking.schedule.operator, ~p"/bookings", fn conn ->
       render(conn, :show, booking: booking)
     end)
   end
@@ -71,9 +71,9 @@ defmodule FleetMintWeb.BookingController do
   def edit(conn, %{"id" => id}) do
     booking = Ticketing.get_booking!(id)
 
-    with_operator_access(conn, booking.schedule.operator_id, ~p"/bookings", fn conn ->
+    with_organisation_access(conn, booking.schedule.operator, ~p"/bookings", fn conn ->
       changeset = Ticketing.change_booking(booking)
-      schedules = Trips.list_schedules(status: "active", operator_id: conn.assigns.operator_scope)
+      schedules = Trips.list_schedules(status: "active", organisation_id: conn.assigns.organisation_scope)
       staff = Users.list_staff_with_phone()
       render(conn, :edit, booking: booking, changeset: changeset,
                           schedules: schedules, staff: staff)
@@ -83,12 +83,12 @@ defmodule FleetMintWeb.BookingController do
   def update(conn, %{"id" => id, "booking" => booking_params}) do
     booking = Ticketing.get_booking!(id)
 
-    with_operator_access(conn, booking.schedule.operator_id, ~p"/bookings", fn conn ->
+    with_organisation_access(conn, booking.schedule.operator, ~p"/bookings", fn conn ->
       case Ticketing.update_booking(booking, booking_params) do
         {:ok, booking} ->
           conn |> put_flash(:info, "Booking updated.") |> redirect(to: ~p"/bookings/#{booking}")
         {:error, changeset} ->
-          schedules = Trips.list_schedules(status: "active", operator_id: conn.assigns.operator_scope)
+          schedules = Trips.list_schedules(status: "active", organisation_id: conn.assigns.organisation_scope)
           staff = Users.list_staff_with_phone()
           render(conn, :edit, booking: booking, changeset: changeset,
                               schedules: schedules, staff: staff)
@@ -99,7 +99,7 @@ defmodule FleetMintWeb.BookingController do
   def delete(conn, %{"id" => id}) do
     booking = Ticketing.get_booking!(id)
 
-    with_operator_access(conn, booking.schedule.operator_id, ~p"/bookings", fn conn ->
+    with_organisation_access(conn, booking.schedule.operator, ~p"/bookings", fn conn ->
       {:ok, _} = Ticketing.cancel_booking(booking)
       conn |> put_flash(:info, "Booking cancelled.") |> redirect(to: ~p"/bookings")
     end)
@@ -112,12 +112,14 @@ defmodule FleetMintWeb.BookingController do
     Enum.any?(schedules, &(to_string(&1.id) == schedule_id))
   end
 
-  defp with_operator_access(conn, operator_id, fallback_path, fun) do
-    if Authorization.can_access_operator?(conn.assigns.current_user, operator_id) do
+  defp with_organisation_access(conn, operator, fallback_path, fun) do
+    organisation_id = operator && operator.organisation_id
+
+    if Authorization.can_access_organisation?(conn.assigns.current_user, organisation_id) do
       fun.(conn)
     else
       conn
-      |> put_flash(:error, "That booking belongs to a different operator.")
+      |> put_flash(:error, "That booking belongs to a different organisation.")
       |> redirect(to: fallback_path)
     end
   end

@@ -75,26 +75,26 @@ defmodule FleetMint.Transport.TicketingTest do
   end
 
   describe "list_bookings/1 tenant scoping" do
-    test "operator_id filters to bookings on that operator's schedules only" do
+    test "organisation_id filters to bookings on that organisation's schedules only" do
       operator_a = operator_fixture()
       operator_b = operator_fixture()
 
       booking_a = booking_fixture(schedule: schedule_fixture(operator_id: operator_a.id))
       _booking_b = booking_fixture(schedule: schedule_fixture(operator_id: operator_b.id))
 
-      result = Ticketing.list_bookings(operator_id: operator_a.id)
+      result = Ticketing.list_bookings(organisation_id: operator_a.organisation_id)
 
       assert Enum.map(result, & &1.id) == [booking_a.id]
     end
 
-    test ":all bypasses the operator filter" do
+    test ":all bypasses the organisation filter" do
       operator_a = operator_fixture()
       operator_b = operator_fixture()
 
       booking_fixture(schedule: schedule_fixture(operator_id: operator_a.id))
       booking_fixture(schedule: schedule_fixture(operator_id: operator_b.id))
 
-      result = Ticketing.list_bookings(operator_id: :all)
+      result = Ticketing.list_bookings(organisation_id: :all)
 
       assert length(result) >= 2
     end

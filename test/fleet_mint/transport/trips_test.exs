@@ -37,7 +37,7 @@ defmodule FleetMint.Transport.TripsTest do
   end
 
   describe "list_schedules/1 tenant scoping" do
-    test "operator_id filters to that operator's schedules only" do
+    test "organisation_id filters to that organisation's schedules only" do
       operator_a = operator_fixture()
       operator_b = operator_fixture()
       route = route_fixture()
@@ -47,12 +47,12 @@ defmodule FleetMint.Transport.TripsTest do
       {:ok, _schedule_b} =
         Trips.create_schedule(%{departure_time: ~T[09:00:00], fare: "100.00", route_id: route.id, operator_id: operator_b.id})
 
-      result = Trips.list_schedules(operator_id: operator_a.id)
+      result = Trips.list_schedules(organisation_id: operator_a.organisation_id)
 
       assert Enum.map(result, & &1.id) == [schedule_a.id]
     end
 
-    test ":all bypasses the operator filter" do
+    test ":all bypasses the organisation filter" do
       operator_a = operator_fixture()
       operator_b = operator_fixture()
       route = route_fixture()
@@ -60,7 +60,7 @@ defmodule FleetMint.Transport.TripsTest do
       {:ok, _} = Trips.create_schedule(%{departure_time: ~T[08:00:00], fare: "100.00", route_id: route.id, operator_id: operator_a.id})
       {:ok, _} = Trips.create_schedule(%{departure_time: ~T[09:00:00], fare: "100.00", route_id: route.id, operator_id: operator_b.id})
 
-      result = Trips.list_schedules(operator_id: :all)
+      result = Trips.list_schedules(organisation_id: :all)
 
       assert length(result) >= 2
     end
