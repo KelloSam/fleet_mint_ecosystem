@@ -136,7 +136,13 @@ defmodule FleetMintWeb.Router do
     get "/dashboard", PageController, :dashboard
 
     # Cashier-owned resources — full CRUD
+    # Declared before the resources macro below so "unmatched" isn't
+    # swallowed by the :id-shaped show route (same ordering concern noted
+    # at the top of this file for :new).
+    get  "/cashing_reports/unmatched",        CashingReportController, :unmatched
     resources "/cashing_reports", CashingReportController
+    get  "/cashing_reports/:id/trip_match",   CashingReportController, :edit_trip_match
+    post "/cashing_reports/:id/trip_match",   CashingReportController, :match_trip
     resources "/expenditures", ExpenditureController
     resources "/bookings", BookingController
     resources "/operation_logs", OperationLogController

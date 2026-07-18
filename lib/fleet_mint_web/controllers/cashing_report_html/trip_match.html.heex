@@ -1,0 +1,83 @@
+<div class="mb-6">
+  <.link navigate={~p"/cashing_reports/unmatched"} class="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1">
+    <.icon name="hero-arrow-left-solid" class="h-3 w-3" /> Trip Matching Queue
+  </.link>
+  <h1 class="text-2xl font-bold text-gray-800 mt-2">Match Cashing Report #<%= @cashing_report.id %> to a Trip</h1>
+</div>
+
+<div class="bg-white rounded-lg shadow p-6 mb-6">
+  <dl class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
+    <div>
+      <dt class="text-gray-500 font-medium">Report date</dt>
+      <dd class="text-gray-900 font-semibold"><%= @cashing_report.report_date %></dd>
+    </div>
+    <div>
+      <dt class="text-gray-500 font-medium">Bus</dt>
+      <dd class="text-gray-900 font-semibold"><%= (@cashing_report.bus && @cashing_report.bus.registration_number) || "— none —" %></dd>
+    </div>
+    <div>
+      <dt class="text-gray-500 font-medium">Received cashing</dt>
+      <dd class="text-gray-900 font-semibold">ZMW <%= @cashing_report.received_cashing %></dd>
+    </div>
+    <div>
+      <dt class="text-gray-500 font-medium">Current status</dt>
+      <dd>
+        <span class={"text-xs font-semibold px-2 py-0.5 rounded-full border #{mapping_status_badge(@cashing_report.trip_mapping_status)}"}>
+          <%= String.replace(@cashing_report.trip_mapping_status, "_", " ") %>
+        </span>
+      </dd>
+    </div>
+  </dl>
+  <p class="text-sm text-gray-500 mt-4 border-t border-gray-100 pt-4"><%= @cashing_report.trip_mapping_notes %></p>
+</div>
+
+<%= if is_nil(@cashing_report.bus) do %>
+  <div class="bg-amber-50 border border-amber-200 text-amber-800 text-sm rounded-lg p-4">
+    This report has no bus recorded, so there is no vehicle to search schedules against.
+    Add a bus to the report first (Edit), or leave it unmatched.
+  </div>
+<% else %>
+  <div class="bg-white rounded-lg shadow overflow-hidden">
+    <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wider px-6 py-4 border-b border-gray-100">
+      Candidate trips within 3 days of <%= @cashing_report.report_date %>
+    </h2>
+
+    <%= if @candidate_trips == [] do %>
+      <p class="text-sm text-gray-400 px-6 py-8 text-center">
+        No trips found for this bus's vehicle near that date. Trips are only created once a
+        schedule for that vehicle has actually run — nothing to match here yet.
+      </p>
+    <% else %>
+      <form action={~p"/cashing_reports/#{@cashing_report}/trip_match"} method="post" class="p-6">
+        <input type="hidden" name="_csrf_token" value={Plug.CSRFProtection.get_csrf_token()} />
+
+        <div class="space-y-2">
+          <%= for trip <- @candidate_trips do %>
+            <label class="flex items-center gap-3 rounded-lg border border-gray-200 p-3 hover:bg-gray-50 cursor-pointer">
+              <input type="radio" name="trip_id" value={trip.id} required class="text-blue-600" />
+              <div class="text-sm">
+                <span class="font-semibold text-gray-800">Trip #<%= trip.id %></span>
+                <span class="text-gray-500">— <%= trip.travel_date %> — status: <%= trip.status %></span>
+                <%= if trip.schedule do %>
+                  <span class="text-gray-400">(schedule <%= trip.schedule.schedule_code %>)</span>
+                <% end %>
+              </div>
+            </label>
+          <% end %>
+        </div>
+
+        <div class="mt-4">
+          <label class="block text-sm font-medium text-gray-700 mb-1">
+            Allocated amount (optional — defaults to the full received cashing, ZMW <%= @cashing_report.received_cashing %>)
+          </label>
+          <input type="number" step="any" name="allocated_amount" placeholder={@cashing_report.received_cashing}
+                 class="rounded-md border-gray-300 shadow-sm text-sm py-2 px-3 border w-48" />
+        </div>
+
+        <button type="submit" class="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg">
+          Confirm Match
+        </button>
+      </form>
+    <% end %>
+  </div>
+<% end %>

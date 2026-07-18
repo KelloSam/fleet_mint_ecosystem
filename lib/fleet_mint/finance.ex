@@ -233,6 +233,7 @@ defmodule FleetMint.Finance do
     |> where([c], c.trip_mapping_status in ["pending", "ambiguous", "unmappable"])
     |> maybe_filter_cashing_report_organisation(opts[:organisation_id])
     |> Repo.all()
+    |> Repo.preload(:bus)
   end
 
   @doc """

@@ -138,6 +138,21 @@ defmodule FleetMint.Transport.Trips do
     trip |> Trip.status_changeset(status) |> Repo.update()
   end
 
+  @doc """
+  Trips within `window_days` of `date`, closest first — the candidate list
+  for manually matching a CashingReport to a Trip (see
+  `FleetMintWeb.CashingReportController.edit_trip_match/2`).
+  """
+  def list_trips_near_date(organisation_id, %Date{} = date, window_days \\ 3) do
+    from(t in Trip,
+      where: t.organisation_id == ^organisation_id,
+      where: t.travel_date >= ^Date.add(date, -window_days) and t.travel_date <= ^Date.add(date, window_days),
+      preload: [:schedule, :vehicle, :driver],
+      order_by: [asc: fragment("abs(? - ?)", t.travel_date, ^date)]
+    )
+    |> Repo.all()
+  end
+
   def change_trip(%Trip{} = trip, attrs \\ %{}), do: Trip.changeset(trip, attrs)
 
   defp maybe_filter_trip_organisation(query, nil), do: query

@@ -1,0 +1,31 @@
+<div class="mb-6">
+  <.link navigate={~p"/cashing_reports"} class="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1">
+    <.icon name="hero-arrow-left-solid" class="h-3 w-3" /> Cashing Reports
+  </.link>
+  <h1 class="text-2xl font-bold text-gray-800 mt-2">Trip Matching Queue</h1>
+  <p class="text-sm text-gray-500 mt-1">
+    Cashing reports not yet attributed to a specific trip — cash already recorded on the
+    ledger either way, this only fills in which trip it came from.
+  </p>
+</div>
+
+<.table id="unmatched-cashing-reports" rows={@cashing_reports} row_click={&JS.navigate(~p"/cashing_reports/#{&1}/trip_match")}>
+  <:col :let={cr} label="Report date"><%= cr.report_date %></:col>
+  <:col :let={cr} label="Bus"><%= (cr.bus && cr.bus.registration_number) || "— no bus —" %></:col>
+  <:col :let={cr} label="Received cashing">ZMW <%= cr.received_cashing %></:col>
+  <:col :let={cr} label="Status">
+    <span class={"text-xs font-semibold px-2 py-0.5 rounded-full border #{mapping_status_badge(cr.trip_mapping_status)}"}>
+      <%= String.replace(cr.trip_mapping_status, "_", " ") %>
+    </span>
+  </:col>
+  <:col :let={cr} label="Why"><span class="text-gray-500"><%= cr.trip_mapping_notes %></span></:col>
+  <:action :let={cr}>
+    <%= if @current_user.role in ["admin", "manager"] do %>
+      <.link navigate={~p"/cashing_reports/#{cr}/trip_match"}>Match</.link>
+    <% end %>
+  </:action>
+</.table>
+
+<%= if @cashing_reports == [] do %>
+  <p class="text-center text-gray-400 mt-8">Nothing waiting on a trip match.</p>
+<% end %>
