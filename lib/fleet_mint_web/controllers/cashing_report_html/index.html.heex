@@ -21,12 +21,12 @@
     <div class="sr-only">
       <.link navigate={~p"/cashing_reports/#{cashing_report}"}>Show</.link>
     </div>
-    <%= if @current_user.role in ["admin", "manager"] do %>
+    <%= if @current_user.role in ["platform_admin", "tenant_admin", "manager"] do %>
       <.link navigate={~p"/cashing_reports/#{cashing_report}/edit"}>Edit</.link>
     <% end %>
   </:action>
   <:action :let={cashing_report}>
-    <%= if @current_user.role in ["admin", "manager"] do %>
+    <%= if @current_user.role in ["platform_admin", "tenant_admin", "manager"] do %>
       <.link href={~p"/cashing_reports/#{cashing_report}"} method="delete" data-confirm="Are you sure?">
         Delete
       </.link>

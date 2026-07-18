@@ -147,7 +147,7 @@ defmodule FleetMintWeb.CashingReportController do
   defp allocated_amount_opts(amount), do: [allocated_amount: amount]
 
   defp require_admin_or_manager(conn, _opts) do
-    if FleetMint.Identity.Authorization.authorized?(conn.assigns.current_user, ["admin", "manager"]) do
+    if FleetMint.Identity.Authorization.authorized?(conn.assigns.current_user, ["platform_admin", "tenant_admin", "manager"]) do
       conn
     else
       conn

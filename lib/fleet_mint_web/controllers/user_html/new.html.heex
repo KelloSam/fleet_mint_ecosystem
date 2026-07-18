@@ -12,8 +12,7 @@
       <.input field={f[:email]} type="email" label="Email" />
       <.input field={f[:phone]} label="Phone" />
       <.input field={f[:password]} type="password" label="Password" />
-      <.input field={f[:role]} type="select" label="Role"
-              options={[{"Admin", "admin"}, {"Manager", "manager"}, {"Cashier", "cashier"}, {"Operator", "operator"}]} />
+      <.input field={f[:role]} type="select" label="Role" options={role_options(@current_user)} />
       <.input field={f[:active]} type="checkbox" label="Active immediately" />
       <:actions>
         <.button>Create User</.button>

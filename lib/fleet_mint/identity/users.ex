@@ -245,10 +245,12 @@ defmodule FleetMint.Identity.Users do
     Repo.all(query)
   end
 
+  @staff_roles ["platform_admin", "tenant_admin", "manager", "cashier"]
+
   def list_on_duty_staff do
     today_start = NaiveDateTime.new!(Date.utc_today(), ~T[00:00:00])
     from(u in User,
-      where: u.role in ["admin", "manager", "cashier"]
+      where: u.role in ^@staff_roles
         and u.active == true
         and not is_nil(u.last_login)
         and u.last_login >= ^today_start,
@@ -258,7 +260,7 @@ defmodule FleetMint.Identity.Users do
 
   def list_staff_with_phone do
     query = from u in User,
-            where: u.role in ["admin", "manager", "cashier"] and not is_nil(u.phone),
+            where: u.role in ^@staff_roles and not is_nil(u.phone),
             order_by: [asc: u.role, asc: u.full_name]
     Repo.all(query)
   end
@@ -331,9 +333,22 @@ defmodule FleetMint.Identity.Users do
     Repo.all(query)
   end
 
-  def list_users_paginated(page \\ 1) do
-    query = from u in User, order_by: [asc: u.role, asc: u.full_name]
-    FleetMint.Pagination.paginate(query, page)
+  @doc """
+  `organisation_id` opt: `:all`/`nil` for a platform administrator (every
+  user, every organisation); an organisation_id scopes to that
+  organisation's own users only — a tenant administrator's `/users` must
+  never list Miway staff or another tenant's staff.
+  """
+  def list_users_paginated(page \\ 1, opts \\ []) do
+    from(u in User, order_by: [asc: u.role, asc: u.full_name])
+    |> maybe_filter_user_organisation(opts[:organisation_id])
+    |> FleetMint.Pagination.paginate(page)
+  end
+
+  defp maybe_filter_user_organisation(query, nil), do: query
+  defp maybe_filter_user_organisation(query, :all), do: query
+  defp maybe_filter_user_organisation(query, organisation_id) do
+    where(query, [u], u.organisation_id == ^organisation_id)
   end
 
   @doc """

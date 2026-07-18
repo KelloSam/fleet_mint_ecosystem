@@ -30,7 +30,7 @@ defmodule FleetMintWeb.CashingReportTripMatchControllerTest do
       other_org_unmatched_bus = bus_fixture(organisation_id: org_b.organisation_id)
       other_org_unmatched_report = cashing_report_fixture(%{bus_id: other_org_unmatched_bus.id})
 
-      admin_a = user_fixture(role: "admin", organisation_id: org_a.organisation_id)
+      admin_a = user_fixture(role: "tenant_admin", organisation_id: org_a.organisation_id)
       cashier_a = user_fixture(role: "cashier", organisation_id: org_a.organisation_id)
 
       %{

@@ -2,7 +2,14 @@ defmodule FleetMint.Identity.User do
   use Ecto.Schema
   import Ecto.Changeset
 
-  @valid_roles ["admin", "manager", "cashier", "operator"]
+  # "platform_admin" and "tenant_admin" are deliberately distinct strings,
+  # not one "admin" role distinguished only by organisation_id — role
+  # checks (RequireRolePlug, per-controller guards) must be able to tell
+  # them apart without also having to remember to check organisation_id
+  # every time. validate_role_organisation_pairing/1 below keeps the
+  # invariant (platform_admin <-> no organisation, everything else <->
+  # has one) enforced at the data layer so the two can't drift apart.
+  @valid_roles ["platform_admin", "tenant_admin", "manager", "cashier", "operator"]
   @email_regex ~r/^[^\s]+@[^\s]+$/
 
   schema "users" do
@@ -35,6 +42,7 @@ defmodule FleetMint.Identity.User do
     |> validate_required([:username, :email, :role, :full_name, :active])
     |> validate_format(:email, @email_regex, message: "must have the @ sign and no spaces")
     |> validate_inclusion(:role, @valid_roles, message: "must be one of: #{Enum.join(@valid_roles, ", ")}")
+    |> validate_role_organisation_pairing()
     |> unique_constraint(:email)
     |> unique_constraint(:username)
     |> foreign_key_constraint(:organisation_id)
@@ -46,6 +54,7 @@ defmodule FleetMint.Identity.User do
     |> validate_required([:username, :email, :password, :role, :full_name])
     |> validate_format(:email, @email_regex, message: "must have the @ sign and no spaces")
     |> validate_inclusion(:role, @valid_roles, message: "must be one of: #{Enum.join(@valid_roles, ", ")}")
+    |> validate_role_organisation_pairing()
     |> validate_length(:password, min: 12, max: 72, message: "must be at least 12 characters")
     |> validate_format(:password, ~r/[A-Z]/, message: "must contain at least one uppercase letter")
     |> validate_format(:password, ~r/[a-z]/, message: "must contain at least one lowercase letter")
@@ -54,6 +63,26 @@ defmodule FleetMint.Identity.User do
     |> unique_constraint(:username)
     |> foreign_key_constraint(:organisation_id)
     |> put_password_hash()
+  end
+
+  # A platform administrator has no organisation (sees across every
+  # tenant); every other role belongs to exactly one. Enforced here, not
+  # just by convention, so authorization checks that key off the role
+  # string can trust it without re-deriving from organisation_id.
+  defp validate_role_organisation_pairing(changeset) do
+    role = get_field(changeset, :role)
+    organisation_id = get_field(changeset, :organisation_id)
+
+    cond do
+      role == "platform_admin" and not is_nil(organisation_id) ->
+        add_error(changeset, :organisation_id, "must be blank for a platform administrator")
+
+      role in ["tenant_admin", "manager", "cashier", "operator"] and is_nil(organisation_id) ->
+        add_error(changeset, :organisation_id, "is required for this role")
+
+      true ->
+        changeset
+    end
   end
 
   def password_changeset(user, attrs) do

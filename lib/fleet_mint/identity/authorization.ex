@@ -18,10 +18,10 @@ defmodule FleetMint.Identity.Authorization do
 
   ## Examples
 
-      iex> authorized?(%User{role: "admin"}, ["admin", "manager"])
+      iex> authorized?(%User{role: "tenant_admin"}, ["platform_admin", "tenant_admin", "manager"])
       true
 
-      iex> authorized?(%User{role: "cashier"}, ["admin", "manager"])
+      iex> authorized?(%User{role: "cashier"}, ["platform_admin", "tenant_admin", "manager"])
       false
 
   """
@@ -45,6 +45,18 @@ defmodule FleetMint.Identity.Authorization do
   """
   def platform_level?(%User{organisation_id: nil}), do: true
   def platform_level?(%User{}), do: false
+
+  @doc """
+  True only for the `platform_admin` role specifically — the authority
+  check for platform-only actions (onboarding a new tenant, the
+  platform-wide audit log). Deliberately a role check, not
+  `platform_level?/1` (organisation_id nil): the two questions —"which
+  organisations' data can this user see" vs. "is this user actually
+  Miway's own platform administrator" — must be checked independently,
+  not inferred from each other.
+  """
+  def platform_admin?(%User{role: "platform_admin"}), do: true
+  def platform_admin?(%User{}), do: false
 
   @doc """
   Returns true if `user` may access a record belonging to `organisation_id`

@@ -37,7 +37,7 @@ defmodule FleetMintWeb.PageHTML do
   Determines if a user has admin privileges.
   """
   def is_admin?(user) do
-    user && user.role == "admin"
+    user && user.role in ["platform_admin", "tenant_admin"]
   end
   
   @doc """

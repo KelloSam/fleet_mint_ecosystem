@@ -20,7 +20,7 @@
   </:col>
   <:col :let={cr} label="Why"><span class="text-gray-500"><%= cr.trip_mapping_notes %></span></:col>
   <:action :let={cr}>
-    <%= if @current_user.role in ["admin", "manager"] do %>
+    <%= if @current_user.role in ["platform_admin", "tenant_admin", "manager"] do %>
       <.link navigate={~p"/cashing_reports/#{cr}/trip_match"}>Match</.link>
     <% end %>
   </:action>

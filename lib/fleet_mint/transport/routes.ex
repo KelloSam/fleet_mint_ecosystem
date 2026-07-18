@@ -239,14 +239,22 @@ defmodule FleetMint.Transport.Routes do
     |> Repo.preload(routes: from(r in Route, order_by: r.name))
   end
 
-  def list_operators_with_route_counts do
+  def list_operators_with_route_counts(opts \\ []) do
     from(o in Operator,
       where: is_nil(o.archived_at),
       left_join: or_ in "operator_routes", on: or_.operator_id == o.id,
       group_by: o.id,
       select: %{o | schedule_count: count(or_.route_id)},
       order_by: o.name
-    ) |> Repo.all()
+    )
+    |> maybe_filter_operator_organisation(opts[:organisation_id])
+    |> Repo.all()
+  end
+
+  defp maybe_filter_operator_organisation(query, nil), do: query
+  defp maybe_filter_operator_organisation(query, :all), do: query
+  defp maybe_filter_operator_organisation(query, organisation_id) do
+    where(query, [o], o.organisation_id == ^organisation_id)
   end
 
   def add_route_to_operator(%Operator{} = op, %Route{} = route) do

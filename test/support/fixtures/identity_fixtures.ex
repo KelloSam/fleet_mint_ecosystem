@@ -4,8 +4,16 @@ defmodule FleetMint.IdentityFixtures do
   entities via the `FleetMint.Identity` context.
   """
 
+  @doc """
+  Defaults role to "platform_admin" (no organisation) or "tenant_admin"
+  (organisation_id given) so the fixture satisfies User's role/organisation
+  pairing invariant without every caller having to pick a role explicitly.
+  Pass `role:` to override.
+  """
   def user_fixture(attrs \\ %{}) do
     n = System.unique_integer([:positive])
+    attrs = Map.new(attrs)
+    default_role = if Map.get(attrs, :organisation_id), do: "tenant_admin", else: "platform_admin"
 
     {:ok, user} =
       attrs
@@ -13,7 +21,7 @@ defmodule FleetMint.IdentityFixtures do
         username: "user#{n}",
         email: "user#{n}@example.com",
         password: "Password123!secure",
-        role: "admin",
+        role: default_role,
         full_name: "Test User #{n}",
         active: true
       })

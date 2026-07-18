@@ -16,7 +16,7 @@
       </svg>
       Print Receipt
     </.link>
-    <%= if @current_user.role in ["admin", "manager"] do %>
+    <%= if @current_user.role in ["platform_admin", "tenant_admin", "manager"] do %>
       <.link navigate={~p"/cashing_reports/#{@cashing_report}/edit"}>
         <.button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm">
           Edit

@@ -30,11 +30,22 @@ defmodule FleetMintWeb.Router do
   end
 
   pipeline :require_manager do
-    plug FleetMintWeb.Plugs.RequireRolePlug, roles: ["admin", "manager"]
+    plug FleetMintWeb.Plugs.RequireRolePlug, roles: ["platform_admin", "tenant_admin", "manager"]
   end
 
+  # Either admin tier may reach /users - UserController itself scopes a
+  # tenant_admin to their own organisation and blocks them from creating
+  # or promoting anyone to platform_admin. Not the same gate as
+  # :require_platform_admin below.
   pipeline :require_admin do
-    plug FleetMintWeb.Plugs.RequireRolePlug, roles: ["admin"]
+    plug FleetMintWeb.Plugs.RequireRolePlug, roles: ["platform_admin", "tenant_admin"]
+  end
+
+  # The full, platform-wide audit trail - a tenant administrator must not
+  # see other tenants' (or Miway's own) security events, so this is
+  # platform_admin only, unlike :require_admin above.
+  pipeline :require_platform_admin do
+    plug FleetMintWeb.Plugs.RequireRolePlug, roles: ["platform_admin"]
   end
 
   pipeline :rate_limited do
@@ -178,11 +189,18 @@ defmodule FleetMintWeb.Router do
     delete "/settings/2fa/disable", TwoFactorController, :disable
   end
 
-  # Admin only
+  # Platform administrators only - the full, platform-wide audit trail.
+  scope "/", FleetMintWeb do
+    pipe_through [:browser, :auth, :require_platform_admin]
+
+    get "/audit-log", AuditLogController, :index
+  end
+
+  # Either admin tier - UserController scopes a tenant_admin to their own
+  # organisation's users internally (see with_organisation_access there).
   scope "/", FleetMintWeb do
     pipe_through [:browser, :auth, :require_admin]
 
-    get "/audit-log", AuditLogController, :index
     resources "/users", UserController, except: [:delete]
     post "/users/:id/activate",   UserController, :activate
     post "/users/:id/deactivate", UserController, :deactivate
