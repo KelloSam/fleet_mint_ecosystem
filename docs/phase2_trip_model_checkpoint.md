@@ -95,4 +95,4 @@ Phase 2b: functionally complete for the reconciliation *model and matching logic
 
 ---
 
-**Commit representing Phase 2 completion (2a already in `ea1df9e`; 2b in the commit immediately following this checkpoint).**
+**Commits representing Phase 2 completion: `ea1df9e` (2a), `aa5d035` (2b, this checkpoint's own commit).**
