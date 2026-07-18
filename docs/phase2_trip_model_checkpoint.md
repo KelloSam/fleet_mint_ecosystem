@@ -56,9 +56,12 @@ select count(*) from cashing_report_trips;
 
 All 10 existing reports have no `bus_id` at all, so all 10 are honestly `unmappable` — zero automatic matches, zero fabricated Trip links. This is the correct outcome given the data, not a bug: there was nothing to match against.
 
-### 3.4 What was explicitly *not* built this pass
+### 3.4 The trip-matching UI (commit `353f437`, follow-on to this checkpoint)
 
-- No reconciliation UI/controller for finance/ops staff to work the `ambiguous`/`unmappable` queue — `Finance.list_unreconciled_cashing_reports/1` and `Finance.match_cashing_report_to_trip/4` are the context-layer capability; wiring them into a controller + views is separate follow-on work, not started.
+`GET /cashing_reports/unmatched` (the work queue, organisation-scoped), `GET`/`POST /cashing_reports/:id/trip_match` (candidate trips within 3 days of the report's date, drawn from the whole organisation rather than just the report's own bus/vehicle chain — manual reconciliation is exactly the case where that chain already failed to produce a candidate). Both write actions gated to admin/manager, matching this controller's existing `edit`/`update`/`delete` gating. Named "trip matching" rather than "reconciliation" — `ReconciliationController` already exists in the app for something unrelated (cash-vs-trip-log variance checking) and reusing the name would collide. Manually exercised against a running dev server (automatic match, manual match, cross-organisation rejection via both the UI's own candidate list and a hand-crafted bypass request, cashier role blocked) before being written up as 6 automated controller tests.
+
+### 3.5 What is still not built
+
 - No "suspense account" GL construct. `Accounting.record_entry/1` already records every cashing_report's cash in the ledger regardless of reconciliation state (unchanged by this phase), so cash is never lost or hidden — `trip_mapping_status` is purely the flag that lets Finance reporting distinguish trip-attributed cash from not-yet-attributed cash without touching the ledger.
 - `update_cashing_report/2` does not re-attempt matching if a report's `bus_id` is corrected after creation (e.g. someone fills in a blank bus later). Named here as a known gap, not silently skipped.
 
