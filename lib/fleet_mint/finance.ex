@@ -18,8 +18,10 @@ defmodule FleetMint.Finance do
       [%CashingReport{}, ...]
 
   """
-  def list_cashing_reports do
-    Repo.all(CashingReport)
+  def list_cashing_reports(opts \\ []) do
+    CashingReport
+    |> maybe_filter_cashing_report_organisation(opts[:organisation_id])
+    |> Repo.all()
   end
 
   @doc """
@@ -33,7 +35,7 @@ defmodule FleetMint.Finance do
       %CashingReport{}
 
   """
-  def get_cashing_report!(id), do: Repo.get!(CashingReport, id)
+  def get_cashing_report!(id), do: Repo.get!(CashingReport, id) |> Repo.preload(:bus)
 
   @doc """
   Creates a cashing_report.
@@ -252,10 +254,10 @@ defmodule FleetMint.Finance do
       [%Expenditure{}, ...]
 
   """
-  def list_expenditures do
-    query = from e in Expenditure,
-            order_by: [desc: e.date]
-    Repo.all(query)
+  def list_expenditures(opts \\ []) do
+    from(e in Expenditure, order_by: [desc: e.date])
+    |> maybe_filter_expenditure_organisation(opts[:organisation_id])
+    |> Repo.all()
   end
 
   @doc """
@@ -269,7 +271,7 @@ defmodule FleetMint.Finance do
       %Expenditure{}
 
   """
-  def get_expenditure!(id), do: Repo.get!(Expenditure, id)
+  def get_expenditure!(id), do: Repo.get!(Expenditure, id) |> Repo.preload(cashing_report: :bus)
 
   @doc """
   Creates a expenditure.
@@ -697,5 +699,22 @@ defmodule FleetMint.Finance do
       {:ok, changes} -> {:ok, Map.fetch!(changes, ok_key)}
       {:error, _failed_step, failed_value, _changes} -> {:error, failed_value}
     end
+  end
+
+  defp maybe_filter_cashing_report_organisation(query, nil), do: query
+  defp maybe_filter_cashing_report_organisation(query, :all), do: query
+  defp maybe_filter_cashing_report_organisation(query, organisation_id) do
+    query
+    |> join(:inner, [c], b in assoc(c, :bus), as: :bus)
+    |> where([bus: b], b.organisation_id == ^organisation_id)
+  end
+
+  defp maybe_filter_expenditure_organisation(query, nil), do: query
+  defp maybe_filter_expenditure_organisation(query, :all), do: query
+  defp maybe_filter_expenditure_organisation(query, organisation_id) do
+    query
+    |> join(:inner, [e], c in assoc(e, :cashing_report), as: :cashing_report)
+    |> join(:inner, [cashing_report: c], b in assoc(c, :bus), as: :bus)
+    |> where([bus: b], b.organisation_id == ^organisation_id)
   end
 end

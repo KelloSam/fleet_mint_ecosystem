@@ -4,6 +4,26 @@ defmodule FleetMint.FinanceTest do
   alias FleetMint.Finance
   alias FleetMint.Accounting
 
+  describe "list_cashing_reports/1 tenant scoping" do
+    import FleetMint.FinanceFixtures
+    import FleetMint.FleetFixtures
+
+    test "organisation_id filters to cashing reports on that organisation's buses only" do
+      org_a = operator_fixture()
+      org_b = operator_fixture()
+
+      bus_a = bus_fixture(organisation_id: org_a.organisation_id)
+      bus_b = bus_fixture(organisation_id: org_b.organisation_id)
+
+      report_a = cashing_report_fixture(%{bus_id: bus_a.id})
+      cashing_report_fixture(%{bus_id: bus_b.id})
+
+      result = Finance.list_cashing_reports(organisation_id: org_a.organisation_id)
+
+      assert Enum.map(result, & &1.id) == [report_a.id]
+    end
+  end
+
   describe "cashing_reports" do
     alias FleetMint.Finance.CashingReport
 
