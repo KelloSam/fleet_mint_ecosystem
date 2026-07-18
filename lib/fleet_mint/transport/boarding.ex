@@ -3,6 +3,7 @@ defmodule FleetMint.Transport.Boarding do
   alias FleetMint.Repo
   alias FleetMint.Transport.Boarding.BusCheckpoint
   alias FleetMint.Transport.Ticketing.{Booking, Ticket}
+  alias FleetMint.Transport.Trips
 
   # ── Ticket validation / boarding ────────────────────────────────────────
 
@@ -28,9 +29,30 @@ defmodule FleetMint.Transport.Boarding do
 
   # ── Bus Checkpoints (live location reporting) ─────────────────────────────
 
+  @doc """
+  Resolves (creating if needed) the Trip for this checkpoint's
+  (schedule, day) before inserting, so trip_id/organisation_id are always
+  set from a real Trip rather than left for the caller to guess at.
+  """
   def post_checkpoint(attrs) do
-    %BusCheckpoint{} |> BusCheckpoint.changeset(attrs) |> Repo.insert()
+    schedule_id = Map.get(attrs, "schedule_id") || Map.get(attrs, :schedule_id)
+    travel_date = Map.get(attrs, "travel_date") || Map.get(attrs, :travel_date)
+
+    with {:ok, date} <- parse_date(travel_date),
+         {:ok, trip} <- Trips.get_or_create_trip(schedule_id, date) do
+      %BusCheckpoint{} |> BusCheckpoint.changeset(attrs, trip) |> Repo.insert()
+    else
+      _ ->
+        %BusCheckpoint{}
+        |> BusCheckpoint.changeset(attrs)
+        |> Ecto.Changeset.add_error(:travel_date, "must be a valid date for an existing schedule")
+        |> Ecto.Changeset.apply_action(:insert)
+    end
   end
+
+  defp parse_date(%Date{} = date), do: {:ok, date}
+  defp parse_date(str) when is_binary(str), do: Date.from_iso8601(str)
+  defp parse_date(_), do: :error
 
   def get_latest_checkpoint(schedule_id, %Date{} = date) do
     from(c in BusCheckpoint,

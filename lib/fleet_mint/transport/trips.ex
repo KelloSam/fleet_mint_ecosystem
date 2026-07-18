@@ -2,7 +2,7 @@ defmodule FleetMint.Transport.Trips do
   import Ecto.Query
   alias FleetMint.Repo
   alias FleetMint.Accounting
-  alias FleetMint.Transport.Trips.{Schedule, MinibusTrip}
+  alias FleetMint.Transport.Trips.{Schedule, MinibusTrip, Trip}
 
   # ── Minibus Trips ─────────────────────────────────────────────────────────
 
@@ -95,6 +95,54 @@ defmodule FleetMint.Transport.Trips do
   def delete_schedule(%Schedule{} = schedule), do: Repo.delete(schedule)
 
   def change_schedule(%Schedule{} = schedule, attrs \\ %{}), do: Schedule.changeset(schedule, attrs)
+
+  # ── Trips (canonical Route → Schedule → Trip; one Schedule instance) ──────
+
+  def list_trips(opts \\ []) do
+    Trip
+    |> maybe_filter_trip_organisation(opts[:organisation_id])
+    |> preload([:schedule, :vehicle, :driver, :conductor])
+    |> order_by([t], desc: t.travel_date)
+    |> Repo.all()
+  end
+
+  def get_trip!(id), do: Repo.get!(Trip, id) |> Repo.preload([:schedule, :vehicle, :driver, :conductor])
+
+  @doc """
+  Finds the Trip for this (schedule, day), creating it if this is the
+  first thing (a checkpoint, a dispatch action, ...) to reference that
+  pair. organisation_id is always derived from the schedule's operator —
+  never accepted from a caller.
+  """
+  def get_or_create_trip(schedule_id, %Date{} = travel_date) do
+    case Repo.get_by(Trip, schedule_id: schedule_id, travel_date: travel_date) do
+      %Trip{} = trip ->
+        {:ok, trip}
+
+      nil ->
+        organisation_id =
+          from(s in Schedule,
+            join: o in assoc(s, :operator),
+            where: s.id == ^schedule_id,
+            select: o.organisation_id
+          )
+          |> Repo.one()
+
+        %Trip{}
+        |> Trip.changeset(%{schedule_id: schedule_id, travel_date: travel_date, organisation_id: organisation_id, status: "planned"})
+        |> Repo.insert()
+    end
+  end
+
+  def update_trip_status(%Trip{} = trip, status) do
+    trip |> Trip.status_changeset(status) |> Repo.update()
+  end
+
+  def change_trip(%Trip{} = trip, attrs \\ %{}), do: Trip.changeset(trip, attrs)
+
+  defp maybe_filter_trip_organisation(query, nil), do: query
+  defp maybe_filter_trip_organisation(query, :all), do: query
+  defp maybe_filter_trip_organisation(query, organisation_id), do: where(query, [t], t.organisation_id == ^organisation_id)
 
   # ── Seat inventory (called from Transport.Ticketing on booking/cancel) ────
 
