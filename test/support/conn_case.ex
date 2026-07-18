@@ -35,4 +35,17 @@ defmodule FleetMintWeb.ConnCase do
     FleetMint.DataCase.setup_sandbox(tags)
     {:ok, conn: Phoenix.ConnTest.build_conn()}
   end
+
+  @doc """
+  Signs `user` in for `conn` the same way AuthPlug expects — a Guardian
+  token in the session under `:user_token` — so controller tests exercise
+  the real auth + tenant-scope pipeline instead of skipping it.
+  """
+  def log_in_user(conn, user) do
+    {:ok, _user, token} = FleetMint.Identity.Guardian.create_token(user)
+
+    conn
+    |> Phoenix.ConnTest.init_test_session(%{})
+    |> Plug.Conn.put_session(:user_token, token)
+  end
 end
