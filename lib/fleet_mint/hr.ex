@@ -3,8 +3,9 @@ defmodule FleetMint.HR do
   alias FleetMint.Repo
   alias FleetMint.HR.Driver
 
-  def list_drivers do
+  def list_drivers(opts \\ []) do
     from(d in Driver, where: is_nil(d.archived_at), order_by: d.name)
+    |> maybe_filter_organisation(opts[:organisation_id])
     |> preload(:user)
     |> Repo.all()
   end
@@ -47,4 +48,8 @@ defmodule FleetMint.HR do
       order_by: d.license_expiry)
     |> Repo.all()
   end
+
+  defp maybe_filter_organisation(query, nil), do: query
+  defp maybe_filter_organisation(query, :all), do: query
+  defp maybe_filter_organisation(query, organisation_id), do: where(query, [d], d.organisation_id == ^organisation_id)
 end

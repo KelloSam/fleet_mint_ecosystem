@@ -14,16 +14,18 @@ defmodule FleetMint.HR.Driver do
     field :archived_at, :naive_datetime
 
     belongs_to :user, FleetMint.Identity.User
+    belongs_to :organisation, FleetMint.Identity.Organisation
 
     timestamps()
   end
 
   def changeset(driver, attrs) do
     driver
-    |> cast(attrs, [:name, :phone, :license_number, :license_expiry, :daily_rate, :date_hired, :status, :notes, :user_id])
+    |> cast(attrs, [:name, :phone, :license_number, :license_expiry, :daily_rate, :date_hired, :status, :notes, :user_id, :organisation_id])
     |> validate_required([:name])
     |> validate_inclusion(:status, status_options() |> Keyword.values())
     |> unique_constraint(:license_number)
+    |> foreign_key_constraint(:organisation_id)
   end
 
   def status_options do

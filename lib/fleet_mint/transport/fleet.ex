@@ -127,8 +127,10 @@ defmodule FleetMint.Transport.Fleet do
       [%Bus{}, ...]
   
   """
-  def list_buses do
-    Repo.all(Bus)
+  def list_buses(opts \\ []) do
+    Bus
+    |> maybe_filter_bus_organisation(opts[:organisation_id])
+    |> Repo.all()
   end
   
   @doc """
@@ -255,11 +257,10 @@ defmodule FleetMint.Transport.Fleet do
       [%Bus{}, ...]
   
   """
-  def list_buses_by_status(status) do
-    query = from b in Bus,
-            where: b.status == ^status,
-            order_by: [desc: b.inserted_at]
-    Repo.all(query)
+  def list_buses_by_status(status, opts \\ []) do
+    from(b in Bus, where: b.status == ^status, order_by: [desc: b.inserted_at])
+    |> maybe_filter_bus_organisation(opts[:organisation_id])
+    |> Repo.all()
   end
   
   @doc """
@@ -299,13 +300,14 @@ defmodule FleetMint.Transport.Fleet do
     from(v in Vehicle, where: is_nil(v.archived_at))
     |> maybe_filter_vehicle_type(opts[:type])
     |> maybe_filter_vehicle_status(opts[:status])
+    |> maybe_filter_vehicle_organisation(opts[:organisation_id])
     |> preload([:bus_profile, :truck_profile, :current_driver])
     |> order_by([v], v.registration_number)
     |> Repo.all()
   end
 
-  def list_buses_v2, do: list_vehicles(type: "bus")
-  def list_trucks, do: list_vehicles(type: "truck")
+  def list_buses_v2(opts \\ []), do: list_vehicles(Keyword.put(opts, :type, "bus"))
+  def list_trucks(opts \\ []), do: list_vehicles(Keyword.put(opts, :type, "truck"))
 
   def get_vehicle!(id) do
     Repo.get!(Vehicle, id)
@@ -370,6 +372,14 @@ defmodule FleetMint.Transport.Fleet do
 
   defp maybe_filter_vehicle_status(query, nil), do: query
   defp maybe_filter_vehicle_status(query, status), do: where(query, [v], v.status == ^status)
+
+  defp maybe_filter_vehicle_organisation(query, nil), do: query
+  defp maybe_filter_vehicle_organisation(query, :all), do: query
+  defp maybe_filter_vehicle_organisation(query, organisation_id), do: where(query, [v], v.organisation_id == ^organisation_id)
+
+  defp maybe_filter_bus_organisation(query, nil), do: query
+  defp maybe_filter_bus_organisation(query, :all), do: query
+  defp maybe_filter_bus_organisation(query, organisation_id), do: where(query, [b], b.organisation_id == ^organisation_id)
 
   # ── Vehicle Maintenance ────────────────────────────────────────────────────
 

@@ -16,6 +16,32 @@ defmodule FleetMint.Transport.FleetTest do
     end
   end
 
+  describe "tenant scoping" do
+    test "list_vehicles/1 organisation_id filters to that organisation's vehicles only" do
+      org_a = operator_fixture()
+      org_b = operator_fixture()
+
+      vehicle_a = vehicle_fixture(%{"organisation_id" => org_a.organisation_id})
+      vehicle_fixture(%{"organisation_id" => org_b.organisation_id})
+
+      result = Fleet.list_vehicles(organisation_id: org_a.organisation_id)
+
+      assert Enum.map(result, & &1.id) == [vehicle_a.id]
+    end
+
+    test "list_buses/1 organisation_id filters to that organisation's buses only" do
+      org_a = operator_fixture()
+      org_b = operator_fixture()
+
+      bus_a = bus_fixture(organisation_id: org_a.organisation_id)
+      bus_fixture(organisation_id: org_b.organisation_id)
+
+      result = Fleet.list_buses(organisation_id: org_a.organisation_id)
+
+      assert Enum.map(result, & &1.id) == [bus_a.id]
+    end
+  end
+
   describe "update_fuel_log/2" do
     test "syncs the linked entry's amount" do
       fuel_log = fuel_log_fixture(liters: "40.0", cost_per_liter: "25.00")

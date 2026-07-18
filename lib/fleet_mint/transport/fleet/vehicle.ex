@@ -15,6 +15,7 @@ defmodule FleetMint.Transport.Fleet.Vehicle do
     field :archived_at, :naive_datetime
 
     belongs_to :current_driver, FleetMint.HR.Driver
+    belongs_to :organisation, FleetMint.Identity.Organisation
     has_one :bus_profile, FleetMint.Transport.Fleet.BusProfile
     has_one :truck_profile, FleetMint.Transport.Fleet.TruckProfile
 
@@ -27,11 +28,12 @@ defmodule FleetMint.Transport.Fleet.Vehicle do
   def changeset(vehicle, attrs) do
     vehicle
     |> cast(attrs, [:registration_number, :make, :model, :year, :color, :vin,
-                    :vehicle_type, :status, :description, :current_driver_id])
+                    :vehicle_type, :status, :description, :current_driver_id, :organisation_id])
     |> validate_required([:registration_number, :make, :model, :vehicle_type])
     |> validate_inclusion(:vehicle_type, @vehicle_types)
     |> validate_inclusion(:status, @statuses)
     |> validate_number(:year, greater_than: 1980, less_than_or_equal_to: Date.utc_today().year + 1)
     |> unique_constraint(:registration_number)
+    |> foreign_key_constraint(:organisation_id)
   end
 end

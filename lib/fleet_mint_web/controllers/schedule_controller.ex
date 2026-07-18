@@ -15,7 +15,7 @@ defmodule FleetMintWeb.ScheduleController do
   def new(conn, _params) do
     changeset = Trips.change_schedule(%Schedule{})
     routes = Routes.list_routes()
-    vehicles = Fleet.list_vehicles(type: "bus", status: "active")
+    vehicles = Fleet.list_vehicles(type: "bus", status: "active", organisation_id: conn.assigns.organisation_scope)
     operators = Fleet.list_operators()
     render(conn, :new, changeset: changeset, routes: routes, vehicles: vehicles, operators: operators)
   end
@@ -28,7 +28,7 @@ defmodule FleetMintWeb.ScheduleController do
         conn |> put_flash(:info, "Schedule created.") |> redirect(to: ~p"/schedules/#{schedule}")
       {:error, changeset} ->
         routes = Routes.list_routes()
-        vehicles = Fleet.list_vehicles(type: "bus", status: "active")
+        vehicles = Fleet.list_vehicles(type: "bus", status: "active", organisation_id: conn.assigns.organisation_scope)
         operators = Fleet.list_operators()
         render(conn, :new, changeset: changeset, routes: routes, vehicles: vehicles, operators: operators)
     end
@@ -73,7 +73,7 @@ defmodule FleetMintWeb.ScheduleController do
     with_organisation_access(conn, schedule.operator, ~p"/schedules", fn conn ->
       changeset = Trips.change_schedule(schedule)
       routes = Routes.list_routes()
-      vehicles = Fleet.list_vehicles(type: "bus", status: "active")
+      vehicles = Fleet.list_vehicles(type: "bus", status: "active", organisation_id: conn.assigns.organisation_scope)
       operators = Fleet.list_operators()
       render(conn, :edit, schedule: schedule, changeset: changeset, routes: routes, vehicles: vehicles, operators: operators)
     end)
@@ -90,7 +90,7 @@ defmodule FleetMintWeb.ScheduleController do
           conn |> put_flash(:info, "Schedule updated.") |> redirect(to: ~p"/schedules/#{schedule}")
         {:error, changeset} ->
           routes = Routes.list_routes()
-          vehicles = Fleet.list_vehicles(type: "bus", status: "active")
+          vehicles = Fleet.list_vehicles(type: "bus", status: "active", organisation_id: conn.assigns.organisation_scope)
           operators = Fleet.list_operators()
           render(conn, :edit, schedule: schedule, changeset: changeset, routes: routes, vehicles: vehicles, operators: operators)
       end
