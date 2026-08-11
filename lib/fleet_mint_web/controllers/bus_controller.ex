@@ -84,7 +84,9 @@ defmodule FleetMintWeb.BusController do
   # ── Tenant scoping helpers ──────────────────────────────────────────────
 
   defp force_organisation_scope(params, :all), do: params
-  defp force_organisation_scope(params, organisation_id), do: Map.put(params, "organisation_id", organisation_id)
+
+  defp force_organisation_scope(params, organisation_id),
+    do: Map.put(params, "organisation_id", organisation_id)
 
   defp with_organisation_access(conn, organisation_id, fallback_path, fun) do
     if Authorization.can_access_organisation?(conn.assigns.current_user, organisation_id) do

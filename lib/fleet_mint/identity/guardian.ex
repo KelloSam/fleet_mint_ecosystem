@@ -50,4 +50,3 @@ defmodule FleetMint.Identity.Guardian do
     {:ok, user, token}
   end
 end
-

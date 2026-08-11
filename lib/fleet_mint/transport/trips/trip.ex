@@ -36,8 +36,17 @@ defmodule FleetMint.Transport.Trips.Trip do
 
   def changeset(trip, attrs) do
     trip
-    |> cast(attrs, [:travel_date, :status, :departed_at, :completed_at,
-                    :schedule_id, :organisation_id, :vehicle_id, :driver_id, :conductor_id])
+    |> cast(attrs, [
+      :travel_date,
+      :status,
+      :departed_at,
+      :completed_at,
+      :schedule_id,
+      :organisation_id,
+      :vehicle_id,
+      :driver_id,
+      :conductor_id
+    ])
     |> validate_required([:travel_date, :status, :schedule_id, :organisation_id])
     |> validate_inclusion(:status, @statuses)
     |> foreign_key_constraint(:schedule_id)

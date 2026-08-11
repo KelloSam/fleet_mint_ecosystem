@@ -27,12 +27,26 @@ defmodule FleetMint.Transport.Fleet.Vehicle do
 
   def changeset(vehicle, attrs) do
     vehicle
-    |> cast(attrs, [:registration_number, :make, :model, :year, :color, :vin,
-                    :vehicle_type, :status, :description, :current_driver_id, :organisation_id])
+    |> cast(attrs, [
+      :registration_number,
+      :make,
+      :model,
+      :year,
+      :color,
+      :vin,
+      :vehicle_type,
+      :status,
+      :description,
+      :current_driver_id,
+      :organisation_id
+    ])
     |> validate_required([:registration_number, :make, :model, :vehicle_type])
     |> validate_inclusion(:vehicle_type, @vehicle_types)
     |> validate_inclusion(:status, @statuses)
-    |> validate_number(:year, greater_than: 1980, less_than_or_equal_to: Date.utc_today().year + 1)
+    |> validate_number(:year,
+      greater_than: 1980,
+      less_than_or_equal_to: Date.utc_today().year + 1
+    )
     |> unique_constraint(:registration_number)
     |> foreign_key_constraint(:organisation_id)
   end

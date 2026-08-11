@@ -33,7 +33,9 @@ defmodule FleetMintWeb.FreightInvoiceHTML do
     ]
 
   def client_options(clients), do: Enum.map(clients, &{&1.company_name, &1.id})
-  def trip_options(trips), do: Enum.map(trips, &{"#{&1.trip_reference} (#{&1.origin} → #{&1.destination})", &1.id})
+
+  def trip_options(trips),
+    do: Enum.map(trips, &{"#{&1.trip_reference} (#{&1.origin} → #{&1.destination})", &1.id})
 
   def format_money(nil), do: "—"
   def format_money(amount), do: "ZMW #{Decimal.to_string(amount)}"

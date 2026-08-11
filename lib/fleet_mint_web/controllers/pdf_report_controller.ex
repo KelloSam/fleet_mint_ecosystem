@@ -36,6 +36,7 @@ defmodule FleetMintWeb.PdfReportController do
       {:ok, pdf} ->
         filename = "weekly_report_#{report.start_date}_to_#{report.end_date}.pdf"
         send_pdf(conn, pdf, filename)
+
       {:error, _} ->
         pdf_error(conn, ~p"/reports/#{id}")
     end
@@ -53,7 +54,9 @@ defmodule FleetMintWeb.PdfReportController do
 
   # GET /pdf/expenditures?from=YYYY-MM-DD&to=YYYY-MM-DD
   def expenditures(conn, params) do
-    start_str = Map.get(params, "from", Date.beginning_of_week(Date.utc_today()) |> Date.to_iso8601())
+    start_str =
+      Map.get(params, "from", Date.beginning_of_week(Date.utc_today()) |> Date.to_iso8601())
+
     end_str = Map.get(params, "to", Date.utc_today() |> Date.to_iso8601())
 
     with {:ok, start_date} <- Date.from_iso8601(start_str),
@@ -63,6 +66,7 @@ defmodule FleetMintWeb.PdfReportController do
       case PdfGenerator.expenditure_report(start_date, end_date, data) do
         {:ok, pdf} ->
           send_pdf(conn, pdf, "expenditures_#{start_str}_to_#{end_str}.pdf")
+
         {:error, _} ->
           pdf_error(conn, ~p"/admin/reports")
       end

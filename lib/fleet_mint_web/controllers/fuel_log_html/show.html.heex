@@ -1,6 +1,10 @@
 <.header>
   Fuel Log
-  <:actions><.link href={~p"/fuel_logs/#{@fuel_log}/edit"}><.button>Edit</.button></.link></:actions>
+  <:actions>
+    <.link href={~p"/fuel_logs/#{@fuel_log}/edit"}>
+      <.button>Edit</.button>
+    </.link>
+  </:actions>
 </.header>
 
 <.list>
@@ -12,7 +16,9 @@
   <:item title="Total Cost">ZMW <%= @fuel_log.total_cost %></:item>
   <:item title="Mileage"><%= @fuel_log.mileage %> km</:item>
   <:item title="Fuel Station"><%= @fuel_log.fuel_station %></:item>
-  <:item title="Driver"><%= @fuel_log.driver && (@fuel_log.driver.full_name || @fuel_log.driver.username) %></:item>
+  <:item title="Driver">
+    <%= @fuel_log.driver && (@fuel_log.driver.full_name || @fuel_log.driver.username) %>
+  </:item>
   <:item title="Notes"><%= @fuel_log.notes %></:item>
 </.list>
 

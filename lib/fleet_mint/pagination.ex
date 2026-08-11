@@ -8,6 +8,7 @@ defmodule FleetMint.Pagination do
     page = max(1, page)
     per_page = min(per_page, 100)
     offset = (page - 1) * per_page
+
     count_query =
       queryable
       |> exclude(:preload)

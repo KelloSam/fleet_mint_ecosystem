@@ -5,7 +5,12 @@ defmodule FleetMintWeb.FreightClientController do
   alias FleetMint.Identity.Authorization
 
   def index(conn, params) do
-    clients = Cargo.list_clients(status: params["status"], organisation_id: conn.assigns.organisation_scope)
+    clients =
+      Cargo.list_clients(
+        status: params["status"],
+        organisation_id: conn.assigns.organisation_scope
+      )
+
     render(conn, :index, clients: clients)
   end
 
@@ -19,7 +24,10 @@ defmodule FleetMintWeb.FreightClientController do
 
     case Cargo.create_client(params) do
       {:ok, client} ->
-        conn |> put_flash(:info, "Client #{client.company_name} created.") |> redirect(to: ~p"/freight/clients/#{client}")
+        conn
+        |> put_flash(:info, "Client #{client.company_name} created.")
+        |> redirect(to: ~p"/freight/clients/#{client}")
+
       {:error, changeset} ->
         render(conn, :new, changeset: changeset)
     end
@@ -48,7 +56,10 @@ defmodule FleetMintWeb.FreightClientController do
     with_organisation_access(conn, client.organisation_id, ~p"/freight/clients", fn conn ->
       case Cargo.update_client(client, params) do
         {:ok, client} ->
-          conn |> put_flash(:info, "Client updated.") |> redirect(to: ~p"/freight/clients/#{client}")
+          conn
+          |> put_flash(:info, "Client updated.")
+          |> redirect(to: ~p"/freight/clients/#{client}")
+
         {:error, changeset} ->
           render(conn, :edit, client: client, changeset: changeset)
       end
@@ -67,7 +78,9 @@ defmodule FleetMintWeb.FreightClientController do
   # ── Tenant scoping helpers ──────────────────────────────────────────────
 
   defp force_organisation_scope(params, :all), do: params
-  defp force_organisation_scope(params, organisation_id), do: Map.put(params, "organisation_id", organisation_id)
+
+  defp force_organisation_scope(params, organisation_id),
+    do: Map.put(params, "organisation_id", organisation_id)
 
   defp with_organisation_access(conn, organisation_id, fallback_path, fun) do
     if Authorization.can_access_organisation?(conn.assigns.current_user, organisation_id) do

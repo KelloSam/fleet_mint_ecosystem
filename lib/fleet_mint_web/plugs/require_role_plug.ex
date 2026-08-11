@@ -9,6 +9,7 @@ defmodule FleetMintWeb.Plugs.RequireRolePlug do
 
   def call(conn, roles: allowed_roles) do
     user = conn.assigns.current_user
+
     if Authorization.authorized?(user, allowed_roles) do
       conn
     else

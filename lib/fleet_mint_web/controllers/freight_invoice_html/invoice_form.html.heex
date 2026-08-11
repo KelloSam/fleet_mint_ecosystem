@@ -7,11 +7,17 @@
     <div>
       <label class="block text-sm font-medium text-gray-700">Client</label>
       <div class="mt-1">
-        <select name={f[:client_id].name} id={f[:client_id].id}
-                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+        <select
+          name={f[:client_id].name}
+          id={f[:client_id].id}
+          class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+        >
           <option value="">— Select client —</option>
           <%= for client <- @clients do %>
-            <option value={client.id} selected={to_string(client.id) == to_string(f[:client_id].value || "")}>
+            <option
+              value={client.id}
+              selected={to_string(client.id) == to_string(f[:client_id].value || "")}
+            >
               <%= client.company_name %>
             </option>
           <% end %>
@@ -22,29 +28,65 @@
     <div>
       <label class="block text-sm font-medium text-gray-700">Delivered Trip</label>
       <div class="mt-1">
-        <select name={f[:trip_id].name} id={f[:trip_id].id}
-                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+        <select
+          name={f[:trip_id].name}
+          id={f[:trip_id].id}
+          class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+        >
           <option value="">— Select trip —</option>
           <%= for trip <- @trips do %>
-            <option value={trip.id} selected={to_string(trip.id) == to_string(f[:trip_id].value || "")}>
+            <option
+              value={trip.id}
+              selected={to_string(trip.id) == to_string(f[:trip_id].value || "")}
+            >
               <%= trip.trip_reference %> (<%= trip.origin %> → <%= trip.destination %>)
             </option>
           <% end %>
         </select>
       </div>
       <%= if @trips == [] do %>
-        <p class="text-xs text-amber-600 mt-1">No delivered trips available yet — an invoice needs a completed trip.</p>
+        <p class="text-xs text-amber-600 mt-1">
+          No delivered trips available yet — an invoice needs a completed trip.
+        </p>
       <% end %>
     </div>
 
-    <.input field={f[:status]} type="select" label="Status" options={FleetMintWeb.FreightInvoiceHTML.status_options()} />
+    <.input
+      field={f[:status]}
+      type="select"
+      label="Status"
+      options={FleetMintWeb.FreightInvoiceHTML.status_options()}
+    />
     <.input field={f[:invoice_date]} type="date" label="Invoice Date" />
     <.input field={f[:due_date]} type="date" label="Due Date" />
-    <.input field={f[:base_amount]} type="number" label="Base Amount (ZMW)" step="0.01" min="0.01" />
-    <.input field={f[:fuel_surcharge]} type="number" label="Fuel Surcharge (ZMW)" step="0.01" min="0" />
-    <.input field={f[:toll_surcharge]} type="number" label="Toll Surcharge (ZMW)" step="0.01" min="0" />
+    <.input
+      field={f[:base_amount]}
+      type="number"
+      label="Base Amount (ZMW)"
+      step="0.01"
+      min="0.01"
+    />
+    <.input
+      field={f[:fuel_surcharge]}
+      type="number"
+      label="Fuel Surcharge (ZMW)"
+      step="0.01"
+      min="0"
+    />
+    <.input
+      field={f[:toll_surcharge]}
+      type="number"
+      label="Toll Surcharge (ZMW)"
+      step="0.01"
+      min="0"
+    />
     <.input field={f[:payment_date]} type="date" label="Payment Date (if paid)" />
-    <.input field={f[:payment_reference]} type="text" label="Payment Reference" placeholder="optional" />
+    <.input
+      field={f[:payment_reference]}
+      type="text"
+      label="Payment Reference"
+      placeholder="optional"
+    />
   </div>
 
   <p class="text-xs text-gray-400 -mt-2">

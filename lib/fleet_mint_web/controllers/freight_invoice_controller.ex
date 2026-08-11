@@ -11,15 +11,23 @@ defmodule FleetMintWeb.FreightInvoiceController do
         client_id: params["client_id"],
         organisation_id: conn.assigns.organisation_scope
       )
+
     render(conn, :index, invoices: invoices)
   end
 
   def new(conn, params) do
     changeset = Cargo.change_invoice(%Invoice{})
     clients = allowed_clients(conn)
-    trips = Cargo.list_trips(status: "delivered", organisation_id: conn.assigns.organisation_scope)
-    render(conn, :new, changeset: changeset, clients: clients, trips: trips,
-                       prefill_trip: params["trip_id"])
+
+    trips =
+      Cargo.list_trips(status: "delivered", organisation_id: conn.assigns.organisation_scope)
+
+    render(conn, :new,
+      changeset: changeset,
+      clients: clients,
+      trips: trips,
+      prefill_trip: params["trip_id"]
+    )
   end
 
   def create(conn, %{"invoice" => params}) do
@@ -29,14 +37,30 @@ defmodule FleetMintWeb.FreightInvoiceController do
     if client_allowed?(clients, params["client_id"]) do
       case Cargo.create_invoice(params, user_id) do
         {:ok, invoice} ->
-          conn |> put_flash(:info, "Invoice #{invoice.invoice_number} created.") |> redirect(to: ~p"/freight/invoices/#{invoice}")
+          conn
+          |> put_flash(:info, "Invoice #{invoice.invoice_number} created.")
+          |> redirect(to: ~p"/freight/invoices/#{invoice}")
+
         {:error, changeset} ->
-          trips = Cargo.list_trips(status: "delivered", organisation_id: conn.assigns.organisation_scope)
-          render(conn, :new, changeset: changeset, clients: clients, trips: trips, prefill_trip: nil)
+          trips =
+            Cargo.list_trips(
+              status: "delivered",
+              organisation_id: conn.assigns.organisation_scope
+            )
+
+          render(conn, :new,
+            changeset: changeset,
+            clients: clients,
+            trips: trips,
+            prefill_trip: nil
+          )
       end
     else
       changeset = Cargo.change_invoice(%Invoice{})
-      trips = Cargo.list_trips(status: "delivered", organisation_id: conn.assigns.organisation_scope)
+
+      trips =
+        Cargo.list_trips(status: "delivered", organisation_id: conn.assigns.organisation_scope)
+
       conn
       |> put_flash(:error, "That client is not available to you.")
       |> render(:new, changeset: changeset, clients: clients, trips: trips, prefill_trip: nil)
@@ -57,7 +81,10 @@ defmodule FleetMintWeb.FreightInvoiceController do
     with_organisation_access(conn, invoice.client, ~p"/freight/invoices", fn conn ->
       changeset = Cargo.change_invoice(invoice)
       clients = allowed_clients(conn)
-      trips = Cargo.list_trips(status: "delivered", organisation_id: conn.assigns.organisation_scope)
+
+      trips =
+        Cargo.list_trips(status: "delivered", organisation_id: conn.assigns.organisation_scope)
+
       render(conn, :edit, invoice: invoice, changeset: changeset, clients: clients, trips: trips)
     end)
   end
@@ -68,11 +95,25 @@ defmodule FleetMintWeb.FreightInvoiceController do
     with_organisation_access(conn, invoice.client, ~p"/freight/invoices", fn conn ->
       case Cargo.update_invoice(invoice, params) do
         {:ok, invoice} ->
-          conn |> put_flash(:info, "Invoice updated.") |> redirect(to: ~p"/freight/invoices/#{invoice}")
+          conn
+          |> put_flash(:info, "Invoice updated.")
+          |> redirect(to: ~p"/freight/invoices/#{invoice}")
+
         {:error, changeset} ->
           clients = allowed_clients(conn)
-          trips = Cargo.list_trips(status: "delivered", organisation_id: conn.assigns.organisation_scope)
-          render(conn, :edit, invoice: invoice, changeset: changeset, clients: clients, trips: trips)
+
+          trips =
+            Cargo.list_trips(
+              status: "delivered",
+              organisation_id: conn.assigns.organisation_scope
+            )
+
+          render(conn, :edit,
+            invoice: invoice,
+            changeset: changeset,
+            clients: clients,
+            trips: trips
+          )
       end
     end)
   end
@@ -88,7 +129,8 @@ defmodule FleetMintWeb.FreightInvoiceController do
 
   # ── Tenant scoping helpers ──────────────────────────────────────────────
 
-  defp allowed_clients(conn), do: Cargo.list_clients(status: "active", organisation_id: conn.assigns.organisation_scope)
+  defp allowed_clients(conn),
+    do: Cargo.list_clients(status: "active", organisation_id: conn.assigns.organisation_scope)
 
   defp client_allowed?(clients, client_id) do
     client_id = to_string(client_id)

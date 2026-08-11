@@ -20,8 +20,16 @@ defmodule FleetMint.Transport.Ticketing.Ticket do
 
   def changeset(ticket, attrs) do
     ticket
-    |> cast(attrs, [:ticket_number, :qr_payload, :qr_svg, :status,
-                    :boarded_at, :validation_token, :expires_at, :booking_id])
+    |> cast(attrs, [
+      :ticket_number,
+      :qr_payload,
+      :qr_svg,
+      :status,
+      :boarded_at,
+      :validation_token,
+      :expires_at,
+      :booking_id
+    ])
     |> validate_required([:booking_id])
     |> validate_inclusion(:status, @statuses)
     |> generate_ticket_number()
@@ -30,7 +38,10 @@ defmodule FleetMint.Transport.Ticketing.Ticket do
   end
 
   def board_changeset(ticket) do
-    change(ticket, status: "boarded", boarded_at: NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second))
+    change(ticket,
+      status: "boarded",
+      boarded_at: NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+    )
   end
 
   def cancel_changeset(ticket) do
@@ -38,8 +49,9 @@ defmodule FleetMint.Transport.Ticketing.Ticket do
   end
 
   defp generate_ticket_number(%Ecto.Changeset{data: %{id: nil}} = changeset) do
-    num = "TKT-#{:rand.uniform(999999999) |> Integer.to_string() |> String.pad_leading(9, "0")}"
+    num = "TKT-#{:rand.uniform(999_999_999) |> Integer.to_string() |> String.pad_leading(9, "0")}"
     put_change(changeset, :ticket_number, num)
   end
+
   defp generate_ticket_number(changeset), do: changeset
 end

@@ -1,6 +1,6 @@
 defmodule FleetMintWeb.ExpenditureComponents do
   use Phoenix.Component
-  
+
   import FleetMintWeb.CoreComponents
   alias FleetMint.Finance
 
@@ -20,7 +20,12 @@ defmodule FleetMintWeb.ExpenditureComponents do
       <.input field={f[:amount]} type="number" label="Amount" step="any" />
       <.input field={f[:description]} type="text" label="Description" />
       <.input field={f[:date]} type="datetime-local" label="Date" />
-      <.input field={f[:cashing_report_id]} type="select" label="Cashing Report" options={cashing_report_options()} />
+      <.input
+        field={f[:cashing_report_id]}
+        type="select"
+        label="Cashing Report"
+        options={cashing_report_options()}
+      />
       <:actions>
         <.button>Save Expenditure</.button>
       </:actions>
@@ -61,7 +66,10 @@ defmodule FleetMintWeb.ExpenditureComponents do
   def expenditure_back_button(assigns) do
     ~H"""
     <div class="mt-16">
-      <.link navigate={@navigate} class="text-sm font-semibold leading-6 text-zinc-900 hover:text-zinc-700">
+      <.link
+        navigate={@navigate}
+        class="text-sm font-semibold leading-6 text-zinc-900 hover:text-zinc-700"
+      >
         <%= render_slot(@inner_block) || "Back to expenditures" %>
       </.link>
     </div>
@@ -70,6 +78,7 @@ defmodule FleetMintWeb.ExpenditureComponents do
 
   # Attributes for expenditure_item_list component
   attr :items, :list, default: [], doc: "the list of items to display"
+
   slot :item, required: true, doc: "the template for each item" do
     attr :title, :string, required: true, doc: "the title of the item"
   end
@@ -92,10 +101,9 @@ defmodule FleetMintWeb.ExpenditureComponents do
   # Helper function needed by components
   defp cashing_report_options do
     Finance.list_cashing_reports()
-    |> Enum.map(fn cr -> 
+    |> Enum.map(fn cr ->
       display_text = "Report ##{cr.id} #{cr.description || ""}"
-      {display_text, cr.id} 
+      {display_text, cr.id}
     end)
   end
 end
-

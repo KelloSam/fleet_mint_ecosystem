@@ -104,11 +104,12 @@ defmodule FleetMintWeb.BusControllerTest do
       refute html =~ bus_b.registration_number
     end
 
-    test "authorised: creating a bus forces the tenant's own organisation regardless of submitted value", %{
-      conn: conn,
-      tenant_user: tenant_user,
-      org_a: org_a
-    } do
+    test "authorised: creating a bus forces the tenant's own organisation regardless of submitted value",
+         %{
+           conn: conn,
+           tenant_user: tenant_user,
+           org_a: org_a
+         } do
       other_org = operator_fixture()
 
       conn =

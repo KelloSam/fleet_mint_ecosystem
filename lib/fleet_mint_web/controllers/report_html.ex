@@ -3,13 +3,16 @@ defmodule FleetMintWeb.ReportHTML do
   use FleetMintWeb, :html
 
   import FleetMintWeb.CoreComponents
+
   @doc """
   Renders a header with title.
   """
   attr :title, :string, required: true
   attr :class, :string, default: nil
   slot :subtitle, required: false
-  slot :actions, required: false  # Add this line
+  # Add this line
+  slot :actions, required: false
+
   def header(assigns) do
     ~H"""
     <header class={[@class]}>
@@ -29,10 +32,14 @@ defmodule FleetMintWeb.ReportHTML do
   """
   attr :navigate, :string, required: true
   slot :inner_block, required: false
+
   def back(assigns) do
     ~H"""
     <div class="mt-16">
-      <.link navigate={@navigate} class="text-sm font-semibold leading-6 text-zinc-900 hover:text-zinc-700">
+      <.link
+        navigate={@navigate}
+        class="text-sm font-semibold leading-6 text-zinc-900 hover:text-zinc-700"
+      >
         <%= render_slot(@inner_block) || "Back to reports" %>
       </.link>
     </div>
@@ -44,6 +51,7 @@ defmodule FleetMintWeb.ReportHTML do
   """
   attr :items, :list, required: true
   slot :item, required: true
+
   def item_list(assigns) do
     ~H"""
     <div class="mt-14">

@@ -35,10 +35,26 @@ defmodule FleetMint.Cargo.Trip do
 
   def changeset(trip, attrs) do
     trip
-    |> cast(attrs, [:origin, :destination, :planned_departure, :actual_departure,
-                    :planned_arrival, :actual_arrival, :status, :current_location,
-                    :odometer_start, :odometer_end, :fuel_used_liters, :toll_fees,
-                    :other_expenses, :notes, :vehicle_id, :driver_id, :co_driver_id, :created_by_id])
+    |> cast(attrs, [
+      :origin,
+      :destination,
+      :planned_departure,
+      :actual_departure,
+      :planned_arrival,
+      :actual_arrival,
+      :status,
+      :current_location,
+      :odometer_start,
+      :odometer_end,
+      :fuel_used_liters,
+      :toll_fees,
+      :other_expenses,
+      :notes,
+      :vehicle_id,
+      :driver_id,
+      :co_driver_id,
+      :created_by_id
+    ])
     |> validate_required([:origin, :destination, :vehicle_id])
     |> validate_inclusion(:status, @statuses)
     |> generate_reference()
@@ -52,8 +68,11 @@ defmodule FleetMint.Cargo.Trip do
   end
 
   defp generate_reference(%Ecto.Changeset{data: %{id: nil}} = changeset) do
-    ref = "FT-#{Date.utc_today() |> Calendar.strftime("%y%m%d")}-#{:rand.uniform(9999) |> Integer.to_string() |> String.pad_leading(4, "0")}"
+    ref =
+      "FT-#{Date.utc_today() |> Calendar.strftime("%y%m%d")}-#{:rand.uniform(9999) |> Integer.to_string() |> String.pad_leading(4, "0")}"
+
     put_change(changeset, :trip_reference, ref)
   end
+
   defp generate_reference(changeset), do: changeset
 end

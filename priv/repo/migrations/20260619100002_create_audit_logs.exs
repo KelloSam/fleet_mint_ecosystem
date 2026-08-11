@@ -3,13 +3,13 @@ defmodule FleetMint.Repo.Migrations.CreateAuditLogs do
 
   def change do
     create table(:audit_logs) do
-      add :event,       :string, null: false
-      add :actor_id,    :integer
+      add :event, :string, null: false
+      add :actor_id, :integer
       add :actor_email, :string
       add :target_type, :string
-      add :target_id,   :string
-      add :metadata,    :map, default: %{}
-      add :ip_address,  :string
+      add :target_id, :string
+      add :metadata, :map, default: %{}
+      add :ip_address, :string
 
       timestamps(updated_at: false)
     end

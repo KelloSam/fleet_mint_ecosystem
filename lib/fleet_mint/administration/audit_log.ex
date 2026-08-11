@@ -3,13 +3,13 @@ defmodule FleetMint.Administration.AuditLog do
   import Ecto.Changeset
 
   schema "audit_logs" do
-    field :event,       :string
-    field :actor_id,    :integer
+    field :event, :string
+    field :actor_id, :integer
     field :actor_email, :string
     field :target_type, :string
-    field :target_id,   :string
-    field :metadata,    :map, default: %{}
-    field :ip_address,  :string
+    field :target_id, :string
+    field :metadata, :map, default: %{}
+    field :ip_address, :string
 
     # Derived server-side from the actor's own organisation at the time
     # of the event (see Administration.log/2) - never accepted as a
@@ -23,7 +23,16 @@ defmodule FleetMint.Administration.AuditLog do
 
   def changeset(log, attrs) do
     log
-    |> cast(attrs, [:event, :actor_id, :actor_email, :target_type, :target_id, :metadata, :ip_address, :organisation_id])
+    |> cast(attrs, [
+      :event,
+      :actor_id,
+      :actor_email,
+      :target_type,
+      :target_id,
+      :metadata,
+      :ip_address,
+      :organisation_id
+    ])
     |> validate_required([:event])
     |> foreign_key_constraint(:organisation_id)
   end

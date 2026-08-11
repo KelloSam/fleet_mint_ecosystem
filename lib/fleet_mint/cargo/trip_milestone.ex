@@ -21,18 +21,31 @@ defmodule FleetMint.Cargo.TripMilestone do
 
   def changeset(milestone, attrs) do
     milestone
-    |> cast(attrs, [:location, :event_type, :event_time, :latitude, :longitude,
-                    :odometer_reading, :notes, :recorded_by, :trip_id])
+    |> cast(attrs, [
+      :location,
+      :event_type,
+      :event_time,
+      :latitude,
+      :longitude,
+      :odometer_reading,
+      :notes,
+      :recorded_by,
+      :trip_id
+    ])
     |> validate_required([:location, :event_type, :event_time, :trip_id])
     |> validate_inclusion(:event_type, @event_types)
   end
 
   def event_type_options do
     [
-      {"Departed", "departed"}, {"Checkpoint", "checkpoint"},
-      {"Fuel Stop", "fuel_stop"}, {"Border Crossing", "border_crossing"},
-      {"Police Checkpoint", "police_checkpoint"}, {"Arrived", "arrived"},
-      {"Incident", "incident"}, {"Delay", "delay"}
+      {"Departed", "departed"},
+      {"Checkpoint", "checkpoint"},
+      {"Fuel Stop", "fuel_stop"},
+      {"Border Crossing", "border_crossing"},
+      {"Police Checkpoint", "police_checkpoint"},
+      {"Arrived", "arrived"},
+      {"Incident", "incident"},
+      {"Delay", "delay"}
     ]
   end
 end

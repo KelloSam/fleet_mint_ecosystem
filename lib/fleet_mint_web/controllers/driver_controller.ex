@@ -21,6 +21,7 @@ defmodule FleetMintWeb.DriverController do
     case HR.create_driver(params) do
       {:ok, driver} ->
         conn |> put_flash(:info, "Driver created.") |> redirect(to: ~p"/drivers/#{driver}")
+
       {:error, changeset} ->
         render(conn, :new, changeset: changeset)
     end
@@ -50,6 +51,7 @@ defmodule FleetMintWeb.DriverController do
       case HR.update_driver(driver, params) do
         {:ok, driver} ->
           conn |> put_flash(:info, "Driver updated.") |> redirect(to: ~p"/drivers/#{driver}")
+
         {:error, changeset} ->
           render(conn, :edit, driver: driver, changeset: changeset)
       end
@@ -68,7 +70,9 @@ defmodule FleetMintWeb.DriverController do
   # ── Tenant scoping helpers ──────────────────────────────────────────────
 
   defp force_organisation_scope(params, :all), do: params
-  defp force_organisation_scope(params, organisation_id), do: Map.put(params, "organisation_id", organisation_id)
+
+  defp force_organisation_scope(params, organisation_id),
+    do: Map.put(params, "organisation_id", organisation_id)
 
   defp with_organisation_access(conn, organisation_id, fallback_path, fun) do
     if Authorization.can_access_organisation?(conn.assigns.current_user, organisation_id) do

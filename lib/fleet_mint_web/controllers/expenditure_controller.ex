@@ -16,6 +16,7 @@ defmodule FleetMintWeb.ExpenditureController do
     expenditures =
       Finance.list_expenditures(organisation_id: conn.assigns.organisation_scope)
       |> FleetMint.Repo.preload([:cashing_report, :created_by])
+
     render(conn, :index, expenditures: expenditures)
   end
 
@@ -52,7 +53,8 @@ defmodule FleetMintWeb.ExpenditureController do
   end
 
   def show(conn, %{"id" => id}) do
-    expenditure = Finance.get_expenditure!(id) |> FleetMint.Repo.preload([:created_by, :updated_by])
+    expenditure =
+      Finance.get_expenditure!(id) |> FleetMint.Repo.preload([:created_by, :updated_by])
 
     with_organisation_access(conn, expenditure.cashing_report.bus, ~p"/expenditures", fn conn ->
       render(conn, :show, expenditure: expenditure)
@@ -142,7 +144,11 @@ defmodule FleetMintWeb.ExpenditureController do
   end
 
   defp require_admin_or_manager(conn, _opts) do
-    if Authorization.authorized?(conn.assigns.current_user, ["platform_admin", "tenant_admin", "manager"]) do
+    if Authorization.authorized?(conn.assigns.current_user, [
+         "platform_admin",
+         "tenant_admin",
+         "manager"
+       ]) do
       conn
     else
       conn

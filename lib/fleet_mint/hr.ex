@@ -28,7 +28,9 @@ defmodule FleetMint.HR do
 
   def delete_driver(%Driver{} = driver) do
     driver
-    |> Ecto.Changeset.change(archived_at: NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second))
+    |> Ecto.Changeset.change(
+      archived_at: NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+    )
     |> Repo.update()
   end
 
@@ -43,13 +45,19 @@ defmodule FleetMint.HR do
   def list_drivers_with_expiring_licenses(days \\ 30) do
     cutoff = Date.add(Date.utc_today(), days)
     today = Date.utc_today()
+
     from(d in Driver,
-      where: not is_nil(d.license_expiry) and d.license_expiry >= ^today and d.license_expiry <= ^cutoff,
-      order_by: d.license_expiry)
+      where:
+        not is_nil(d.license_expiry) and d.license_expiry >= ^today and
+          d.license_expiry <= ^cutoff,
+      order_by: d.license_expiry
+    )
     |> Repo.all()
   end
 
   defp maybe_filter_organisation(query, nil), do: query
   defp maybe_filter_organisation(query, :all), do: query
-  defp maybe_filter_organisation(query, organisation_id), do: where(query, [d], d.organisation_id == ^organisation_id)
+
+  defp maybe_filter_organisation(query, organisation_id),
+    do: where(query, [d], d.organisation_id == ^organisation_id)
 end

@@ -35,7 +35,8 @@ defmodule FleetMint.Application do
 
   defp chromic_pdf_opts do
     [
-      chrome_executable: System.find_executable("google-chrome") || System.find_executable("chromium-browser"),
+      chrome_executable:
+        System.find_executable("google-chrome") || System.find_executable("chromium-browser"),
       no_sandbox: true,
       offline: true
     ]

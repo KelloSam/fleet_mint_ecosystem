@@ -42,14 +42,15 @@ defmodule FleetMint.Administration do
 
   def log(event, opts \\ []) do
     attrs = %{
-      event:           event,
-      actor_id:        opts[:actor_id],
-      actor_email:     opts[:actor_email],
-      target_type:     opts[:target_type],
-      target_id:       opts[:target_id] && to_string(opts[:target_id]),
-      metadata:        opts[:metadata] || %{},
-      ip_address:      opts[:ip_address],
-      organisation_id: Keyword.get_lazy(opts, :organisation_id, fn -> actor_organisation_id(opts[:actor_id]) end)
+      event: event,
+      actor_id: opts[:actor_id],
+      actor_email: opts[:actor_email],
+      target_type: opts[:target_type],
+      target_id: opts[:target_id] && to_string(opts[:target_id]),
+      metadata: opts[:metadata] || %{},
+      ip_address: opts[:ip_address],
+      organisation_id:
+        Keyword.get_lazy(opts, :organisation_id, fn -> actor_organisation_id(opts[:actor_id]) end)
     }
 
     %AuditLog{}
@@ -60,7 +61,9 @@ defmodule FleetMint.Administration do
   end
 
   defp actor_organisation_id(nil), do: nil
-  defp actor_organisation_id(actor_id), do: Repo.get(FleetMint.Identity.User, actor_id) |> then(& &1 && &1.organisation_id)
+
+  defp actor_organisation_id(actor_id),
+    do: Repo.get(FleetMint.Identity.User, actor_id) |> then(&(&1 && &1.organisation_id))
 
   @doc """
   `organisation_id` opt: `:all`/`nil` for a platform administrator (the
@@ -78,12 +81,14 @@ defmodule FleetMint.Administration do
 
   defp maybe_filter_audit_log_organisation(query, nil), do: query
   defp maybe_filter_audit_log_organisation(query, :all), do: query
+
   defp maybe_filter_audit_log_organisation(query, organisation_id) do
     where(query, [l], l.organisation_id == ^organisation_id)
   end
 
   def count_audit_logs_today do
     today_start = NaiveDateTime.new!(Date.utc_today(), ~T[00:00:00])
+
     from(l in AuditLog, where: l.inserted_at >= ^today_start)
     |> Repo.aggregate(:count)
   end

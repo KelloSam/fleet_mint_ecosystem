@@ -22,17 +22,21 @@ defmodule FleetMintWeb.FreightOrderControllerTest do
       client_a = client_fixture(organisation_id: org_a.organisation_id)
       order = order_fixture(client: client_a, weight_tons: "1.0")
 
-      trip_b = trip_fixture(vehicle: FleetFixtures.vehicle_fixture(%{"organisation_id" => org_b.organisation_id}))
+      trip_b =
+        trip_fixture(
+          vehicle: FleetFixtures.vehicle_fixture(%{"organisation_id" => org_b.organisation_id})
+        )
 
       %{admin_a: admin_a, order: order, trip_b: trip_b}
     end
 
-    test "a tampered cross-organisation assigned_trip_id is rejected and the order stays unassigned", %{
-      conn: conn,
-      admin_a: admin_a,
-      order: order,
-      trip_b: trip_b
-    } do
+    test "a tampered cross-organisation assigned_trip_id is rejected and the order stays unassigned",
+         %{
+           conn: conn,
+           admin_a: admin_a,
+           order: order,
+           trip_b: trip_b
+         } do
       conn =
         conn
         |> log_in_user(admin_a)

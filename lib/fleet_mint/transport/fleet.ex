@@ -1,14 +1,14 @@
 defmodule FleetMint.Transport.Fleet do
   @moduledoc """
   The Fleet context.
-  
+
   This context handles operations related to vehicles (buses/trucks) and
   operators — it provides functions to create, read, update, and delete
   fleet assets, as well as more specialized fleet management operations.
   Route network data lives in `FleetMint.Transport.Routes` — a route is a
   geography fact independent of any vehicle assigned to run it.
   """
-  
+
   import Ecto.Query, warn: false
   alias FleetMint.Repo
   alias FleetMint.Accounting
@@ -30,12 +30,15 @@ defmodule FleetMint.Transport.Fleet do
       group_by: o.id,
       select: %{o | schedule_count: count(s.id)},
       order_by: o.name
-    ) |> Repo.all()
+    )
+    |> Repo.all()
   end
 
   def get_operator!(id), do: Repo.get!(Operator, id)
   def get_operator_by_slug!(slug), do: Repo.get_by!(Operator, slug: slug, active: true)
-  def get_operator_by_organisation(organisation_id), do: Repo.get_by(Operator, organisation_id: organisation_id)
+
+  def get_operator_by_organisation(organisation_id),
+    do: Repo.get_by(Operator, organisation_id: organisation_id)
 
   @doc """
   Onboards a new operator (bus company). Every operator is one tenant's
@@ -64,7 +67,9 @@ defmodule FleetMint.Transport.Fleet do
 
   def delete_operator(%Operator{} = op) do
     op
-    |> Ecto.Changeset.change(archived_at: NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second))
+    |> Ecto.Changeset.change(
+      archived_at: NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+    )
     |> Repo.update()
   end
 
@@ -115,178 +120,180 @@ defmodule FleetMint.Transport.Fleet do
 
   def delete_terminal(%Terminal{} = terminal), do: Repo.delete(terminal)
 
-  def change_terminal(%Terminal{} = terminal, attrs \\ %{}), do: Terminal.changeset(terminal, attrs)
-
+  def change_terminal(%Terminal{} = terminal, attrs \\ %{}),
+    do: Terminal.changeset(terminal, attrs)
 
   @doc """
   Returns the list of buses.
-  
+
   ## Examples
-  
+
       iex> list_buses()
       [%Bus{}, ...]
-  
+
   """
   def list_buses(opts \\ []) do
     Bus
     |> maybe_filter_bus_organisation(opts[:organisation_id])
     |> Repo.all()
   end
-  
+
   @doc """
   Gets a single bus.
-  
+
   Raises `Ecto.NoResultsError` if the Bus does not exist.
-  
+
   ## Examples
-  
+
       iex> get_bus!(123)
       %Bus{}
       
       iex> get_bus!(456)
       ** (Ecto.NoResultsError)
-  
+
   """
   def get_bus!(id), do: Repo.get!(Bus, id)
-  
+
   @doc """
   Gets a single bus.
-  
+
   Returns nil if the Bus does not exist.
-  
+
   ## Examples
-  
+
       iex> get_bus(123)
       %Bus{}
       
       iex> get_bus(456)
       nil
-  
+
   """
   def get_bus(id), do: Repo.get(Bus, id)
-  
+
   @doc """
   Gets a bus by registration number.
-  
+
   Returns nil if no bus is found with the given registration number.
-  
+
   ## Examples
-  
+
       iex> get_bus_by_registration_number("ABC123")
       %Bus{}
       
       iex> get_bus_by_registration_number("NOT_EXISTS")
       nil
-  
+
   """
   def get_bus_by_registration_number(registration_number) do
     Repo.get_by(Bus, registration_number: registration_number)
   end
-  
+
   @doc """
   Creates a bus.
-  
+
   ## Examples
-  
+
       iex> create_bus(%{field: value})
       {:ok, %Bus{}}
       
       iex> create_bus(%{field: bad_value})
       {:error, %Ecto.Changeset{}}
-  
+
   """
   def create_bus(attrs \\ %{}) do
     %Bus{}
     |> Bus.changeset(attrs)
     |> Repo.insert()
   end
-  
+
   @doc """
   Updates a bus.
-  
+
   ## Examples
-  
+
       iex> update_bus(bus, %{field: new_value})
       {:ok, %Bus{}}
       
       iex> update_bus(bus, %{field: bad_value})
       {:error, %Ecto.Changeset{}}
-  
+
   """
   def update_bus(%Bus{} = bus, attrs) do
     bus
     |> Bus.changeset(attrs)
     |> Repo.update()
   end
-  
+
   @doc """
   Deletes a bus.
-  
+
   ## Examples
-  
+
       iex> delete_bus(bus)
       {:ok, %Bus{}}
       
       iex> delete_bus(bus)
       {:error, %Ecto.Changeset{}}
-  
+
   """
   def delete_bus(%Bus{} = bus) do
     Repo.delete(bus)
   end
-  
+
   @doc """
   Returns an `%Ecto.Changeset{}` for tracking bus changes.
-  
+
   ## Examples
-  
+
       iex> change_bus(bus)
       %Ecto.Changeset{data: %Bus{}}
-  
+
   """
   def change_bus(%Bus{} = bus, attrs \\ %{}) do
     Bus.changeset(bus, attrs)
   end
-  
+
   @doc """
   Returns the list of buses with a specific status.
-  
+
   ## Examples
-  
+
       iex> list_buses_by_status("active")
       [%Bus{}, ...]
-  
+
   """
   def list_buses_by_status(status, opts \\ []) do
     from(b in Bus, where: b.status == ^status, order_by: [desc: b.inserted_at])
     |> maybe_filter_bus_organisation(opts[:organisation_id])
     |> Repo.all()
   end
-  
+
   @doc """
   Returns the list of buses manufactured in a specific year range.
-  
+
   ## Examples
-  
+
       iex> list_buses_by_year_range(2010, 2020)
       [%Bus{}, ...]
-  
+
   """
   def list_buses_by_year_range(start_year, end_year) do
-    query = from b in Bus,
-            where: b.year >= ^start_year and b.year <= ^end_year,
-            order_by: [asc: b.year]
+    query =
+      from b in Bus,
+        where: b.year >= ^start_year and b.year <= ^end_year,
+        order_by: [asc: b.year]
+
     Repo.all(query)
   end
-  
+
   @doc """
   Returns the total count of buses.
-  
+
   ## Examples
-  
+
       iex> count_buses()
       12
-  
+
   """
   def count_buses do
     Repo.aggregate(Bus, :count, :id)
@@ -317,14 +324,19 @@ defmodule FleetMint.Transport.Fleet do
   def create_vehicle(attrs) do
     Repo.transaction(fn ->
       vehicle = %Vehicle{} |> Vehicle.changeset(attrs) |> Repo.insert!()
+
       case vehicle.vehicle_type do
         "bus" ->
           profile_attrs = Map.get(attrs, "bus_profile", %{}) |> Map.put("vehicle_id", vehicle.id)
           %BusProfile{} |> BusProfile.changeset(profile_attrs) |> Repo.insert!()
+
         "truck" ->
-          profile_attrs = Map.get(attrs, "truck_profile", %{}) |> Map.put("vehicle_id", vehicle.id)
+          profile_attrs =
+            Map.get(attrs, "truck_profile", %{}) |> Map.put("vehicle_id", vehicle.id)
+
           %TruckProfile{} |> TruckProfile.changeset(profile_attrs) |> Repo.insert!()
       end
+
       Repo.preload(vehicle, [:bus_profile, :truck_profile])
     end)
   end
@@ -332,23 +344,31 @@ defmodule FleetMint.Transport.Fleet do
   def update_vehicle(%Vehicle{} = vehicle, attrs) do
     Repo.transaction(fn ->
       vehicle = vehicle |> Vehicle.changeset(attrs) |> Repo.update!()
+
       case vehicle.vehicle_type do
         "bus" ->
           profile = vehicle.bus_profile || %BusProfile{}
           profile_attrs = Map.get(attrs, "bus_profile", %{}) |> Map.put("vehicle_id", vehicle.id)
           profile |> BusProfile.changeset(profile_attrs) |> Repo.insert_or_update!()
+
         "truck" ->
           profile = vehicle.truck_profile || %TruckProfile{}
-          profile_attrs = Map.get(attrs, "truck_profile", %{}) |> Map.put("vehicle_id", vehicle.id)
+
+          profile_attrs =
+            Map.get(attrs, "truck_profile", %{}) |> Map.put("vehicle_id", vehicle.id)
+
           profile |> TruckProfile.changeset(profile_attrs) |> Repo.insert_or_update!()
       end
+
       Repo.preload(vehicle, [:bus_profile, :truck_profile])
     end)
   end
 
   def delete_vehicle(%Vehicle{} = vehicle) do
     vehicle
-    |> Ecto.Changeset.change(archived_at: NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second))
+    |> Ecto.Changeset.change(
+      archived_at: NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+    )
     |> Repo.update()
   end
 
@@ -365,7 +385,8 @@ defmodule FleetMint.Transport.Fleet do
     |> Map.new()
   end
 
-  def active_vehicle_count, do: Repo.aggregate(from(v in Vehicle, where: v.status == "active"), :count)
+  def active_vehicle_count,
+    do: Repo.aggregate(from(v in Vehicle, where: v.status == "active"), :count)
 
   defp maybe_filter_vehicle_type(query, nil), do: query
   defp maybe_filter_vehicle_type(query, type), do: where(query, [v], v.vehicle_type == ^type)
@@ -375,11 +396,15 @@ defmodule FleetMint.Transport.Fleet do
 
   defp maybe_filter_vehicle_organisation(query, nil), do: query
   defp maybe_filter_vehicle_organisation(query, :all), do: query
-  defp maybe_filter_vehicle_organisation(query, organisation_id), do: where(query, [v], v.organisation_id == ^organisation_id)
+
+  defp maybe_filter_vehicle_organisation(query, organisation_id),
+    do: where(query, [v], v.organisation_id == ^organisation_id)
 
   defp maybe_filter_bus_organisation(query, nil), do: query
   defp maybe_filter_bus_organisation(query, :all), do: query
-  defp maybe_filter_bus_organisation(query, organisation_id), do: where(query, [b], b.organisation_id == ^organisation_id)
+
+  defp maybe_filter_bus_organisation(query, organisation_id),
+    do: where(query, [b], b.organisation_id == ^organisation_id)
 
   # ── Vehicle Maintenance ────────────────────────────────────────────────────
 
@@ -393,8 +418,11 @@ defmodule FleetMint.Transport.Fleet do
   end
 
   def list_maintenances_for_vehicle(vehicle_id) do
-    from(m in VehicleMaintenance, where: m.vehicle_id == ^vehicle_id,
-      order_by: [desc: m.service_date], preload: [:vehicle, :recorded_by])
+    from(m in VehicleMaintenance,
+      where: m.vehicle_id == ^vehicle_id,
+      order_by: [desc: m.service_date],
+      preload: [:vehicle, :recorded_by]
+    )
     |> Repo.all()
   end
 
@@ -408,7 +436,13 @@ defmodule FleetMint.Transport.Fleet do
     Ecto.Multi.new()
     |> Ecto.Multi.insert(:maintenance, changeset)
     |> Ecto.Multi.run(:expense_entry, fn _repo, %{maintenance: m} ->
-      maybe_record_amount("expense", "VehicleMaintenance", m.id, m.cost, "#{m.service_type} on #{m.service_date}")
+      maybe_record_amount(
+        "expense",
+        "VehicleMaintenance",
+        m.id,
+        m.cost,
+        "#{m.service_type} on #{m.service_date}"
+      )
     end)
     |> Repo.transaction()
     |> unwrap_multi(:maintenance)
@@ -420,7 +454,13 @@ defmodule FleetMint.Transport.Fleet do
     Ecto.Multi.new()
     |> Ecto.Multi.update(:maintenance, changeset)
     |> Ecto.Multi.run(:expense_entry, fn _repo, %{maintenance: updated} ->
-      sync_amount("expense", "VehicleMaintenance", updated.id, updated.cost, "#{updated.service_type} on #{updated.service_date}")
+      sync_amount(
+        "expense",
+        "VehicleMaintenance",
+        updated.id,
+        updated.cost,
+        "#{updated.service_type} on #{updated.service_date}"
+      )
     end)
     |> Repo.transaction()
     |> unwrap_multi(:maintenance)
@@ -443,8 +483,11 @@ defmodule FleetMint.Transport.Fleet do
   end
 
   def list_fuel_logs_for_vehicle(vehicle_id) do
-    from(f in FuelLog, where: f.vehicle_id == ^vehicle_id,
-      order_by: [desc: f.log_date], preload: [:vehicle, :driver])
+    from(f in FuelLog,
+      where: f.vehicle_id == ^vehicle_id,
+      order_by: [desc: f.log_date],
+      preload: [:vehicle, :driver]
+    )
     |> Repo.all()
   end
 
@@ -458,7 +501,13 @@ defmodule FleetMint.Transport.Fleet do
     Ecto.Multi.new()
     |> Ecto.Multi.insert(:fuel_log, changeset)
     |> Ecto.Multi.run(:expense_entry, fn _repo, %{fuel_log: log} ->
-      maybe_record_amount("expense", "FuelLog", log.id, log.total_cost, "Fuel log on #{log.log_date}")
+      maybe_record_amount(
+        "expense",
+        "FuelLog",
+        log.id,
+        log.total_cost,
+        "Fuel log on #{log.log_date}"
+      )
     end)
     |> Repo.transaction()
     |> unwrap_multi(:fuel_log)
@@ -470,7 +519,13 @@ defmodule FleetMint.Transport.Fleet do
     Ecto.Multi.new()
     |> Ecto.Multi.update(:fuel_log, changeset)
     |> Ecto.Multi.run(:expense_entry, fn _repo, %{fuel_log: updated} ->
-      sync_amount("expense", "FuelLog", updated.id, updated.total_cost, "Fuel log on #{updated.log_date}")
+      sync_amount(
+        "expense",
+        "FuelLog",
+        updated.id,
+        updated.total_cost,
+        "Fuel log on #{updated.log_date}"
+      )
     end)
     |> Repo.transaction()
     |> unwrap_multi(:fuel_log)
@@ -487,12 +542,16 @@ defmodule FleetMint.Transport.Fleet do
 
   def fuel_cost_today do
     today = Date.utc_today()
+
     Repo.aggregate(from(f in FuelLog, where: f.log_date == ^today), :sum, :total_cost)
     |> Kernel.||(Decimal.new(0))
   end
 
   def count_pending_maintenances do
-    Repo.aggregate(from(m in VehicleMaintenance, where: m.status in ["scheduled", "in_progress"]), :count)
+    Repo.aggregate(
+      from(m in VehicleMaintenance, where: m.status in ["scheduled", "in_progress"]),
+      :count
+    )
   end
 
   def count_vehicles do

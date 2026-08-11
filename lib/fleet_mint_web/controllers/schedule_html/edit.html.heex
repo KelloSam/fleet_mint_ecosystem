@@ -1,18 +1,30 @@
 <div class="max-w-2xl mx-auto">
   <div class="mb-6">
-    <.link navigate={~p"/schedules"} class="text-sm text-blue-600 hover:text-blue-800">← Back to Schedules</.link>
-    <h1 class="text-2xl font-bold text-gray-800 mt-2">Edit Schedule <span class="text-blue-600"><%= @schedule.schedule_code %></span></h1>
+    <.link navigate={~p"/schedules"} class="text-sm text-blue-600 hover:text-blue-800">
+      ← Back to Schedules
+    </.link>
+    <h1 class="text-2xl font-bold text-gray-800 mt-2">
+      Edit Schedule <span class="text-blue-600"><%= @schedule.schedule_code %></span>
+    </h1>
   </div>
 
   <div class="bg-white rounded-xl shadow p-6">
     <.form :let={f} for={@changeset} action={~p"/schedules/#{@schedule}"} method="put">
       <div class="space-y-4">
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Bus Company (Operator)</label>
-          <select name="schedule[operator_id]" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <label class="block text-sm font-medium text-gray-700 mb-1">
+            Bus Company (Operator)
+          </label>
+          <select
+            name="schedule[operator_id]"
+            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
             <option value="">— No specific operator —</option>
             <%= for op <- @operators do %>
-              <option value={op.id} selected={Phoenix.HTML.Form.input_value(f, :operator_id) == op.id}>
+              <option
+                value={op.id}
+                selected={Phoenix.HTML.Form.input_value(f, :operator_id) == op.id}
+              >
                 <%= op.name %>
               </option>
             <% end %>
@@ -20,8 +32,14 @@
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Route <span class="text-red-500">*</span></label>
-          <select name="schedule[route_id]" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+          <label class="block text-sm font-medium text-gray-700 mb-1">
+            Route <span class="text-red-500">*</span>
+          </label>
+          <select
+            name="schedule[route_id]"
+            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            required
+          >
             <option value="">— Select Route —</option>
             <%= for r <- @routes do %>
               <option value={r.id} selected={Phoenix.HTML.Form.input_value(f, :route_id) == r.id}>
@@ -33,11 +51,18 @@
 
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Vehicle (Bus)</label>
-          <select name="schedule[vehicle_id]" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <select
+            name="schedule[vehicle_id]"
+            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
             <option value="">— No vehicle assigned —</option>
             <%= for v <- @vehicles do %>
-              <option value={v.id} selected={Phoenix.HTML.Form.input_value(f, :vehicle_id) == v.id}>
-                <%= v.registration_number %><%= if v.bus_profile, do: " (#{v.bus_profile.seat_capacity} seats)" %>
+              <option
+                value={v.id}
+                selected={Phoenix.HTML.Form.input_value(f, :vehicle_id) == v.id}
+              >
+                <%= v.registration_number %><%= if v.bus_profile,
+                  do: " (#{v.bus_profile.seat_capacity} seats)" %>
               </option>
             <% end %>
           </select>
@@ -56,9 +81,13 @@
           <div class="flex flex-wrap gap-2">
             <%= for {label, val} <- [{"Mon","mon"},{"Tue","tue"},{"Wed","wed"},{"Thu","thu"},{"Fri","fri"},{"Sat","sat"},{"Sun","sun"}] do %>
               <label class="flex items-center gap-1 text-sm">
-                <input type="checkbox" name="schedule[days_of_week][]" value={val}
-                       checked={val in (Phoenix.HTML.Form.input_value(f, :days_of_week) || [])}
-                       class="rounded border-gray-300 text-blue-600" />
+                <input
+                  type="checkbox"
+                  name="schedule[days_of_week][]"
+                  value={val}
+                  checked={val in (Phoenix.HTML.Form.input_value(f, :days_of_week) || [])}
+                  class="rounded border-gray-300 text-blue-600"
+                />
                 <%= label %>
               </label>
             <% end %>
@@ -67,9 +96,14 @@
 
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
-          <select name="schedule[status]" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+          <select
+            name="schedule[status]"
+            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+          >
             <%= for s <- ["active", "suspended", "cancelled"] do %>
-              <option value={s} selected={Phoenix.HTML.Form.input_value(f, :status) == s}><%= String.capitalize(s) %></option>
+              <option value={s} selected={Phoenix.HTML.Form.input_value(f, :status) == s}>
+                <%= String.capitalize(s) %>
+              </option>
             <% end %>
           </select>
         </div>
@@ -78,10 +112,16 @@
       </div>
 
       <div class="mt-6 flex gap-3">
-        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2 rounded-lg">
+        <button
+          type="submit"
+          class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2 rounded-lg"
+        >
           Save Changes
         </button>
-        <.link navigate={~p"/schedules/#{@schedule}"} class="px-6 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50">
+        <.link
+          navigate={~p"/schedules/#{@schedule}"}
+          class="px-6 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50"
+        >
           Cancel
         </.link>
       </div>

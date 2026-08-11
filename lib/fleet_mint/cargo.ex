@@ -15,7 +15,9 @@ defmodule FleetMint.Cargo do
   end
 
   def get_client!(id), do: Repo.get!(Client, id)
-  def get_client_with_orders!(id), do: Repo.get!(Client, id) |> Repo.preload(orders: [:assigned_trip])
+
+  def get_client_with_orders!(id),
+    do: Repo.get!(Client, id) |> Repo.preload(orders: [:assigned_trip])
 
   def create_client(attrs) do
     %Client{} |> Client.changeset(attrs) |> Repo.insert()
@@ -36,7 +38,7 @@ defmodule FleetMint.Cargo do
     |> maybe_filter_client(opts[:client_id])
     |> maybe_filter_order_organisation(opts[:organisation_id])
     |> preload([:client, :assigned_trip, :created_by])
-    |> order_by([o], [desc: o.inserted_at])
+    |> order_by([o], desc: o.inserted_at)
     |> Repo.all()
   end
 
@@ -87,10 +89,18 @@ defmodule FleetMint.Cargo do
             changeset
 
           is_nil(trip.vehicle) or is_nil(trip.vehicle.organisation_id) ->
-            Ecto.Changeset.add_error(changeset, :assigned_trip_id, "cannot be assigned - the trip's vehicle has no organisation on record")
+            Ecto.Changeset.add_error(
+              changeset,
+              :assigned_trip_id,
+              "cannot be assigned - the trip's vehicle has no organisation on record"
+            )
 
           trip.vehicle.organisation_id != client.organisation_id ->
-            Ecto.Changeset.add_error(changeset, :assigned_trip_id, "belongs to a different organisation than this order's client")
+            Ecto.Changeset.add_error(
+              changeset,
+              :assigned_trip_id,
+              "belongs to a different organisation than this order's client"
+            )
 
           true ->
             validate_trip_capacity(changeset, trip)
@@ -99,7 +109,9 @@ defmodule FleetMint.Cargo do
   end
 
   defp validate_trip_capacity(changeset, %Trip{} = trip) do
-    capacity = trip.vehicle && trip.vehicle.truck_profile && trip.vehicle.truck_profile.payload_capacity_tons
+    capacity =
+      trip.vehicle && trip.vehicle.truck_profile &&
+        trip.vehicle.truck_profile.payload_capacity_tons
 
     if is_nil(capacity) do
       # No capacity on record for this vehicle - nothing to check against,
@@ -111,10 +123,15 @@ defmodule FleetMint.Cargo do
 
       already_assigned =
         Order
-        |> where([o], o.assigned_trip_id == ^trip.id and o.status not in ["delivered", "cancelled"])
+        |> where(
+          [o],
+          o.assigned_trip_id == ^trip.id and o.status not in ["delivered", "cancelled"]
+        )
         |> Repo.all()
         |> Enum.reject(&(&1.id == order_id))
-        |> Enum.reduce(Decimal.new(0), fn o, acc -> Decimal.add(acc, o.weight_tons || Decimal.new(0)) end)
+        |> Enum.reduce(Decimal.new(0), fn o, acc ->
+          Decimal.add(acc, o.weight_tons || Decimal.new(0))
+        end)
 
       total = Decimal.add(already_assigned, this_weight)
 
@@ -144,12 +161,19 @@ defmodule FleetMint.Cargo do
     |> maybe_filter_status(opts[:status])
     |> maybe_filter_trip_organisation(opts[:organisation_id])
     |> preload([:vehicle, :driver, :co_driver, orders: [:client]])
-    |> order_by([t], [desc: t.planned_departure])
+    |> order_by([t], desc: t.planned_departure)
     |> Repo.all()
   end
 
-  def get_trip!(id), do: Repo.get!(Trip, id) |> Repo.preload([:vehicle, :driver, :co_driver, :milestones, orders: [:client]])
-  def get_trip_by_reference!(ref), do: Repo.get_by!(Trip, trip_reference: ref) |> Repo.preload([:vehicle, :driver, :milestones, orders: [:client]])
+  def get_trip!(id),
+    do:
+      Repo.get!(Trip, id)
+      |> Repo.preload([:vehicle, :driver, :co_driver, :milestones, orders: [:client]])
+
+  def get_trip_by_reference!(ref),
+    do:
+      Repo.get_by!(Trip, trip_reference: ref)
+      |> Repo.preload([:vehicle, :driver, :milestones, orders: [:client]])
 
   def create_trip(attrs, user_id \\ nil) do
     attrs = if user_id, do: Map.put(attrs, "created_by_id", user_id), else: attrs
@@ -187,17 +211,20 @@ defmodule FleetMint.Cargo do
   left alone either way.
   """
   def update_trip_status(%Trip{} = trip, status) do
-    extra = case status do
-      "in_transit" -> %{actual_departure: NaiveDateTime.utc_now()}
-      "delivered" -> %{actual_arrival: NaiveDateTime.utc_now()}
-      _ -> %{}
-    end
+    extra =
+      case status do
+        "in_transit" -> %{actual_departure: NaiveDateTime.utc_now()}
+        "delivered" -> %{actual_arrival: NaiveDateTime.utc_now()}
+        _ -> %{}
+      end
 
     changeset = Trip.changeset(trip, Map.merge(%{status: status}, extra))
 
     Ecto.Multi.new()
     |> Ecto.Multi.update(:trip, changeset)
-    |> Ecto.Multi.run(:cascade_order_status, fn _repo, %{trip: updated} -> cascade_order_status(updated) end)
+    |> Ecto.Multi.run(:cascade_order_status, fn _repo, %{trip: updated} ->
+      cascade_order_status(updated)
+    end)
     |> Repo.transaction()
     |> unwrap_multi(:trip)
   end
@@ -211,7 +238,8 @@ defmodule FleetMint.Cargo do
     {:ok, count}
   end
 
-  defp cascade_order_status(%Trip{status: status} = trip) when status in ~w(loading in_transit delivered) do
+  defp cascade_order_status(%Trip{status: status} = trip)
+       when status in ~w(loading in_transit delivered) do
     {count, _} =
       Order
       |> where([o], o.assigned_trip_id == ^trip.id and o.status not in ["delivered", "cancelled"])
@@ -232,7 +260,12 @@ defmodule FleetMint.Cargo do
   # ── Trip Milestones ───────────────────────────────────────────────────────
 
   def add_milestone(%Trip{} = trip, attrs) do
-    attrs = Map.merge(attrs, %{"trip_id" => trip.id, "event_time" => attrs["event_time"] || NaiveDateTime.utc_now()})
+    attrs =
+      Map.merge(attrs, %{
+        "trip_id" => trip.id,
+        "event_time" => attrs["event_time"] || NaiveDateTime.utc_now()
+      })
+
     %TripMilestone{} |> TripMilestone.changeset(attrs) |> Repo.insert()
   end
 
@@ -251,7 +284,7 @@ defmodule FleetMint.Cargo do
     |> maybe_filter_client(opts[:client_id])
     |> maybe_filter_invoice_organisation(opts[:organisation_id])
     |> preload([:client, :trip])
-    |> order_by([i], [desc: i.invoice_date])
+    |> order_by([i], desc: i.invoice_date)
     |> Repo.all()
   end
 
@@ -296,7 +329,8 @@ defmodule FleetMint.Cargo do
     from(i in Invoice,
       where: i.status in ["issued", "overdue"],
       select: sum(i.total_amount)
-    ) |> Repo.one() || Decimal.new(0)
+    )
+    |> Repo.one() || Decimal.new(0)
   end
 
   # ── Private ───────────────────────────────────────────────────────────────
@@ -309,10 +343,13 @@ defmodule FleetMint.Cargo do
 
   defp maybe_filter_organisation(query, nil), do: query
   defp maybe_filter_organisation(query, :all), do: query
-  defp maybe_filter_organisation(query, organisation_id), do: where(query, [c], c.organisation_id == ^organisation_id)
+
+  defp maybe_filter_organisation(query, organisation_id),
+    do: where(query, [c], c.organisation_id == ^organisation_id)
 
   defp maybe_filter_order_organisation(query, nil), do: query
   defp maybe_filter_order_organisation(query, :all), do: query
+
   defp maybe_filter_order_organisation(query, organisation_id) do
     query
     |> join(:inner, [o], c in assoc(o, :client), as: :client)
@@ -321,6 +358,7 @@ defmodule FleetMint.Cargo do
 
   defp maybe_filter_trip_organisation(query, nil), do: query
   defp maybe_filter_trip_organisation(query, :all), do: query
+
   defp maybe_filter_trip_organisation(query, organisation_id) do
     query
     |> join(:inner, [t], v in assoc(t, :vehicle), as: :vehicle)
@@ -329,6 +367,7 @@ defmodule FleetMint.Cargo do
 
   defp maybe_filter_invoice_organisation(query, nil), do: query
   defp maybe_filter_invoice_organisation(query, :all), do: query
+
   defp maybe_filter_invoice_organisation(query, organisation_id) do
     query
     |> join(:inner, [i], c in assoc(i, :client), as: :client)
@@ -337,7 +376,8 @@ defmodule FleetMint.Cargo do
 
   # ── Private ledger helpers ─────────────────────────────────────────────────
 
-  defp maybe_record_invoice_payment(was_paid, %Invoice{status: "paid"} = invoice) when not was_paid do
+  defp maybe_record_invoice_payment(was_paid, %Invoice{status: "paid"} = invoice)
+       when not was_paid do
     case Accounting.entries_for_source("Invoice", invoice.id, "revenue") do
       [] ->
         Accounting.record_entry(%{

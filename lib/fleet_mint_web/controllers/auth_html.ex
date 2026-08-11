@@ -20,7 +20,10 @@ defmodule FleetMintWeb.AuthHTML do
       </:actions>
     </.simple_form>
     <div class="mt-6 text-center">
-      <.link href={~p"/register"} class="text-sm font-semibold leading-6 text-zinc-900 hover:text-zinc-700">
+      <.link
+        href={~p"/register"}
+        class="text-sm font-semibold leading-6 text-zinc-900 hover:text-zinc-700"
+      >
         Need an account? Register here
       </.link>
     </div>
@@ -42,18 +45,31 @@ defmodule FleetMintWeb.AuthHTML do
       <.input field={f[:username]} type="text" label="Username" required />
       <.input field={f[:email]} type="email" label="Email" required />
       <.input field={f[:password]} type="password" label="Password" required />
-      <.input field={f[:role]} type="select" label="Role" options={[{"Admin", "admin"}, {"Manager", "manager"}, {"Cashier", "cashier"}, {"Operator", "operator"}]} required />
+      <.input
+        field={f[:role]}
+        type="select"
+        label="Role"
+        options={[
+          {"Admin", "admin"},
+          {"Manager", "manager"},
+          {"Cashier", "cashier"},
+          {"Operator", "operator"}
+        ]}
+        required
+      />
 
       <:actions>
         <.button class="w-full">Register</.button>
       </:actions>
     </.simple_form>
     <div class="mt-6 text-center">
-      <.link href={~p"/login"} class="text-sm font-semibold leading-6 text-zinc-900 hover:text-zinc-700">
+      <.link
+        href={~p"/login"}
+        class="text-sm font-semibold leading-6 text-zinc-900 hover:text-zinc-700"
+      >
         Already have an account? Login here
       </.link>
     </div>
     """
   end
 end
-

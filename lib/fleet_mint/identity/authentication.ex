@@ -30,7 +30,8 @@ defmodule FleetMint.Identity.Authentication do
   @max_attempts 5
   @lockout_minutes 15
 
-  def authenticate_user(email_or_username, password) when is_binary(email_or_username) and is_binary(password) do
+  def authenticate_user(email_or_username, password)
+      when is_binary(email_or_username) and is_binary(password) do
     user =
       if String.contains?(email_or_username, "@") do
         Users.get_user_by_email(email_or_username)
@@ -95,7 +96,9 @@ defmodule FleetMint.Identity.Authentication do
 
   def update_last_login(%User{} = user) do
     user
-    |> Ecto.Changeset.change(last_login: NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second))
+    |> Ecto.Changeset.change(
+      last_login: NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+    )
     |> Repo.update()
   end
 
@@ -103,16 +106,23 @@ defmodule FleetMint.Identity.Authentication do
     case Users.get_user_by_email(email) do
       nil ->
         {:error, :not_found}
+
       user ->
         token = :crypto.strong_rand_bytes(32) |> Base.url_encode64(padding: false)
         token_hash = :crypto.hash(:sha256, token) |> Base.encode16(case: :lower)
+
         expires_at =
           NaiveDateTime.utc_now()
           |> NaiveDateTime.add(3600, :second)
           |> NaiveDateTime.truncate(:second)
+
         user
-        |> User.reset_token_changeset(%{reset_token_hash: token_hash, reset_token_expires_at: expires_at})
+        |> User.reset_token_changeset(%{
+          reset_token_hash: token_hash,
+          reset_token_expires_at: expires_at
+        })
         |> Repo.update()
+
         {:ok, user, token}
     end
   end
@@ -120,9 +130,11 @@ defmodule FleetMint.Identity.Authentication do
   def reset_password_by_token(token, new_password) when is_binary(token) do
     token_hash = :crypto.hash(:sha256, token) |> Base.encode16(case: :lower)
     now = NaiveDateTime.utc_now()
+
     case Repo.get_by(User, reset_token_hash: token_hash) do
       nil ->
         {:error, :invalid_token}
+
       %User{reset_token_expires_at: exp} = user ->
         if NaiveDateTime.compare(exp, now) == :lt do
           {:error, :expired_token}

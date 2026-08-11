@@ -46,17 +46,23 @@ defmodule FleetMint.Repo.Migrations.ReshapeTransactionsIntoLedgerEntries do
     create index(:ledger_entries, [:occurred_at])
     create index(:ledger_entries, [:reverses_entry_id])
     create index(:ledger_entries, [:recorded_by_id])
-    create unique_index(:ledger_entries, [:reference_number], where: "reference_number IS NOT NULL")
+
+    create unique_index(:ledger_entries, [:reference_number],
+             where: "reference_number IS NOT NULL"
+           )
 
     create constraint(:ledger_entries, :ledger_entries_entry_type_check,
-             check: "entry_type IN ('revenue','expense','refund','adjustment')")
+             check: "entry_type IN ('revenue','expense','refund','adjustment')"
+           )
 
     create constraint(:ledger_entries, :ledger_entries_payment_method_check,
              check:
-               "payment_method IS NULL OR payment_method IN ('cash','card','mobile_money','airtel_money','mtn_money','bank_transfer')")
+               "payment_method IS NULL OR payment_method IN ('cash','card','mobile_money','airtel_money','mtn_money','bank_transfer')"
+           )
 
     create constraint(:ledger_entries, :ledger_entries_amount_sign_check,
-             check: "entry_type = 'adjustment' OR amount >= 0")
+             check: "entry_type = 'adjustment' OR amount >= 0"
+           )
   end
 
   def down do
@@ -86,10 +92,12 @@ defmodule FleetMint.Repo.Migrations.ReshapeTransactionsIntoLedgerEntries do
     rename table(:transactions), :recorded_by_id, to: :user_id
 
     create constraint(:transactions, :transactions_status_check,
-             check: "status IN ('success','failed','pending')")
+             check: "status IN ('success','failed','pending')"
+           )
 
     create constraint(:transactions, :transactions_payment_method_check,
-             check: "payment_method IN ('cash','card','mobile_money')")
+             check: "payment_method IN ('cash','card','mobile_money')"
+           )
 
     create constraint(:transactions, :amount_must_be_positive, check: "amount > 0")
 

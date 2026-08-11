@@ -1,7 +1,9 @@
 <.header>
   <%= @driver.name %>
   <:actions>
-    <.link href={~p"/drivers/#{@driver}/edit"}><.button>Edit</.button></.link>
+    <.link href={~p"/drivers/#{@driver}/edit"}>
+      <.button>Edit</.button>
+    </.link>
   </:actions>
 </.header>
 
@@ -9,27 +11,39 @@
   <:item title="Full Name"><%= @driver.name %></:item>
   <:item title="Phone">
     <%= if @driver.phone && @driver.phone != "" do %>
-      <a href={"tel:#{@driver.phone}"} class="text-blue-600 hover:underline"><%= @driver.phone %></a>
-    <% else %>—<% end %>
+      <a href={"tel:#{@driver.phone}"} class="text-blue-600 hover:underline">
+        <%= @driver.phone %>
+      </a>
+    <% else %>
+      —
+    <% end %>
   </:item>
   <:item title="License Number"><%= @driver.license_number || "—" %></:item>
   <:item title="License Expiry">
     <%= if @driver.license_expiry do %>
-      <span class={if FleetMint.HR.Driver.license_expired?(@driver), do: "text-red-600 font-bold", else: "text-green-700"}>
+      <span class={
+        if FleetMint.HR.Driver.license_expired?(@driver),
+          do: "text-red-600 font-bold",
+          else: "text-green-700"
+      }>
         <%= @driver.license_expiry %>
         <%= if FleetMint.HR.Driver.license_expired?(@driver), do: " — EXPIRED" %>
       </span>
-    <% else %>—<% end %>
+    <% else %>
+      —
+    <% end %>
   </:item>
   <:item title="Daily Rate">ZMW <%= @driver.daily_rate || "—" %></:item>
   <:item title="Date Hired"><%= @driver.date_hired || "—" %></:item>
   <:item title="Status">
-    <span class={["px-2 py-0.5 rounded-full text-xs font-semibold",
+    <span class={[
+      "px-2 py-0.5 rounded-full text-xs font-semibold",
       case @driver.status do
-        "active"    -> "bg-green-100 text-green-700"
+        "active" -> "bg-green-100 text-green-700"
         "suspended" -> "bg-red-100 text-red-700"
-        _           -> "bg-gray-100 text-gray-500"
-      end]}>
+        _ -> "bg-gray-100 text-gray-500"
+      end
+    ]}>
       <%= String.capitalize(@driver.status) %>
     </span>
   </:item>
@@ -37,7 +51,12 @@
 </.list>
 
 <div class="mt-6 flex gap-4">
-  <.link href={~p"/drivers/#{@driver}"} method="delete" data-confirm="Remove this driver?" class="text-sm font-semibold text-red-600 hover:text-red-700">
+  <.link
+    href={~p"/drivers/#{@driver}"}
+    method="delete"
+    data-confirm="Remove this driver?"
+    class="text-sm font-semibold text-red-600 hover:text-red-700"
+  >
     Delete Driver
   </.link>
 </div>

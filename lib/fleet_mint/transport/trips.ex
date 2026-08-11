@@ -23,10 +23,22 @@ defmodule FleetMint.Transport.Trips do
     Ecto.Multi.new()
     |> Ecto.Multi.insert(:minibus_trip, changeset)
     |> Ecto.Multi.run(:revenue_entry, fn _repo, %{minibus_trip: trip} ->
-      maybe_record_amount("revenue", "MinibusTrip", trip.id, trip.fare_collected, "Fare collected for trip on #{trip.date}")
+      maybe_record_amount(
+        "revenue",
+        "MinibusTrip",
+        trip.id,
+        trip.fare_collected,
+        "Fare collected for trip on #{trip.date}"
+      )
     end)
     |> Ecto.Multi.run(:expense_entry, fn _repo, %{minibus_trip: trip} ->
-      maybe_record_amount("expense", "MinibusTrip", trip.id, trip.fuel_cost, "Fuel cost for trip on #{trip.date}")
+      maybe_record_amount(
+        "expense",
+        "MinibusTrip",
+        trip.id,
+        trip.fuel_cost,
+        "Fuel cost for trip on #{trip.date}"
+      )
     end)
     |> Repo.transaction()
     |> unwrap_multi(:minibus_trip)
@@ -38,10 +50,22 @@ defmodule FleetMint.Transport.Trips do
     Ecto.Multi.new()
     |> Ecto.Multi.update(:minibus_trip, changeset)
     |> Ecto.Multi.run(:revenue_entry, fn _repo, %{minibus_trip: updated} ->
-      sync_amount("revenue", "MinibusTrip", updated.id, updated.fare_collected, "Fare collected for trip on #{updated.date}")
+      sync_amount(
+        "revenue",
+        "MinibusTrip",
+        updated.id,
+        updated.fare_collected,
+        "Fare collected for trip on #{updated.date}"
+      )
     end)
     |> Ecto.Multi.run(:expense_entry, fn _repo, %{minibus_trip: updated} ->
-      sync_amount("expense", "MinibusTrip", updated.id, updated.fuel_cost, "Fuel cost for trip on #{updated.date}")
+      sync_amount(
+        "expense",
+        "MinibusTrip",
+        updated.id,
+        updated.fuel_cost,
+        "Fuel cost for trip on #{updated.date}"
+      )
     end)
     |> Repo.transaction()
     |> unwrap_multi(:minibus_trip)
@@ -59,6 +83,7 @@ defmodule FleetMint.Transport.Trips do
 
   def minibus_revenue_today do
     today = Date.utc_today()
+
     Repo.aggregate(from(t in MinibusTrip, where: t.date == ^today), :sum, :fare_collected)
     |> Kernel.||(Decimal.new(0))
   end
@@ -79,10 +104,13 @@ defmodule FleetMint.Transport.Trips do
       where: s.operator_id == ^operator_id and s.status == "active",
       preload: [:route, vehicle: :bus_profile],
       order_by: s.departure_time
-    ) |> Repo.all()
+    )
+    |> Repo.all()
   end
 
-  def get_schedule!(id), do: Repo.get!(Schedule, id) |> Repo.preload([:route, :vehicle, :driver, :conductor, :operator])
+  def get_schedule!(id),
+    do:
+      Repo.get!(Schedule, id) |> Repo.preload([:route, :vehicle, :driver, :conductor, :operator])
 
   def create_schedule(attrs) do
     %Schedule{} |> Schedule.changeset(attrs) |> Repo.insert()
@@ -94,7 +122,8 @@ defmodule FleetMint.Transport.Trips do
 
   def delete_schedule(%Schedule{} = schedule), do: Repo.delete(schedule)
 
-  def change_schedule(%Schedule{} = schedule, attrs \\ %{}), do: Schedule.changeset(schedule, attrs)
+  def change_schedule(%Schedule{} = schedule, attrs \\ %{}),
+    do: Schedule.changeset(schedule, attrs)
 
   # ── Trips (canonical Route → Schedule → Trip; one Schedule instance) ──────
 
@@ -106,7 +135,8 @@ defmodule FleetMint.Transport.Trips do
     |> Repo.all()
   end
 
-  def get_trip!(id), do: Repo.get!(Trip, id) |> Repo.preload([:schedule, :vehicle, :driver, :conductor])
+  def get_trip!(id),
+    do: Repo.get!(Trip, id) |> Repo.preload([:schedule, :vehicle, :driver, :conductor])
 
   @doc """
   Finds the Trip for this (schedule, day), creating it if this is the
@@ -129,7 +159,12 @@ defmodule FleetMint.Transport.Trips do
           |> Repo.one()
 
         %Trip{}
-        |> Trip.changeset(%{schedule_id: schedule_id, travel_date: travel_date, organisation_id: organisation_id, status: "planned"})
+        |> Trip.changeset(%{
+          schedule_id: schedule_id,
+          travel_date: travel_date,
+          organisation_id: organisation_id,
+          status: "planned"
+        })
         |> Repo.insert()
     end
   end
@@ -146,7 +181,9 @@ defmodule FleetMint.Transport.Trips do
   def list_trips_near_date(organisation_id, %Date{} = date, window_days \\ 3) do
     from(t in Trip,
       where: t.organisation_id == ^organisation_id,
-      where: t.travel_date >= ^Date.add(date, -window_days) and t.travel_date <= ^Date.add(date, window_days),
+      where:
+        t.travel_date >= ^Date.add(date, -window_days) and
+          t.travel_date <= ^Date.add(date, window_days),
       preload: [:schedule, :vehicle, :driver],
       order_by: [asc: fragment("abs(? - ?)", t.travel_date, ^date)]
     )
@@ -157,7 +194,9 @@ defmodule FleetMint.Transport.Trips do
 
   defp maybe_filter_trip_organisation(query, nil), do: query
   defp maybe_filter_trip_organisation(query, :all), do: query
-  defp maybe_filter_trip_organisation(query, organisation_id), do: where(query, [t], t.organisation_id == ^organisation_id)
+
+  defp maybe_filter_trip_organisation(query, organisation_id),
+    do: where(query, [t], t.organisation_id == ^organisation_id)
 
   # ── Seat inventory (called from Transport.Ticketing on booking/cancel) ────
 
@@ -176,6 +215,7 @@ defmodule FleetMint.Transport.Trips do
 
   defp maybe_filter_organisation(query, nil), do: query
   defp maybe_filter_organisation(query, :all), do: query
+
   defp maybe_filter_organisation(query, organisation_id) do
     query
     |> join(:inner, [s], o in assoc(s, :operator), as: :operator)

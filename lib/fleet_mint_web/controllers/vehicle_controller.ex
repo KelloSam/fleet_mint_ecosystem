@@ -11,7 +11,12 @@ defmodule FleetMintWeb.VehicleController do
         status: params["status"],
         organisation_id: conn.assigns.organisation_scope
       )
-    render(conn, :index, vehicles: vehicles, type_filter: params["type"], status_filter: params["status"])
+
+    render(conn, :index,
+      vehicles: vehicles,
+      type_filter: params["type"],
+      status_filter: params["status"]
+    )
   end
 
   def new(conn, params) do
@@ -30,7 +35,10 @@ defmodule FleetMintWeb.VehicleController do
         |> redirect(to: ~p"/vehicles/#{vehicle}")
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        render(conn, :new, changeset: changeset, vehicle_type: vehicle_params["vehicle_type"] || "bus")
+        render(conn, :new,
+          changeset: changeset,
+          vehicle_type: vehicle_params["vehicle_type"] || "bus"
+        )
     end
   end
 
@@ -72,6 +80,7 @@ defmodule FleetMintWeb.VehicleController do
 
     with_organisation_access(conn, vehicle.organisation_id, ~p"/vehicles", fn conn ->
       {:ok, _} = Fleet.delete_vehicle(vehicle)
+
       conn
       |> put_flash(:info, "Vehicle archived and removed from active fleet.")
       |> redirect(to: ~p"/vehicles")
@@ -81,7 +90,9 @@ defmodule FleetMintWeb.VehicleController do
   # ── Tenant scoping helpers ──────────────────────────────────────────────
 
   defp force_organisation_scope(params, :all), do: params
-  defp force_organisation_scope(params, organisation_id), do: Map.put(params, "organisation_id", organisation_id)
+
+  defp force_organisation_scope(params, organisation_id),
+    do: Map.put(params, "organisation_id", organisation_id)
 
   defp with_organisation_access(conn, organisation_id, fallback_path, fun) do
     if Authorization.can_access_organisation?(conn.assigns.current_user, organisation_id) do

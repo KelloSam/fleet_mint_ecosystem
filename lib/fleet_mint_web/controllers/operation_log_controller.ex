@@ -16,9 +16,11 @@ defmodule FleetMintWeb.OperationLogController do
 
   def create(conn, %{"operation_log" => params}) do
     params_with_user = Map.put(params, "logged_by_id", conn.assigns.current_user.id)
+
     case Administration.create_operation_log(params_with_user) do
       {:ok, log} ->
         conn |> put_flash(:info, "Log entry created.") |> redirect(to: ~p"/operation_logs/#{log}")
+
       {:error, changeset} ->
         render(conn, :new, changeset: changeset)
     end
@@ -37,9 +39,11 @@ defmodule FleetMintWeb.OperationLogController do
 
   def update(conn, %{"id" => id, "operation_log" => params}) do
     log = Administration.get_operation_log!(id)
+
     case Administration.update_operation_log(log, params) do
       {:ok, log} ->
         conn |> put_flash(:info, "Log updated.") |> redirect(to: ~p"/operation_logs/#{log}")
+
       {:error, changeset} ->
         render(conn, :edit, log: log, changeset: changeset)
     end

@@ -16,7 +16,8 @@ defmodule FleetMint.Repo.Migrations.AddTripMappingStatusToCashingReports do
 
     create constraint(:cashing_reports, :cashing_reports_trip_mapping_status_check,
              check:
-               "trip_mapping_status IN ('pending','automatically_matched','manually_matched','ambiguous','unmappable')")
+               "trip_mapping_status IN ('pending','automatically_matched','manually_matched','ambiguous','unmappable')"
+           )
 
     # Stage 1 — automatic match: only when exactly one schedule, in the
     # same organisation as the bus, has ever used this bus's vehicle, AND

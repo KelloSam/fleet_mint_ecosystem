@@ -14,7 +14,7 @@ defmodule FleetMint.Transport.Ticketing do
     |> maybe_filter_status(opts[:status])
     |> maybe_filter_organisation(opts[:organisation_id])
     |> preload([:schedule, :booked_by, ticket: []])
-    |> order_by([b], [desc: b.inserted_at])
+    |> order_by([b], desc: b.inserted_at)
     |> Repo.all()
   end
 
@@ -26,17 +26,24 @@ defmodule FleetMint.Transport.Ticketing do
       |> maybe_filter_organisation(opts[:organisation_id])
       |> preload([:schedule, :booked_by, ticket: []])
       |> order_by([b], desc: b.inserted_at)
+
     FleetMint.Pagination.paginate(query, page)
   end
 
-  def get_booking!(id), do: Repo.get!(Booking, id) |> Repo.preload([:booked_by, :ticket, schedule: :operator])
-  def get_booking_by_reference!(ref), do: Repo.get_by!(Booking, booking_reference: ref) |> Repo.preload([:schedule, :ticket])
+  def get_booking!(id),
+    do: Repo.get!(Booking, id) |> Repo.preload([:booked_by, :ticket, schedule: :operator])
+
+  def get_booking_by_reference!(ref),
+    do: Repo.get_by!(Booking, booking_reference: ref) |> Repo.preload([:schedule, :ticket])
 
   def create_booking(attrs, user_id \\ nil) do
     attrs = if user_id, do: Map.put(attrs, "booked_by_id", user_id), else: attrs
-    changeset = if user_id,
-      do: Booking.internal_changeset(%Booking{}, attrs),
-      else: Booking.changeset(%Booking{}, attrs)
+
+    changeset =
+      if user_id,
+        do: Booking.internal_changeset(%Booking{}, attrs),
+        else: Booking.changeset(%Booking{}, attrs)
+
     changeset = validate_seat_against_map(changeset)
 
     Ecto.Multi.new()
@@ -118,21 +125,30 @@ defmodule FleetMint.Transport.Ticketing do
 
   def count_bookings_today do
     today = Date.utc_today()
-    Booking |> where([b], b.travel_date == ^today and b.status != "cancelled") |> Repo.aggregate(:count, :id)
+
+    Booking
+    |> where([b], b.travel_date == ^today and b.status != "cancelled")
+    |> Repo.aggregate(:count, :id)
   end
 
   def revenue_today do
     today = Date.utc_today()
-    result = Booking
-    |> where([b], b.travel_date == ^today and b.status != "cancelled")
-    |> select([b], sum(b.fare_paid))
-    |> Repo.one()
+
+    result =
+      Booking
+      |> where([b], b.travel_date == ^today and b.status != "cancelled")
+      |> select([b], sum(b.fare_paid))
+      |> Repo.one()
+
     result || Decimal.new("0.00")
   end
 
   def get_booked_seats(schedule_id, %Date{} = date) do
     Booking
-    |> where([b], b.schedule_id == ^schedule_id and b.travel_date == ^date and b.status != "cancelled")
+    |> where(
+      [b],
+      b.schedule_id == ^schedule_id and b.travel_date == ^date and b.status != "cancelled"
+    )
     |> select([b], b.seat_number)
     |> Repo.all()
     |> Enum.reject(&is_nil/1)
@@ -189,7 +205,8 @@ defmodule FleetMint.Transport.Ticketing do
     |> Repo.insert()
   end
 
-  def get_ticket_by_number(num), do: Repo.get_by(Ticket, ticket_number: num) |> Repo.preload(booking: [:schedule])
+  def get_ticket_by_number(num),
+    do: Repo.get_by(Ticket, ticket_number: num) |> Repo.preload(booking: [:schedule])
 
   # ── Private helpers ───────────────────────────────────────────────────────
 
@@ -246,6 +263,7 @@ defmodule FleetMint.Transport.Ticketing do
 
   defp maybe_filter_organisation(query, nil), do: query
   defp maybe_filter_organisation(query, :all), do: query
+
   defp maybe_filter_organisation(query, organisation_id) do
     query
     |> join(:inner, [b], s in assoc(b, :schedule), as: :schedule)

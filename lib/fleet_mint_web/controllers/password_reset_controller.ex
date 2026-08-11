@@ -11,9 +11,11 @@ defmodule FleetMintWeb.PasswordResetController do
     case Authentication.request_password_reset(email) do
       {:ok, user, token} ->
         Notifications.password_reset_email(user, token)
+
         conn
         |> put_flash(:info, "If that email exists, a reset link has been sent.")
         |> redirect(to: ~p"/login")
+
       {:error, _} ->
         conn
         |> put_flash(:info, "If that email exists, a reset link has been sent.")
@@ -31,14 +33,17 @@ defmodule FleetMintWeb.PasswordResetController do
         conn
         |> put_flash(:info, "Password updated. Please sign in.")
         |> redirect(to: ~p"/login")
+
       {:error, :invalid_token} ->
         conn
         |> put_flash(:error, "Reset link is invalid.")
         |> redirect(to: ~p"/password-reset")
+
       {:error, :expired_token} ->
         conn
         |> put_flash(:error, "Reset link has expired. Please request a new one.")
         |> redirect(to: ~p"/password-reset")
+
       {:error, %Ecto.Changeset{} = changeset} ->
         render(conn, :edit, token: token, error: changeset_error(changeset))
     end

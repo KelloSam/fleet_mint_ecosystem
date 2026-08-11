@@ -2,12 +2,15 @@ import Config
 
 # General application configuration
 config :fleet_mint,
-  ecto_repos: [FleetMint.Repo], # Defines the repository for Ecto.
+  # Defines the repository for Ecto.
+  ecto_repos: [FleetMint.Repo],
   generators: [timestamp_type: :utc_datetime]
 
 config :fleet_mint, FleetMintWeb.Gettext,
-  locales: ~w(en), # List of available locales
-  default_locale: "en" # Default locale for the application
+  # List of available locales
+  locales: ~w(en),
+  # Default locale for the application
+  default_locale: "en"
 
 # Configures the endpoint
 config :fleet_mint, FleetMintWeb.Endpoint,
@@ -26,14 +29,15 @@ config :fleet_mint, FleetMintWeb.Endpoint,
 # locally. You can see the emails in your browser at "/dev/mailbox".
 #
 # For production, configure a different adapter in `config/runtime.exs`.
-config :fleet_mint, FleetMint.Mailer,
-  adapter: Swoosh.Adapters.Local
+config :fleet_mint, FleetMint.Mailer, adapter: Swoosh.Adapters.Local
 
 # Configure esbuild (the version is required)
 config :esbuild,
   version: "0.17.11",
-  fleet_mint: [ # Ensure the profile key matches your project name
-    args: ~w(js/app.js --bundle --target=es2017 --outdir=../priv/static/assets --external:/fonts/* --external:/images/*),
+  # Ensure the profile key matches your project name
+  fleet_mint: [
+    args:
+      ~w(js/app.js --bundle --target=es2017 --outdir=../priv/static/assets --external:/fonts/* --external:/images/*),
     cd: Path.expand("../assets", __DIR__),
     env: %{"NODE_PATH" => Path.expand("../deps", __DIR__)}
   ]
@@ -41,7 +45,8 @@ config :esbuild,
 # Configure tailwind (the version is required)
 config :tailwind,
   version: "3.4.3",
-  fleet_mint: [ # Ensure the profile key matches your project name
+  # Ensure the profile key matches your project name
+  fleet_mint: [
     args: ~w(
       --config=tailwind.config.js
       --input=css/app.css
@@ -61,8 +66,7 @@ config :phoenix, :json_library, Jason
 # Configure Guardian for authentication.
 # secret_key is intentionally NOT set here — it differs per environment
 # and, for prod, is required from an env var in runtime.exs.
-config :fleet_mint, FleetMint.Identity.Guardian,
-  issuer: "fleet_mint"
+config :fleet_mint, FleetMint.Identity.Guardian, issuer: "fleet_mint"
 
 # Import environment-specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

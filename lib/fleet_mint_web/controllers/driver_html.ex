@@ -11,7 +11,9 @@ defmodule FleetMintWeb.DriverHTML do
     <header class="px-4 sm:px-6 lg:px-8">
       <div class="flex items-center justify-between border-b border-zinc-100 py-3 mb-6">
         <div class="flex-1">
-          <h1 class="text-xl font-semibold leading-7 text-zinc-800"><%= render_slot(@inner_block) %></h1>
+          <h1 class="text-xl font-semibold leading-7 text-zinc-800">
+            <%= render_slot(@inner_block) %>
+          </h1>
           <%= if @subtitle != [], do: render_slot(@subtitle) %>
         </div>
         <div class="flex-none"><%= render_slot(@actions) %></div>
@@ -26,7 +28,10 @@ defmodule FleetMintWeb.DriverHTML do
   def back(assigns) do
     ~H"""
     <div class="mt-6">
-      <.link navigate={@navigate} class="text-sm font-semibold leading-6 text-zinc-600 hover:text-zinc-700">
+      <.link
+        navigate={@navigate}
+        class="text-sm font-semibold leading-6 text-zinc-600 hover:text-zinc-700"
+      >
         &larr; <%= render_slot(@inner_block) %>
       </.link>
     </div>
@@ -46,8 +51,12 @@ defmodule FleetMintWeb.DriverHTML do
       <.input field={f[:license_expiry]} type="date" label="License Expiry Date" />
       <.input field={f[:daily_rate]} type="number" label="Daily Rate (ZMW)" step="0.01" />
       <.input field={f[:date_hired]} type="date" label="Date Hired" />
-      <.input field={f[:status]} type="select" label="Status"
-        options={FleetMint.HR.Driver.status_options()} />
+      <.input
+        field={f[:status]}
+        type="select"
+        label="Status"
+        options={FleetMint.HR.Driver.status_options()}
+      />
       <.input field={f[:notes]} type="textarea" label="Notes" />
       <:actions>
         <.button>Save Driver</.button>

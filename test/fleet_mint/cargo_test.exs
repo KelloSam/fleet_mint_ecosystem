@@ -37,7 +37,9 @@ defmodule FleetMint.CargoTest do
       org_a = FleetFixtures.operator_fixture()
       org_b = FleetFixtures.operator_fixture()
 
-      trip_a = trip_fixture(vehicle: vehicle_fixture(%{"organisation_id" => org_a.organisation_id}))
+      trip_a =
+        trip_fixture(vehicle: vehicle_fixture(%{"organisation_id" => org_a.organisation_id}))
+
       trip_fixture(vehicle: vehicle_fixture(%{"organisation_id" => org_b.organisation_id}))
 
       result = Cargo.list_trips(organisation_id: org_a.organisation_id)
@@ -129,7 +131,10 @@ defmodule FleetMint.CargoTest do
       trip = trip_fixture(vehicle: vehicle_fixture(%{"organisation_id" => org_b.organisation_id}))
 
       assert {:error, changeset} = Cargo.update_order(order, %{assigned_trip_id: trip.id})
-      assert "belongs to a different organisation than this order's client" in errors_on(changeset).assigned_trip_id
+
+      assert "belongs to a different organisation than this order's client" in errors_on(
+               changeset
+             ).assigned_trip_id
 
       reloaded = Cargo.get_order!(order.id)
       assert reloaded.assigned_trip_id == nil
@@ -138,7 +143,13 @@ defmodule FleetMint.CargoTest do
     test "assigning an order that would exceed the vehicle's remaining payload capacity is rejected" do
       org = FleetFixtures.operator_fixture()
       client = client_fixture(organisation_id: org.organisation_id)
-      vehicle = vehicle_fixture(%{"organisation_id" => org.organisation_id, "truck_profile" => %{"payload_capacity_tons" => "10.0"}})
+
+      vehicle =
+        vehicle_fixture(%{
+          "organisation_id" => org.organisation_id,
+          "truck_profile" => %{"payload_capacity_tons" => "10.0"}
+        })
+
       trip = trip_fixture(vehicle: vehicle)
 
       order_a = order_fixture(client: client, weight_tons: "7.0")
@@ -152,7 +163,13 @@ defmodule FleetMint.CargoTest do
     test "an order already assigned to a trip can be re-saved without tripping its own weight against itself" do
       org = FleetFixtures.operator_fixture()
       client = client_fixture(organisation_id: org.organisation_id)
-      vehicle = vehicle_fixture(%{"organisation_id" => org.organisation_id, "truck_profile" => %{"payload_capacity_tons" => "10.0"}})
+
+      vehicle =
+        vehicle_fixture(%{
+          "organisation_id" => org.organisation_id,
+          "truck_profile" => %{"payload_capacity_tons" => "10.0"}
+        })
+
       trip = trip_fixture(vehicle: vehicle)
 
       order = order_fixture(client: client, weight_tons: "9.0")

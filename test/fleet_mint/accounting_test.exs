@@ -145,9 +145,26 @@ defmodule FleetMint.AccountingTest do
 
   describe "entries_for_source/3" do
     test "filters by source and optional entry_type" do
-      ledger_entry_fixture(%{source_type: "Booking", source_id: 7, entry_type: "revenue", amount: "10.00"})
-      ledger_entry_fixture(%{source_type: "Booking", source_id: 7, entry_type: "refund", amount: "10.00"})
-      ledger_entry_fixture(%{source_type: "Booking", source_id: 8, entry_type: "revenue", amount: "10.00"})
+      ledger_entry_fixture(%{
+        source_type: "Booking",
+        source_id: 7,
+        entry_type: "revenue",
+        amount: "10.00"
+      })
+
+      ledger_entry_fixture(%{
+        source_type: "Booking",
+        source_id: 7,
+        entry_type: "refund",
+        amount: "10.00"
+      })
+
+      ledger_entry_fixture(%{
+        source_type: "Booking",
+        source_id: 8,
+        entry_type: "revenue",
+        amount: "10.00"
+      })
 
       assert length(Accounting.entries_for_source("Booking", 7)) == 2
       assert [%{entry_type: "revenue"}] = Accounting.entries_for_source("Booking", 7, "revenue")
@@ -162,7 +179,11 @@ defmodule FleetMint.AccountingTest do
       ledger_entry_fixture(%{entry_type: "refund", amount: "20.00", source_type: "Booking"})
 
       assert Decimal.equal?(Accounting.total_for("revenue"), Decimal.new("150.00"))
-      assert Decimal.equal?(Accounting.total_for("revenue", source_type: "Booking"), Decimal.new("100.00"))
+
+      assert Decimal.equal?(
+               Accounting.total_for("revenue", source_type: "Booking"),
+               Decimal.new("100.00")
+             )
 
       totals = Accounting.totals_by_type()
       assert Decimal.equal?(totals["expense"], Decimal.new("30.00"))
@@ -171,7 +192,10 @@ defmodule FleetMint.AccountingTest do
     end
 
     test "total_for/2 returns 0.00 when there are no matching entries" do
-      assert Decimal.equal?(Accounting.total_for("expense", source_type: "Nonexistent"), Decimal.new("0.00"))
+      assert Decimal.equal?(
+               Accounting.total_for("expense", source_type: "Nonexistent"),
+               Decimal.new("0.00")
+             )
     end
 
     test "daily_summary/1 scopes totals to the given date" do

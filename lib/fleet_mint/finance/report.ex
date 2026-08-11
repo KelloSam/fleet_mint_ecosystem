@@ -7,7 +7,7 @@ defmodule FleetMint.Finance.Report do
     field :end_date, :date
 
     has_many :cashing_reports, FleetMint.Finance.CashingReport, foreign_key: :report_id
-    
+
     timestamps(type: :utc_datetime)
   end
 
@@ -18,4 +18,3 @@ defmodule FleetMint.Finance.Report do
     |> validate_required([:start_date, :end_date])
   end
 end
-

@@ -4,9 +4,11 @@ defmodule FleetMintWeb.ComplaintController do
 
   # Public: show submission form
   def new(conn, params) do
-    changeset = Administration.change_complaint(%Administration.Complaint{
-      type: params["type"] || "complaint"
-    })
+    changeset =
+      Administration.change_complaint(%Administration.Complaint{
+        type: params["type"] || "complaint"
+      })
+
     render(conn, :new, changeset: changeset, prefill_ref: params["ref"])
   end
 
@@ -15,11 +17,17 @@ defmodule FleetMintWeb.ComplaintController do
     case Administration.create_complaint(complaint_params) do
       {:ok, _complaint} ->
         conn
-        |> put_flash(:info, "Thank you! Your #{complaint_params["type"] || "submission"} has been received. We will review it shortly.")
+        |> put_flash(
+          :info,
+          "Thank you! Your #{complaint_params["type"] || "submission"} has been received. We will review it shortly."
+        )
         |> redirect(to: ~p"/feedback/thank_you")
 
       {:error, changeset} ->
-        render(conn, :new, changeset: changeset, prefill_ref: complaint_params["booking_reference"])
+        render(conn, :new,
+          changeset: changeset,
+          prefill_ref: complaint_params["booking_reference"]
+        )
     end
   end
 
@@ -29,13 +37,20 @@ defmodule FleetMintWeb.ComplaintController do
 
   # Staff: list all complaints and suggestions
   def index(conn, params) do
-    complaints = Administration.list_complaints(
-      type: params["type"],
-      status: params["status"]
-    )
+    complaints =
+      Administration.list_complaints(
+        type: params["type"],
+        status: params["status"]
+      )
+
     pending_count = Administration.count_pending_complaints()
-    render(conn, :index, complaints: complaints, pending_count: pending_count,
-           type_filter: params["type"], status_filter: params["status"])
+
+    render(conn, :index,
+      complaints: complaints,
+      pending_count: pending_count,
+      type_filter: params["type"],
+      status_filter: params["status"]
+    )
   end
 
   # Staff: view single complaint
@@ -48,6 +63,7 @@ defmodule FleetMintWeb.ComplaintController do
   def update(conn, %{"id" => id, "complaint" => params}) do
     complaint = Administration.get_complaint!(id)
     update_params = Map.merge(params, %{"reviewed_by_id" => conn.assigns.current_user.id})
+
     case Administration.update_complaint(complaint, update_params) do
       {:ok, complaint} ->
         conn
@@ -62,6 +78,7 @@ defmodule FleetMintWeb.ComplaintController do
   def delete(conn, %{"id" => id}) do
     complaint = Administration.get_complaint!(id)
     {:ok, _} = Administration.delete_complaint(complaint)
+
     conn
     |> put_flash(:info, "Record deleted.")
     |> redirect(to: ~p"/complaints")

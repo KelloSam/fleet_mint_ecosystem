@@ -38,6 +38,7 @@ defmodule FleetMintWeb.PublicBookingController do
       end
 
     taken_seats = Ticketing.get_booked_seats(schedule.id, date)
+
     render(conn, :book,
       operator: operator,
       schedule: schedule,
@@ -75,12 +76,12 @@ defmodule FleetMintWeb.PublicBookingController do
         conn
         |> put_flash(:error, "Please check the form and try again.")
         |> render(:book,
-            operator: operator,
-            schedule: schedule,
-            date: date,
-            taken_seats: taken_seats,
-            changeset: changeset
-          )
+          operator: operator,
+          schedule: schedule,
+          date: date,
+          taken_seats: taken_seats,
+          changeset: changeset
+        )
     end
   end
 end

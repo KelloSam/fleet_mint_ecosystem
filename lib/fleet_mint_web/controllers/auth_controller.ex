@@ -22,7 +22,10 @@ defmodule FleetMintWeb.AuthController do
     case Users.create_user(user_params) do
       {:ok, _user} ->
         conn
-        |> put_flash(:info, "Account created. An administrator must activate it before you can log in.")
+        |> put_flash(
+          :info,
+          "Account created. An administrator must activate it before you can log in."
+        )
         |> redirect(to: ~p"/login")
 
       {:error, %Ecto.Changeset{} = changeset} ->
@@ -57,7 +60,8 @@ defmodule FleetMintWeb.AuthController do
         end
 
       {:error, {:account_locked, locked_until}} ->
-        remaining = max(1, div(NaiveDateTime.diff(locked_until, NaiveDateTime.utc_now(), :second), 60))
+        remaining =
+          max(1, div(NaiveDateTime.diff(locked_until, NaiveDateTime.utc_now(), :second), 60))
 
         Administration.log("login_blocked_lockout",
           actor_email: email,
@@ -66,8 +70,13 @@ defmodule FleetMintWeb.AuthController do
         )
 
         conn
-        |> put_flash(:error, "Account locked after too many failed attempts. Try again in #{remaining} minute(s).")
-        |> render(:login, error_message: "Account temporarily locked. Try again in #{remaining} minute(s).")
+        |> put_flash(
+          :error,
+          "Account locked after too many failed attempts. Try again in #{remaining} minute(s)."
+        )
+        |> render(:login,
+          error_message: "Account temporarily locked. Try again in #{remaining} minute(s)."
+        )
 
       {:error, :inactive_account} ->
         conn

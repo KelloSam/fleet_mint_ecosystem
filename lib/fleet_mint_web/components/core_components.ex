@@ -24,11 +24,13 @@ defmodule FleetMintWeb.CoreComponents do
       data-cancel={JS.exec(@on_cancel, "phx-remove")}
       class="relative z-50 hidden"
     >
-      <div id={@id}-bg class="bg-zinc-50/90 fixed inset-0 transition-opacity" aria-hidden="true" />
+      <div id={@id} -bg class="bg-zinc-50/90 fixed inset-0 transition-opacity" aria-hidden="true" />
       <div
         class="fixed inset-0 overflow-y-auto"
-        aria-labelledby={@id}-title
-        aria-describedby={@id}-description
+        aria-labelledby={@id}
+        -title
+        aria-describedby={@id}
+        -description
         role="dialog"
         aria-modal="true"
         tabindex="0"
@@ -178,6 +180,7 @@ defmodule FleetMintWeb.CoreComponents do
   """
   attr :for, :any, required: true, doc: "the data structure for the form"
   attr :as, :any, default: nil, doc: "the server side parameter to collect all input under"
+
   attr :rest, :global,
     include: ~w(autocomplete name rel action enctype method novalidate target multipart),
     doc: "the arbitrary HTML attributes to apply to the form tag"
@@ -217,6 +220,7 @@ defmodule FleetMintWeb.CoreComponents do
 
   def input(assigns) do
     assigns = assign_new(assigns, :step, fn -> nil end)
+
     ~H"""
     <div phx-feedback-for={@field.name}>
       <label for={@field.id} class="block text-sm font-medium text-gray-700"><%= @label %></label>
@@ -271,7 +275,7 @@ defmodule FleetMintWeb.CoreComponents do
   """
   attr :rest, :global, doc: "any other HTML attributes for the button"
 
-  slot :inner_block, required: true 
+  slot :inner_block, required: true
 
   def button(assigns) do
     ~H"""
@@ -294,7 +298,7 @@ defmodule FleetMintWeb.CoreComponents do
       <.error>Error message</.error>
   """
   attr :message, :string, default: nil, doc: "the error message to display"
-  
+
   slot :inner_block, doc: "the optional inner block that renders the error message"
 
   def error(assigns) do
@@ -320,6 +324,7 @@ defmodule FleetMintWeb.CoreComponents do
   attr :row_click, :any, default: nil
   attr :row_id, :any, default: nil
   attr :headers, :list, default: [], doc: "list of header labels for the table"
+
   slot :col, required: true do
     attr :label, :string
   end
@@ -331,7 +336,10 @@ defmodule FleetMintWeb.CoreComponents do
     <table class="min-w-full divide-y divide-gray-200">
       <thead>
         <tr>
-          <th :for={col <- @col} class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+          <th
+            :for={col <- @col}
+            class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
+          >
             <%= col[:label] %>
           </th>
           <th :if={@action != []} class="relative p-0 pb-4">
@@ -344,7 +352,10 @@ defmodule FleetMintWeb.CoreComponents do
           <td :for={col <- @col} class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
             <%= render_slot(col, row) %>
           </td>
-          <td :if={@action != []} class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium">
+          <td
+            :if={@action != []}
+            class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium"
+          >
             <div class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium">
               <span class="absolute -inset-y-px -right-4 left-0 group-hover:bg-gray-50 sm:rounded-r-xl" />
               <span class="relative inline-flex gap-3">

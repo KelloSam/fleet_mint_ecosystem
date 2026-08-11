@@ -9,10 +9,10 @@ defmodule FleetMint.Repo.Migrations.AddDateToExpendituresAndUpdateForeignKey do
 
     # Drop existing foreign key and index
     drop_if_exists index(:expenditures, [:cashing_report_id])
-    
+
     # Update foreign key constraint
     execute "ALTER TABLE expenditures DROP CONSTRAINT IF EXISTS expenditures_cashing_report_id_fkey"
-    
+
     alter table(:expenditures) do
       modify :cashing_report_id, references(:cashing_reports, on_delete: :delete_all)
     end

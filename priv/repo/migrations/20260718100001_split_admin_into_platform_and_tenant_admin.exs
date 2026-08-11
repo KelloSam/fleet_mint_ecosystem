@@ -15,7 +15,9 @@ defmodule FleetMint.Repo.Migrations.SplitAdminIntoPlatformAndTenantAdmin do
     execute "ALTER TABLE users DROP CONSTRAINT users_role_check"
 
     create constraint(:users, :users_role_check,
-             check: "role IN ('admin','manager','cashier','operator','platform_admin','tenant_admin')")
+             check:
+               "role IN ('admin','manager','cashier','operator','platform_admin','tenant_admin')"
+           )
 
     execute """
     UPDATE users
@@ -27,20 +29,24 @@ defmodule FleetMint.Repo.Migrations.SplitAdminIntoPlatformAndTenantAdmin do
     execute "ALTER TABLE users DROP CONSTRAINT users_role_check"
 
     create constraint(:users, :users_role_check,
-             check: "role IN ('platform_admin','tenant_admin','manager','cashier','operator')")
+             check: "role IN ('platform_admin','tenant_admin','manager','cashier','operator')"
+           )
   end
 
   def down do
     execute "ALTER TABLE users DROP CONSTRAINT users_role_check"
 
     create constraint(:users, :users_role_check,
-             check: "role IN ('admin','manager','cashier','operator','platform_admin','tenant_admin')")
+             check:
+               "role IN ('admin','manager','cashier','operator','platform_admin','tenant_admin')"
+           )
 
     execute "UPDATE users SET role = 'admin' WHERE role IN ('platform_admin', 'tenant_admin')"
 
     execute "ALTER TABLE users DROP CONSTRAINT users_role_check"
 
     create constraint(:users, :users_role_check,
-             check: "role IN ('admin','manager','cashier','operator')")
+             check: "role IN ('admin','manager','cashier','operator')"
+           )
   end
 end

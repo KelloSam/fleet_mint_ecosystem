@@ -127,7 +127,9 @@ defmodule FleetMint.Transport.Routes do
   """
   def delete_route(%Route{} = route) do
     route
-    |> Ecto.Changeset.change(archived_at: NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second))
+    |> Ecto.Changeset.change(
+      archived_at: NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+    )
     |> Repo.update()
   end
 
@@ -154,7 +156,10 @@ defmodule FleetMint.Transport.Routes do
 
   """
   def list_routes_by_status(status) do
-    from(r in Route, where: r.status == ^status and is_nil(r.archived_at), order_by: [desc: r.inserted_at])
+    from(r in Route,
+      where: r.status == ^status and is_nil(r.archived_at),
+      order_by: [desc: r.inserted_at]
+    )
     |> Repo.all()
   end
 
@@ -168,7 +173,10 @@ defmodule FleetMint.Transport.Routes do
 
   """
   def list_routes_by_start_location(location) do
-    from(r in Route, where: r.start_location == ^location and is_nil(r.archived_at), order_by: [asc: r.name])
+    from(r in Route,
+      where: r.start_location == ^location and is_nil(r.archived_at),
+      order_by: [asc: r.name]
+    )
     |> Repo.all()
   end
 
@@ -182,7 +190,10 @@ defmodule FleetMint.Transport.Routes do
 
   """
   def list_routes_by_end_location(location) do
-    from(r in Route, where: r.end_location == ^location and is_nil(r.archived_at), order_by: [asc: r.name])
+    from(r in Route,
+      where: r.end_location == ^location and is_nil(r.archived_at),
+      order_by: [asc: r.name]
+    )
     |> Repo.all()
   end
 
@@ -197,9 +208,11 @@ defmodule FleetMint.Transport.Routes do
   """
   def list_routes_by_location(location) do
     from(r in Route,
-      where: (r.start_location == ^location or r.end_location == ^location) and is_nil(r.archived_at),
+      where:
+        (r.start_location == ^location or r.end_location == ^location) and is_nil(r.archived_at),
       order_by: [asc: r.name]
-    ) |> Repo.all()
+    )
+    |> Repo.all()
   end
 
   @doc """
@@ -215,7 +228,8 @@ defmodule FleetMint.Transport.Routes do
     from(r in Route,
       where: r.fare >= ^min_fare and r.fare <= ^max_fare and is_nil(r.archived_at),
       order_by: [asc: r.fare]
-    ) |> Repo.all()
+    )
+    |> Repo.all()
   end
 
   @doc """
@@ -242,7 +256,8 @@ defmodule FleetMint.Transport.Routes do
   def list_operators_with_route_counts(opts \\ []) do
     from(o in Operator,
       where: is_nil(o.archived_at),
-      left_join: or_ in "operator_routes", on: or_.operator_id == o.id,
+      left_join: or_ in "operator_routes",
+      on: or_.operator_id == o.id,
       group_by: o.id,
       select: %{o | schedule_count: count(or_.route_id)},
       order_by: o.name
@@ -253,13 +268,16 @@ defmodule FleetMint.Transport.Routes do
 
   defp maybe_filter_operator_organisation(query, nil), do: query
   defp maybe_filter_operator_organisation(query, :all), do: query
+
   defp maybe_filter_operator_organisation(query, organisation_id) do
     where(query, [o], o.organisation_id == ^organisation_id)
   end
 
   def add_route_to_operator(%Operator{} = op, %Route{} = route) do
-    Repo.insert_all("operator_routes",
+    Repo.insert_all(
+      "operator_routes",
       [%{operator_id: op.id, route_id: route.id}],
-      on_conflict: :nothing)
+      on_conflict: :nothing
+    )
   end
 end

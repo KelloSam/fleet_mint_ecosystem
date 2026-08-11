@@ -23,8 +23,19 @@ defmodule FleetMint.Transport.Fleet.FuelLog do
 
   def changeset(log, attrs) do
     log
-    |> cast(attrs, [:log_date, :liters, :cost_per_liter, :total_cost, :mileage,
-                    :fuel_station, :fuel_type, :notes, :vehicle_id, :driver_id, :recorded_by_id])
+    |> cast(attrs, [
+      :log_date,
+      :liters,
+      :cost_per_liter,
+      :total_cost,
+      :mileage,
+      :fuel_station,
+      :fuel_type,
+      :notes,
+      :vehicle_id,
+      :driver_id,
+      :recorded_by_id
+    ])
     |> validate_required([:log_date, :liters, :vehicle_id])
     |> validate_number(:liters, greater_than: 0)
     |> validate_inclusion(:fuel_type, @fuel_types)
@@ -34,6 +45,7 @@ defmodule FleetMint.Transport.Fleet.FuelLog do
   defp compute_total_cost(changeset) do
     liters = get_field(changeset, :liters)
     cpp = get_field(changeset, :cost_per_liter)
+
     if liters && cpp && is_nil(get_field(changeset, :total_cost)) do
       put_change(changeset, :total_cost, Decimal.mult(liters, cpp) |> Decimal.round(2))
     else

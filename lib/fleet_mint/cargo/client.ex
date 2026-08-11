@@ -29,9 +29,21 @@ defmodule FleetMint.Cargo.Client do
 
   def changeset(client, attrs) do
     client
-    |> cast(attrs, [:company_name, :contact_person, :phone, :email, :address, :city,
-                    :client_type, :tpin, :credit_limit, :credit_balance, :status, :notes,
-                    :organisation_id])
+    |> cast(attrs, [
+      :company_name,
+      :contact_person,
+      :phone,
+      :email,
+      :address,
+      :city,
+      :client_type,
+      :tpin,
+      :credit_limit,
+      :credit_balance,
+      :status,
+      :notes,
+      :organisation_id
+    ])
     |> validate_required([:company_name, :client_type])
     |> validate_inclusion(:client_type, @client_types)
     |> validate_inclusion(:status, @statuses)
@@ -41,9 +53,12 @@ defmodule FleetMint.Cargo.Client do
 
   def type_options do
     [
-      {"Mining Company", "mining_company"}, {"Farm / Agricultural", "farm"},
-      {"General Business", "general_business"}, {"Individual", "individual"},
-      {"Government", "government"}, {"NGO / Charity", "ngo"}
+      {"Mining Company", "mining_company"},
+      {"Farm / Agricultural", "farm"},
+      {"General Business", "general_business"},
+      {"Individual", "individual"},
+      {"Government", "government"},
+      {"NGO / Charity", "ngo"}
     ]
   end
 end

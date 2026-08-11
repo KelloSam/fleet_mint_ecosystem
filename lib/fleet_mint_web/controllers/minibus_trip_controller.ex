@@ -14,6 +14,7 @@ defmodule FleetMintWeb.MinibusTripController do
 
   def new(conn, _params) do
     changeset = Trips.change_minibus_trip(%MinibusTrip{})
+
     render(conn, :new,
       changeset: changeset,
       buses: Fleet.list_buses(),
@@ -26,6 +27,7 @@ defmodule FleetMintWeb.MinibusTripController do
     case Trips.create_minibus_trip(params) do
       {:ok, trip} ->
         conn |> put_flash(:info, "Trip recorded.") |> redirect(to: ~p"/minibus_trips/#{trip}")
+
       {:error, changeset} ->
         render(conn, :new,
           changeset: changeset,
@@ -44,6 +46,7 @@ defmodule FleetMintWeb.MinibusTripController do
   def edit(conn, %{"id" => id}) do
     trip = Trips.get_minibus_trip!(id)
     changeset = Trips.change_minibus_trip(trip)
+
     render(conn, :edit,
       trip: trip,
       changeset: changeset,
@@ -55,9 +58,11 @@ defmodule FleetMintWeb.MinibusTripController do
 
   def update(conn, %{"id" => id, "minibus_trip" => params}) do
     trip = Trips.get_minibus_trip!(id)
+
     case Trips.update_minibus_trip(trip, params) do
       {:ok, trip} ->
         conn |> put_flash(:info, "Trip updated.") |> redirect(to: ~p"/minibus_trips/#{trip}")
+
       {:error, changeset} ->
         render(conn, :edit,
           trip: trip,

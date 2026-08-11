@@ -15,8 +15,7 @@ defmodule FleetMint.Transport.Routes.Route do
     field :stops, {:array, :string}, default: []
     field :archived_at, :naive_datetime
 
-    many_to_many :operators, FleetMint.Transport.Fleet.Operator,
-      join_through: "operator_routes"
+    many_to_many :operators, FleetMint.Transport.Fleet.Operator, join_through: "operator_routes"
 
     timestamps(type: :utc_datetime)
   end
@@ -33,13 +32,32 @@ defmodule FleetMint.Transport.Routes.Route do
   """
   def changeset(route, attrs) do
     route
-    |> cast(attrs, [:name, :start_location, :end_location, :distance, :duration, :fare, :status, :description, :stops])
-    |> validate_required([:name, :start_location, :end_location, :distance, :duration, :fare, :status])
+    |> cast(attrs, [
+      :name,
+      :start_location,
+      :end_location,
+      :distance,
+      :duration,
+      :fare,
+      :status,
+      :description,
+      :stops
+    ])
+    |> validate_required([
+      :name,
+      :start_location,
+      :end_location,
+      :distance,
+      :duration,
+      :fare,
+      :status
+    ])
     |> validate_number(:distance, greater_than: 0, message: "must be greater than 0")
     |> validate_number(:duration, greater_than: 0, message: "must be greater than 0")
     |> validate_number(:fare, greater_than: 0, message: "must be greater than 0")
     |> validate_inclusion(:status, @valid_statuses,
-       message: "must be one of: #{Enum.join(@valid_statuses, ", ")}")
+      message: "must be one of: #{Enum.join(@valid_statuses, ", ")}"
+    )
     |> unique_constraint(:name)
   end
 end

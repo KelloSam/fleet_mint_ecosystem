@@ -29,7 +29,8 @@ defmodule FleetMintWeb.AuditLogControllerTest do
       org = operator_fixture()
       staff = user_fixture(role: "cashier", organisation_id: org.organisation_id)
 
-      :ok = FleetMint.Administration.log("test_event", actor_id: staff.id, actor_email: staff.email)
+      :ok =
+        FleetMint.Administration.log("test_event", actor_id: staff.id, actor_email: staff.email)
 
       [log] = FleetMint.Administration.list_recent_audit_logs(1)
       assert log.organisation_id == org.organisation_id
@@ -51,7 +52,11 @@ defmodule FleetMintWeb.AuditLogControllerTest do
       :ok = FleetMint.Administration.log("scoped_event_a", actor_id: staff_a.id)
       :ok = FleetMint.Administration.log("scoped_event_b", actor_id: staff_b.id)
 
-      events = FleetMint.Administration.list_recent_audit_logs(50, organisation_id: org_a.organisation_id)
+      events =
+        FleetMint.Administration.list_recent_audit_logs(50,
+          organisation_id: org_a.organisation_id
+        )
+
       assert Enum.any?(events, &(&1.event == "scoped_event_a"))
       refute Enum.any?(events, &(&1.event == "scoped_event_b"))
     end

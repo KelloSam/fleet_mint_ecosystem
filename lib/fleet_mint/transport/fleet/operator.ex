@@ -18,6 +18,7 @@ defmodule FleetMint.Transport.Fleet.Operator do
 
     has_many :schedules, FleetMint.Transport.Trips.Schedule
     has_many :branches, FleetMint.Transport.Fleet.Branch
+
     many_to_many :routes, FleetMint.Transport.Routes.Route,
       join_through: "operator_routes",
       on_replace: :delete
@@ -27,7 +28,16 @@ defmodule FleetMint.Transport.Fleet.Operator do
 
   def changeset(operator, attrs) do
     operator
-    |> cast(attrs, [:name, :slug, :tagline, :contact_phone, :contact_email, :color, :active, :organisation_id])
+    |> cast(attrs, [
+      :name,
+      :slug,
+      :tagline,
+      :contact_phone,
+      :contact_email,
+      :color,
+      :active,
+      :organisation_id
+    ])
     |> validate_required([:name, :slug, :organisation_id])
     |> update_change(:slug, &slugify/1)
     |> unique_constraint(:name)

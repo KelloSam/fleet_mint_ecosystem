@@ -14,7 +14,9 @@ defmodule FleetMint.FinanceTest do
 
     test "unmappable: no bus on the report" do
       cashing_report = cashing_report_fixture()
-      assert {:unmappable, "No bus recorded on this report."} = Finance.attempt_trip_match(cashing_report)
+
+      assert {:unmappable, "No bus recorded on this report."} =
+               Finance.attempt_trip_match(cashing_report)
     end
 
     test "unmappable: bus has no vehicle assignment" do
@@ -22,7 +24,8 @@ defmodule FleetMint.FinanceTest do
       bus = bus_fixture(organisation_id: operator.organisation_id)
       cashing_report = cashing_report_fixture(%{bus_id: bus.id})
 
-      assert {:unmappable, "Bus has no vehicle assignment recorded."} = Finance.attempt_trip_match(cashing_report)
+      assert {:unmappable, "Bus has no vehicle assignment recorded."} =
+               Finance.attempt_trip_match(cashing_report)
     end
 
     test "unmappable: vehicle has never been assigned to any schedule" do
@@ -82,7 +85,9 @@ defmodule FleetMint.FinanceTest do
 
       cashing_report = cashing_report_fixture(%{bus_id: bus.id, report_date: ~D[2026-08-01]})
 
-      assert {:automatically_matched, matched_trip, organisation_id} = Finance.attempt_trip_match(cashing_report)
+      assert {:automatically_matched, matched_trip, organisation_id} =
+               Finance.attempt_trip_match(cashing_report)
+
       assert matched_trip.id == trip.id
       assert organisation_id == operator.organisation_id
     end
@@ -94,7 +99,12 @@ defmodule FleetMint.FinanceTest do
       schedule = schedule_fixture(operator_id: operator.id, vehicle_id: vehicle.id)
       {:ok, trip} = Trips.get_or_create_trip(schedule.id, ~D[2026-08-01])
 
-      cashing_report = cashing_report_fixture(%{bus_id: bus.id, report_date: ~D[2026-08-01], received_cashing: "300.00"})
+      cashing_report =
+        cashing_report_fixture(%{
+          bus_id: bus.id,
+          report_date: ~D[2026-08-01],
+          received_cashing: "300.00"
+        })
 
       assert cashing_report.trip_mapping_status == "automatically_matched"
 
@@ -150,7 +160,9 @@ defmodule FleetMint.FinanceTest do
 
       cashing_report = cashing_report_fixture(%{bus_id: bus_a.id})
 
-      assert {:error, :organisation_mismatch} = Finance.match_cashing_report_to_trip(cashing_report, trip_b, staff)
+      assert {:error, :organisation_mismatch} =
+               Finance.match_cashing_report_to_trip(cashing_report, trip_b, staff)
+
       assert Repo.all(CashingReportTrip) == []
 
       reloaded = Finance.get_cashing_report!(cashing_report.id)
@@ -165,7 +177,8 @@ defmodule FleetMint.FinanceTest do
 
       cashing_report = cashing_report_fixture()
 
-      assert {:error, :no_bus_on_report} = Finance.match_cashing_report_to_trip(cashing_report, trip, staff)
+      assert {:error, :no_bus_on_report} =
+               Finance.match_cashing_report_to_trip(cashing_report, trip, staff)
     end
   end
 
@@ -251,7 +264,15 @@ defmodule FleetMint.FinanceTest do
 
     import FleetMint.FinanceFixtures
 
-    @invalid_attrs %{description: nil, days_worked: nil, expected_cashing: nil, received_cashing: nil, airtel_id: nil, debt_balance: nil, expenditure: nil}
+    @invalid_attrs %{
+      description: nil,
+      days_worked: nil,
+      expected_cashing: nil,
+      received_cashing: nil,
+      airtel_id: nil,
+      debt_balance: nil,
+      expenditure: nil
+    }
 
     test "list_cashing_reports/0 returns all cashing_reports" do
       cashing_report = cashing_report_fixture()
@@ -266,13 +287,14 @@ defmodule FleetMint.FinanceTest do
     test "create_cashing_report/1 with valid data creates a cashing_report" do
       # Create a report first to get a valid report_id
       report = FleetMint.FinanceFixtures.report_fixture()
+
       valid_attrs = %{
-        description: "some description", 
-        days_worked: 42, 
-        expected_cashing: "120.5", 
-        received_cashing: "120.5", 
-        airtel_id: "some airtel_id", 
-        debt_balance: "120.5", 
+        description: "some description",
+        days_worked: 42,
+        expected_cashing: "120.5",
+        received_cashing: "120.5",
+        airtel_id: "some airtel_id",
+        debt_balance: "120.5",
         expenditure: "120.5",
         report_id: report.id
       }
@@ -293,9 +315,20 @@ defmodule FleetMint.FinanceTest do
 
     test "update_cashing_report/2 with valid data updates the cashing_report" do
       cashing_report = cashing_report_fixture()
-      update_attrs = %{description: "some updated description", days_worked: 43, expected_cashing: "456.7", received_cashing: "456.7", airtel_id: "some updated airtel_id", debt_balance: "456.7", expenditure: "456.7"}
 
-      assert {:ok, %CashingReport{} = cashing_report} = Finance.update_cashing_report(cashing_report, update_attrs)
+      update_attrs = %{
+        description: "some updated description",
+        days_worked: 43,
+        expected_cashing: "456.7",
+        received_cashing: "456.7",
+        airtel_id: "some updated airtel_id",
+        debt_balance: "456.7",
+        expenditure: "456.7"
+      }
+
+      assert {:ok, %CashingReport{} = cashing_report} =
+               Finance.update_cashing_report(cashing_report, update_attrs)
+
       assert cashing_report.description == "some updated description"
       assert cashing_report.days_worked == 43
       assert cashing_report.expected_cashing == Decimal.new("456.7")
@@ -307,13 +340,19 @@ defmodule FleetMint.FinanceTest do
 
     test "update_cashing_report/2 with invalid data returns error changeset" do
       cashing_report = cashing_report_fixture()
-      assert {:error, %Ecto.Changeset{}} = Finance.update_cashing_report(cashing_report, @invalid_attrs)
+
+      assert {:error, %Ecto.Changeset{}} =
+               Finance.update_cashing_report(cashing_report, @invalid_attrs)
+
       assert cashing_report == Finance.get_cashing_report!(cashing_report.id)
     end
 
     test "delete_cashing_report/1 archives (soft-deletes) the cashing_report" do
       cashing_report = cashing_report_fixture()
-      assert {:ok, %CashingReport{archived_at: %NaiveDateTime{}}} = Finance.delete_cashing_report(cashing_report)
+
+      assert {:ok, %CashingReport{archived_at: %NaiveDateTime{}}} =
+               Finance.delete_cashing_report(cashing_report)
+
       refute cashing_report.id in Enum.map(Finance.list_cashing_reports(), & &1.id)
       assert %CashingReport{} = Finance.get_cashing_report!(cashing_report.id)
     end
@@ -346,7 +385,9 @@ defmodule FleetMint.FinanceTest do
 
     test "update_cashing_report/2 syncs the linked ledger entry's amount" do
       cashing_report = cashing_report_fixture(%{received_cashing: "100.00"})
-      assert {:ok, updated} = Finance.update_cashing_report(cashing_report, %{received_cashing: "300.00"})
+
+      assert {:ok, updated} =
+               Finance.update_cashing_report(cashing_report, %{received_cashing: "300.00"})
 
       assert [entry] = Accounting.entries_for_source("CashingReport", updated.id)
       assert Decimal.equal?(entry.amount, Decimal.new("300.00"))
@@ -372,20 +413,21 @@ defmodule FleetMint.FinanceTest do
 
     test "create_expenditure/1 with valid data creates a expenditure" do
       # Create a cashing report first to get a valid cashing_report_id
-      {:ok, cashing_report} = Finance.create_cashing_report(%{
-        description: "some description", 
-        days_worked: 42, 
-        expected_cashing: "120.5", 
-        received_cashing: "120.5", 
-        airtel_id: "some airtel_id", 
-        debt_balance: "120.5", 
-        expenditure: "120.5",
-        report_id: FleetMint.FinanceFixtures.report_fixture().id
-      })
-      
+      {:ok, cashing_report} =
+        Finance.create_cashing_report(%{
+          description: "some description",
+          days_worked: 42,
+          expected_cashing: "120.5",
+          received_cashing: "120.5",
+          airtel_id: "some airtel_id",
+          debt_balance: "120.5",
+          expenditure: "120.5",
+          report_id: FleetMint.FinanceFixtures.report_fixture().id
+        })
+
       valid_attrs = %{
-        description: "some description", 
-        amount: "120.5", 
+        description: "some description",
+        amount: "120.5",
         date: DateTime.utc_now(),
         cashing_report_id: cashing_report.id
       }
@@ -403,7 +445,9 @@ defmodule FleetMint.FinanceTest do
       expenditure = expenditure_fixture()
       update_attrs = %{description: "some updated description", amount: "456.7"}
 
-      assert {:ok, %Expenditure{} = expenditure} = Finance.update_expenditure(expenditure, update_attrs)
+      assert {:ok, %Expenditure{} = expenditure} =
+               Finance.update_expenditure(expenditure, update_attrs)
+
       assert expenditure.description == "some updated description"
       assert expenditure.amount == Decimal.new("456.7")
     end
@@ -416,7 +460,10 @@ defmodule FleetMint.FinanceTest do
 
     test "delete_expenditure/1 archives (soft-deletes) the expenditure" do
       expenditure = expenditure_fixture()
-      assert {:ok, %Expenditure{archived_at: %NaiveDateTime{}}} = Finance.delete_expenditure(expenditure)
+
+      assert {:ok, %Expenditure{archived_at: %NaiveDateTime{}}} =
+               Finance.delete_expenditure(expenditure)
+
       refute expenditure.id in Enum.map(Finance.list_expenditures(), & &1.id)
       assert %Expenditure{} = Finance.get_expenditure!(expenditure.id)
     end

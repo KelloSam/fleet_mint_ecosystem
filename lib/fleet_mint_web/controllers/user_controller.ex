@@ -53,7 +53,12 @@ defmodule FleetMintWeb.UserController do
 
     with_organisation_access(conn, user, fn conn ->
       changeset = Users.change_user(user)
-      render(conn, :edit, user: user, changeset: changeset, organisations: Users.list_organisations())
+
+      render(conn, :edit,
+        user: user,
+        changeset: changeset,
+        organisations: Users.list_organisations()
+      )
     end)
   end
 
@@ -83,7 +88,11 @@ defmodule FleetMintWeb.UserController do
           |> redirect(to: ~p"/users/#{updated}")
 
         {:error, %Ecto.Changeset{} = changeset} ->
-          render(conn, :edit, user: user, changeset: changeset, organisations: Users.list_organisations())
+          render(conn, :edit,
+            user: user,
+            changeset: changeset,
+            organisations: Users.list_organisations()
+          )
       end
     end)
   end
@@ -141,7 +150,9 @@ defmodule FleetMintWeb.UserController do
   defp sanitize_params(params, %User{role: "tenant_admin"} = tenant_admin) do
     params
     |> Map.put("organisation_id", tenant_admin.organisation_id)
-    |> then(fn p -> if p["role"] == "platform_admin", do: Map.put(p, "role", "tenant_admin"), else: p end)
+    |> then(fn p ->
+      if p["role"] == "platform_admin", do: Map.put(p, "role", "tenant_admin"), else: p
+    end)
   end
 
   defp log_if_escalation_attempted(conn, %{"role" => "platform_admin"}, opts) do
@@ -162,7 +173,10 @@ defmodule FleetMintWeb.UserController do
   defp log_if_escalation_attempted(_conn, _params, _opts), do: :ok
 
   defp with_organisation_access(conn, %User{} = target_user, fun) do
-    if Authorization.can_access_organisation?(conn.assigns.current_user, target_user.organisation_id) do
+    if Authorization.can_access_organisation?(
+         conn.assigns.current_user,
+         target_user.organisation_id
+       ) do
       fun.(conn)
     else
       Administration.log("cross_tenant_access_denied",

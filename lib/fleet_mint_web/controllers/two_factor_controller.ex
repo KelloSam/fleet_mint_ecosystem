@@ -81,7 +81,10 @@ defmodule FleetMintWeb.TwoFactorController do
     else
       _ ->
         conn
-        |> put_flash(:error, "Code did not match. Please scan the QR code again and try once more.")
+        |> put_flash(
+          :error,
+          "Code did not match. Please scan the QR code again and try once more."
+        )
         |> redirect(to: ~p"/settings/2fa")
     end
   end

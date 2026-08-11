@@ -71,7 +71,9 @@ defmodule FleetMint.Finance do
         description: "Cash received for report #{cashing_report.report_date}"
       }
     end)
-    |> Ecto.Multi.merge(fn %{cashing_report: cashing_report} -> trip_match_multi(cashing_report) end)
+    |> Ecto.Multi.merge(fn %{cashing_report: cashing_report} ->
+      trip_match_multi(cashing_report)
+    end)
     |> Repo.transaction()
     |> unwrap_multi(:cashing_report_reconciled)
   end
@@ -119,7 +121,8 @@ defmodule FleetMint.Finance do
       )
       |> Repo.all()
 
-    same_org_candidates = Enum.filter(candidates, fn {_schedule_id, org_id} -> org_id == bus.organisation_id end)
+    same_org_candidates =
+      Enum.filter(candidates, fn {_schedule_id, org_id} -> org_id == bus.organisation_id end)
 
     case {candidates, same_org_candidates} do
       {[], _} ->
@@ -189,7 +192,12 @@ defmodule FleetMint.Finance do
   CashingReport has no organisation_id column of its own, so it's enforced
   here instead.
   """
-  def match_cashing_report_to_trip(%CashingReport{} = cashing_report, %Trip{} = trip, matched_by_user, opts \\ []) do
+  def match_cashing_report_to_trip(
+        %CashingReport{} = cashing_report,
+        %Trip{} = trip,
+        matched_by_user,
+        opts \\ []
+      ) do
     bus = cashing_report.bus_id && Repo.get(Bus, cashing_report.bus_id)
 
     cond do
@@ -287,7 +295,9 @@ defmodule FleetMint.Finance do
   """
   def delete_cashing_report(%CashingReport{} = cashing_report, actor_id \\ nil) do
     cashing_report
-    |> Ecto.Changeset.change(archived_at: NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second))
+    |> Ecto.Changeset.change(
+      archived_at: NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+    )
     |> Ecto.Changeset.put_change(:updated_by_id, actor_id)
     |> Repo.update()
   end
@@ -315,9 +325,11 @@ defmodule FleetMint.Finance do
 
   """
   def get_cashing_reports_by_report(report_id) do
-    query = from cr in CashingReport,
-            where: cr.report_id == ^report_id and is_nil(cr.archived_at),
-            order_by: [desc: cr.inserted_at]
+    query =
+      from cr in CashingReport,
+        where: cr.report_id == ^report_id and is_nil(cr.archived_at),
+        order_by: [desc: cr.inserted_at]
+
     Repo.all(query)
   end
 
@@ -525,7 +537,9 @@ defmodule FleetMint.Finance do
   """
   def delete_expenditure(%Expenditure{} = expenditure, actor_id \\ nil) do
     expenditure
-    |> Ecto.Changeset.change(archived_at: NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second))
+    |> Ecto.Changeset.change(
+      archived_at: NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+    )
     |> Ecto.Changeset.put_change(:updated_by_id, actor_id)
     |> Repo.update()
   end
@@ -553,9 +567,11 @@ defmodule FleetMint.Finance do
 
   """
   def get_expenditures_by_cashing_report(cashing_report_id) do
-    query = from e in Expenditure,
-            where: e.cashing_report_id == ^cashing_report_id and is_nil(e.archived_at),
-            order_by: [desc: e.inserted_at]
+    query =
+      from e in Expenditure,
+        where: e.cashing_report_id == ^cashing_report_id and is_nil(e.archived_at),
+        order_by: [desc: e.inserted_at]
+
     Repo.all(query)
   end
 
@@ -569,9 +585,11 @@ defmodule FleetMint.Finance do
 
   """
   def calculate_total_expenditures(cashing_report_id) do
-    query = from e in Expenditure,
-            where: e.cashing_report_id == ^cashing_report_id and is_nil(e.archived_at),
-            select: sum(e.amount)
+    query =
+      from e in Expenditure,
+        where: e.cashing_report_id == ^cashing_report_id and is_nil(e.archived_at),
+        select: sum(e.amount)
+
     Repo.one(query) || Decimal.new("0.00")
   end
 
@@ -585,12 +603,16 @@ defmodule FleetMint.Finance do
 
   """
   def list_expenditures_by_date_range(start_date, end_date) do
-    start_datetime = start_date |> NaiveDateTime.new!(~T[00:00:00.000]) |> NaiveDateTime.truncate(:second)
-    end_datetime = end_date |> NaiveDateTime.new!(~T[23:59:59.999]) |> NaiveDateTime.truncate(:second)
-    
-    query = from e in Expenditure,
-            where: e.date >= ^start_datetime and e.date <= ^end_datetime and is_nil(e.archived_at),
-            order_by: [asc: e.date]
+    start_datetime =
+      start_date |> NaiveDateTime.new!(~T[00:00:00.000]) |> NaiveDateTime.truncate(:second)
+
+    end_datetime =
+      end_date |> NaiveDateTime.new!(~T[23:59:59.999]) |> NaiveDateTime.truncate(:second)
+
+    query =
+      from e in Expenditure,
+        where: e.date >= ^start_datetime and e.date <= ^end_datetime and is_nil(e.archived_at),
+        order_by: [asc: e.date]
 
     Repo.all(query)
   end
@@ -605,12 +627,16 @@ defmodule FleetMint.Finance do
 
   """
   def calculate_total_expenditures_by_date_range(start_date, end_date) do
-    start_datetime = start_date |> NaiveDateTime.new!(~T[00:00:00.000]) |> NaiveDateTime.truncate(:second)
-    end_datetime = end_date |> NaiveDateTime.new!(~T[23:59:59.999]) |> NaiveDateTime.truncate(:second)
-    
-    query = from e in Expenditure,
-            where: e.date >= ^start_datetime and e.date <= ^end_datetime and is_nil(e.archived_at),
-            select: sum(e.amount)
+    start_datetime =
+      start_date |> NaiveDateTime.new!(~T[00:00:00.000]) |> NaiveDateTime.truncate(:second)
+
+    end_datetime =
+      end_date |> NaiveDateTime.new!(~T[23:59:59.999]) |> NaiveDateTime.truncate(:second)
+
+    query =
+      from e in Expenditure,
+        where: e.date >= ^start_datetime and e.date <= ^end_datetime and is_nil(e.archived_at),
+        select: sum(e.amount)
 
     Repo.one(query) || Decimal.new("0.00")
   end
@@ -628,7 +654,7 @@ defmodule FleetMint.Finance do
 
   """
   def group_expenditures_by_date(expenditures) when is_list(expenditures) do
-    Enum.group_by(expenditures, fn expenditure -> 
+    Enum.group_by(expenditures, fn expenditure ->
       NaiveDateTime.to_date(expenditure.date)
     end)
   end
@@ -649,31 +675,36 @@ defmodule FleetMint.Finance do
 
   """
   def get_daily_expenditure_report(date) do
-    expenditures = 
+    expenditures =
       date
       |> NaiveDateTime.new!(~T[00:00:00.000])
       |> NaiveDateTime.truncate(:second)
-      |> then(fn start_datetime -> 
-        end_datetime = date |> NaiveDateTime.new!(~T[23:59:59.999]) |> NaiveDateTime.truncate(:second)
-        
-        query = from e in Expenditure,
-                where: e.date >= ^start_datetime and e.date <= ^end_datetime and is_nil(e.archived_at),
-                order_by: [asc: e.date]
+      |> then(fn start_datetime ->
+        end_datetime =
+          date |> NaiveDateTime.new!(~T[23:59:59.999]) |> NaiveDateTime.truncate(:second)
+
+        query =
+          from e in Expenditure,
+            where:
+              e.date >= ^start_datetime and e.date <= ^end_datetime and is_nil(e.archived_at),
+            order_by: [asc: e.date]
 
         Repo.all(query)
       end)
 
-    total = Enum.reduce(expenditures, Decimal.new("0.00"), fn expenditure, acc ->
-      Decimal.add(acc, expenditure.amount)
-    end)
+    total =
+      Enum.reduce(expenditures, Decimal.new("0.00"), fn expenditure, acc ->
+        Decimal.add(acc, expenditure.amount)
+      end)
 
     count = length(expenditures)
-    
-    average = if count > 0 do
-      Decimal.div(total, Decimal.new(count))
-    else
-      Decimal.new("0.00")
-    end
+
+    average =
+      if count > 0 do
+        Decimal.div(total, Decimal.new(count))
+      else
+        Decimal.new("0.00")
+      end
 
     %{
       date: date,
@@ -709,45 +740,49 @@ defmodule FleetMint.Finance do
     days_in_month = Date.days_in_month(Date.new!(year, month, 1))
     start_date = Date.new!(year, month, 1)
     end_date = Date.new!(year, month, days_in_month)
-    
+
     # Get all expenditures for the month
     expenditures = list_expenditures_by_date_range(start_date, end_date)
-    
+
     # Group expenditures by date
     grouped_expenditures = group_expenditures_by_date(expenditures)
-    
+
     # Create daily breakdown
-    daily_breakdown = 
+    daily_breakdown =
       for day <- 1..days_in_month do
         date = Date.new!(year, month, day)
         day_expenditures = Map.get(grouped_expenditures, date, [])
-        day_total = Enum.reduce(day_expenditures, Decimal.new("0.00"), fn expenditure, acc ->
-          Decimal.add(acc, expenditure.amount)
-        end)
-        
+
+        day_total =
+          Enum.reduce(day_expenditures, Decimal.new("0.00"), fn expenditure, acc ->
+            Decimal.add(acc, expenditure.amount)
+          end)
+
         %{
           date: date,
           total: day_total,
           count: length(day_expenditures)
         }
       end
-    
+
     # Calculate monthly totals
-    total_expenditures = Enum.reduce(expenditures, Decimal.new("0.00"), fn expenditure, acc ->
-      Decimal.add(acc, expenditure.amount)
-    end)
-    
+    total_expenditures =
+      Enum.reduce(expenditures, Decimal.new("0.00"), fn expenditure, acc ->
+        Decimal.add(acc, expenditure.amount)
+      end)
+
     expenditure_count = length(expenditures)
-    
+
     # Calculate average daily expenditure
     days_with_expenditures = Enum.count(daily_breakdown, fn day -> day.count > 0 end)
-    average_daily_expenditure = 
+
+    average_daily_expenditure =
       if days_with_expenditures > 0 do
         Decimal.div(total_expenditures, Decimal.new(days_with_expenditures))
       else
         Decimal.new("0.00")
       end
-    
+
     %{
       year: year,
       month: month,
@@ -757,31 +792,33 @@ defmodule FleetMint.Finance do
       average_daily_expenditure: average_daily_expenditure
     }
   end
+
   @doc """
   Returns the most recent reports for the dashboard.
-  
+
   ## Examples
-  
+
       iex> list_recent_reports(5)
       [%Report{}, ...]
-  
+
   """
   def list_recent_reports(limit \\ 5) do
     from(r in Report,
       order_by: [desc: r.inserted_at],
       limit: ^limit,
       preload: [:cashing_reports]
-    ) |> Repo.all()
+    )
+    |> Repo.all()
   end
-  
+
   @doc """
   Returns the most recent transactions for the dashboard.
-  
+
   ## Examples
-  
+
       iex> list_recent_transactions(5)
       [%{id: 1, type: "income", amount: #Decimal<100.00>, inserted_at: ~N[2025-04-06 10:00:00]}, ...]
-  
+
   """
   def list_recent_transactions(limit \\ 5) do
     Accounting.list_entries()
@@ -795,15 +832,15 @@ defmodule FleetMint.Finance do
       }
     end)
   end
-  
+
   @doc """
   Returns the total count of expenditures.
-  
+
   ## Examples
-  
+
       iex> count_expenditures()
       42
-  
+
   """
   def count_expenditures do
     Expenditure |> where([e], is_nil(e.archived_at)) |> Repo.aggregate(:count, :id)
@@ -823,7 +860,9 @@ defmodule FleetMint.Finance do
 
   def get_report_with_cashing_details!(id) do
     cashing_preload = [
-      cashing_reports: {active_cashing_reports_query(), [:bus, :conductor, expenditures: active_expenditures_query()]}
+      cashing_reports:
+        {active_cashing_reports_query(),
+         [:bus, :conductor, expenditures: active_expenditures_query()]}
     ]
 
     Repo.get!(Report, id) |> Repo.preload(cashing_preload)
@@ -842,7 +881,9 @@ defmodule FleetMint.Finance do
   defp active_cashing_reports_query, do: from(cr in CashingReport, where: is_nil(cr.archived_at))
 
   def get_expenditures_report(start_date, end_date) do
-    expenditures = list_expenditures_by_date_range(start_date, end_date) |> Repo.preload(:cashing_report)
+    expenditures =
+      list_expenditures_by_date_range(start_date, end_date) |> Repo.preload(:cashing_report)
+
     total = Enum.reduce(expenditures, Decimal.new("0.00"), &Decimal.add(&2, &1.amount))
 
     by_date =
@@ -860,10 +901,34 @@ defmodule FleetMint.Finance do
   def cashing_summary_for_report(report_id) do
     reports = get_cashing_reports_by_report(report_id)
 
-    total_expected = Enum.reduce(reports, Decimal.new("0.00"), &Decimal.add(&2, &1.expected_cashing || Decimal.new(0)))
-    total_received = Enum.reduce(reports, Decimal.new("0.00"), &Decimal.add(&2, &1.received_cashing || Decimal.new(0)))
-    total_expenditure = Enum.reduce(reports, Decimal.new("0.00"), &Decimal.add(&2, &1.expenditure || Decimal.new(0)))
-    total_debt = Enum.reduce(reports, Decimal.new("0.00"), &Decimal.add(&2, &1.debt_balance || Decimal.new(0)))
+    total_expected =
+      Enum.reduce(
+        reports,
+        Decimal.new("0.00"),
+        &Decimal.add(&2, &1.expected_cashing || Decimal.new(0))
+      )
+
+    total_received =
+      Enum.reduce(
+        reports,
+        Decimal.new("0.00"),
+        &Decimal.add(&2, &1.received_cashing || Decimal.new(0))
+      )
+
+    total_expenditure =
+      Enum.reduce(
+        reports,
+        Decimal.new("0.00"),
+        &Decimal.add(&2, &1.expenditure || Decimal.new(0))
+      )
+
+    total_debt =
+      Enum.reduce(
+        reports,
+        Decimal.new("0.00"),
+        &Decimal.add(&2, &1.debt_balance || Decimal.new(0))
+      )
+
     variance = Decimal.sub(total_received, total_expected)
 
     %{
@@ -887,6 +952,7 @@ defmodule FleetMint.Finance do
 
   defp maybe_filter_cashing_report_organisation(query, nil), do: query
   defp maybe_filter_cashing_report_organisation(query, :all), do: query
+
   defp maybe_filter_cashing_report_organisation(query, organisation_id) do
     query
     |> join(:inner, [c], b in assoc(c, :bus), as: :bus)
@@ -895,6 +961,7 @@ defmodule FleetMint.Finance do
 
   defp maybe_filter_expenditure_organisation(query, nil), do: query
   defp maybe_filter_expenditure_organisation(query, :all), do: query
+
   defp maybe_filter_expenditure_organisation(query, organisation_id) do
     query
     |> join(:inner, [e], c in assoc(e, :cashing_report), as: :cashing_report)

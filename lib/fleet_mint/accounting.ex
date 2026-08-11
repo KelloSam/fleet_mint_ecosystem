@@ -58,7 +58,8 @@ defmodule FleetMint.Accounting do
   so far and must return the `%LedgerEntry{}` to reverse, or `nil` to no-op
   (safe for records that predate ledger integration and have no linked entry).
   """
-  def multi_reverse_entry(multi, name, original_fun, attrs \\ %{}) when is_function(original_fun, 1) do
+  def multi_reverse_entry(multi, name, original_fun, attrs \\ %{})
+      when is_function(original_fun, 1) do
     Ecto.Multi.run(multi, name, fn _repo, changes ->
       case original_fun.(changes) do
         nil -> {:ok, nil}
@@ -146,8 +147,12 @@ defmodule FleetMint.Accounting do
   defp maybe_filter_type(query, type), do: where(query, [e], e.entry_type == ^type)
 
   defp maybe_filter_source(query, nil), do: query
-  defp maybe_filter_source(query, source_type), do: where(query, [e], e.source_type == ^source_type)
+
+  defp maybe_filter_source(query, source_type),
+    do: where(query, [e], e.source_type == ^source_type)
 
   defp maybe_filter_range(query, nil, nil), do: query
-  defp maybe_filter_range(query, from, to), do: where(query, [e], e.occurred_at >= ^from and e.occurred_at <= ^to)
+
+  defp maybe_filter_range(query, from, to),
+    do: where(query, [e], e.occurred_at >= ^from and e.occurred_at <= ^to)
 end

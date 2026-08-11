@@ -1,7 +1,7 @@
 defmodule FleetMint.Finance.Expenditure do
   @moduledoc """
   The Expenditure schema represents a financial expenditure record in the system.
-  
+
   Expenditures are associated with cashing reports and include amount, description,
   and date details. Each expenditure represents a cost incurred in bus operations.
   """
@@ -28,7 +28,7 @@ defmodule FleetMint.Finance.Expenditure do
 
   @doc """
   Changeset for creating and updating expenditures.
-  
+
   Validates that:
   - Amount, description, and date are required
   - Amount is greater than zero

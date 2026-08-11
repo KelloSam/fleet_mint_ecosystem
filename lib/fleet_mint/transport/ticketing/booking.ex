@@ -31,10 +31,24 @@ defmodule FleetMint.Transport.Ticketing.Booking do
 
   def changeset(booking, attrs) do
     booking
-    |> cast(attrs, [:passenger_name, :passenger_phone, :passenger_email, :seat_number,
-                    :travel_date, :status, :fare_paid, :payment_method, :payment_reference,
-                    :notes, :pickup_station, :has_luggage, :luggage_description,
-                    :schedule_id, :booked_by_id, :terminal_id])
+    |> cast(attrs, [
+      :passenger_name,
+      :passenger_phone,
+      :passenger_email,
+      :seat_number,
+      :travel_date,
+      :status,
+      :fare_paid,
+      :payment_method,
+      :payment_reference,
+      :notes,
+      :pickup_station,
+      :has_luggage,
+      :luggage_description,
+      :schedule_id,
+      :booked_by_id,
+      :terminal_id
+    ])
     |> validate_required([:passenger_name, :travel_date, :fare_paid, :schedule_id])
     |> validate_number(:fare_paid, greater_than_or_equal_to: 0)
     |> validate_inclusion(:status, @statuses)
@@ -58,5 +72,6 @@ defmodule FleetMint.Transport.Ticketing.Booking do
     suffix = :crypto.strong_rand_bytes(4) |> Base.encode16()
     put_change(changeset, :booking_reference, "BK-#{suffix}")
   end
+
   defp generate_reference(changeset), do: changeset
 end

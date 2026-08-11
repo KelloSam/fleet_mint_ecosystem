@@ -31,10 +31,22 @@ defmodule FleetMint.Cargo.Invoice do
 
   def changeset(invoice, attrs) do
     invoice
-    |> cast(attrs, [:invoice_date, :due_date, :base_amount, :fuel_surcharge,
-                    :toll_surcharge, :vat_amount, :total_amount, :status,
-                    :payment_date, :payment_reference, :notes,
-                    :client_id, :trip_id, :created_by_id])
+    |> cast(attrs, [
+      :invoice_date,
+      :due_date,
+      :base_amount,
+      :fuel_surcharge,
+      :toll_surcharge,
+      :vat_amount,
+      :total_amount,
+      :status,
+      :payment_date,
+      :payment_reference,
+      :notes,
+      :client_id,
+      :trip_id,
+      :created_by_id
+    ])
     |> validate_required([:invoice_date, :base_amount, :client_id, :trip_id])
     |> validate_number(:base_amount, greater_than: 0)
     |> validate_inclusion(:status, @statuses)
@@ -50,6 +62,7 @@ defmodule FleetMint.Cargo.Invoice do
     subtotal = Decimal.add(base, Decimal.add(fuel, toll))
     vat = Decimal.mult(subtotal, vat_rate()) |> Decimal.round(2)
     total = Decimal.add(subtotal, vat) |> Decimal.round(2)
+
     changeset
     |> put_change(:vat_amount, vat)
     |> put_change(:total_amount, total)
@@ -60,5 +73,6 @@ defmodule FleetMint.Cargo.Invoice do
     suffix = :crypto.strong_rand_bytes(3) |> Base.encode16()
     put_change(changeset, :invoice_number, "INV-#{year}-#{suffix}")
   end
+
   defp generate_invoice_number(changeset), do: changeset
 end

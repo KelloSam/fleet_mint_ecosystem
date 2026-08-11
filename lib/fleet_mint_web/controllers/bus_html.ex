@@ -20,7 +20,8 @@ defmodule FleetMintWeb.BusHTML do
     """
   end
 
-  def status_options, do: [{"Active", "active"}, {"Inactive", "inactive"}, {"Maintenance", "maintenance"}]
+  def status_options,
+    do: [{"Active", "active"}, {"Inactive", "inactive"}, {"Maintenance", "maintenance"}]
 
   def current_year, do: Date.utc_today().year
 end

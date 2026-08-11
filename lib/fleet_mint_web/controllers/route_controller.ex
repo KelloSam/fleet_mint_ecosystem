@@ -7,7 +7,11 @@ defmodule FleetMintWeb.RouteController do
   plug :require_admin when action in [:new, :create, :edit, :update, :delete]
 
   defp require_admin(conn, _opts) do
-    if FleetMint.Identity.Authorization.authorized?(conn.assigns.current_user, ["platform_admin", "tenant_admin", "manager"]) do
+    if FleetMint.Identity.Authorization.authorized?(conn.assigns.current_user, [
+         "platform_admin",
+         "tenant_admin",
+         "manager"
+       ]) do
       conn
     else
       conn
@@ -19,7 +23,12 @@ defmodule FleetMintWeb.RouteController do
 
   def index(conn, params) do
     status = Map.get(params, "status")
-    routes = if status && status != "", do: Routes.list_routes_by_status(status), else: Routes.list_routes()
+
+    routes =
+      if status && status != "",
+        do: Routes.list_routes_by_status(status),
+        else: Routes.list_routes()
+
     render(conn, :index, routes: routes, filter_status: status || "")
   end
 

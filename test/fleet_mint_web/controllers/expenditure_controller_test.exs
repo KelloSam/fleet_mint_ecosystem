@@ -5,13 +5,14 @@ defmodule FleetMintWeb.ExpenditureControllerTest do
 
   # We need a valid cashing_report_id for these tests
   @create_attrs %{
-    description: "some description", 
+    description: "some description",
     amount: "120.5",
     date: DateTime.utc_now(),
-    cashing_report_id: nil  # Will be set in setup
+    # Will be set in setup
+    cashing_report_id: nil
   }
   @update_attrs %{
-    description: "some updated description", 
+    description: "some updated description",
     amount: "456.7",
     date: DateTime.utc_now()
   }
@@ -36,7 +37,7 @@ defmodule FleetMintWeb.ExpenditureControllerTest do
       # Create a cashing report for this test
       cashing_report = cashing_report_fixture()
       create_attrs = Map.put(@create_attrs, :cashing_report_id, cashing_report.id)
-      
+
       conn = post(conn, ~p"/expenditures", expenditure: create_attrs)
 
       assert %{id: id} = redirected_params(conn)
@@ -94,10 +95,10 @@ defmodule FleetMintWeb.ExpenditureControllerTest do
   defp create_expenditure(_) do
     # Create a cashing report first
     cashing_report = cashing_report_fixture()
-    
+
     # Create expenditure with the cashing_report_id
     expenditure = expenditure_fixture(%{cashing_report_id: cashing_report.id})
-    
+
     %{expenditure: expenditure, cashing_report: cashing_report}
   end
 end

@@ -25,9 +25,19 @@ defmodule FleetMint.Administration.Complaint do
 
   def changeset(complaint, attrs) do
     complaint
-    |> cast(attrs, [:type, :category, :passenger_name, :passenger_phone,
-                    :booking_reference, :staff_member_name, :subject,
-                    :description, :status, :resolution_notes, :reviewed_by_id])
+    |> cast(attrs, [
+      :type,
+      :category,
+      :passenger_name,
+      :passenger_phone,
+      :booking_reference,
+      :staff_member_name,
+      :subject,
+      :description,
+      :status,
+      :resolution_notes,
+      :reviewed_by_id
+    ])
     |> validate_required([:type, :passenger_name, :description])
     |> validate_inclusion(:type, @types)
     |> validate_inclusion(:category, @categories)

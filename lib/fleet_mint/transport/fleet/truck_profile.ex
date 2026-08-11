@@ -22,8 +22,16 @@ defmodule FleetMint.Transport.Fleet.TruckProfile do
 
   def changeset(profile, attrs) do
     profile
-    |> cast(attrs, [:payload_capacity_tons, :cargo_volume_cbm, :axle_configuration,
-                    :truck_category, :allowed_cargo_types, :refrigerated, :gvw_kg, :vehicle_id])
+    |> cast(attrs, [
+      :payload_capacity_tons,
+      :cargo_volume_cbm,
+      :axle_configuration,
+      :truck_category,
+      :allowed_cargo_types,
+      :refrigerated,
+      :gvw_kg,
+      :vehicle_id
+    ])
     |> validate_required([:payload_capacity_tons, :vehicle_id])
     |> validate_number(:payload_capacity_tons, greater_than: 0)
     |> validate_inclusion(:truck_category, @truck_categories)
@@ -33,21 +41,33 @@ defmodule FleetMint.Transport.Fleet.TruckProfile do
 
   defp validate_cargo_types(changeset) do
     case get_change(changeset, :allowed_cargo_types) do
-      nil -> changeset
+      nil ->
+        changeset
+
       types ->
         invalid = Enum.reject(types, &(&1 in @cargo_types))
-        if Enum.empty?(invalid), do: changeset,
+
+        if Enum.empty?(invalid),
+          do: changeset,
           else: add_error(changeset, :allowed_cargo_types, "invalid: #{Enum.join(invalid, ", ")}")
     end
   end
 
   def cargo_type_options do
     [
-      {"Copper Ore", "copper_ore"}, {"Coal", "coal"}, {"Cobalt Ore", "cobalt_ore"},
-      {"Agricultural Produce", "agricultural_produce"}, {"Maize", "maize"},
-      {"Fertilizer", "fertilizer"}, {"Cement", "cement"}, {"Fuel", "fuel"},
-      {"General Cargo", "general_cargo"}, {"Hazardous", "hazardous"},
-      {"Refrigerated", "refrigerated"}, {"Timber", "timber"}, {"Steel", "steel"}
+      {"Copper Ore", "copper_ore"},
+      {"Coal", "coal"},
+      {"Cobalt Ore", "cobalt_ore"},
+      {"Agricultural Produce", "agricultural_produce"},
+      {"Maize", "maize"},
+      {"Fertilizer", "fertilizer"},
+      {"Cement", "cement"},
+      {"Fuel", "fuel"},
+      {"General Cargo", "general_cargo"},
+      {"Hazardous", "hazardous"},
+      {"Refrigerated", "refrigerated"},
+      {"Timber", "timber"},
+      {"Steel", "steel"}
     ]
   end
 end

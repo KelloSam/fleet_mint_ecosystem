@@ -89,6 +89,7 @@ defmodule FleetMint.Repo.Migrations.AlignSchemasWithDb do
     drop_if_exists index(:cashing_reports, [:report_date])
     drop_if_exists index(:cashing_reports, [:conductor_id])
     drop_if_exists index(:cashing_reports, [:bus_id])
+
     alter table(:cashing_reports) do
       remove :report_date
       remove :conductor_id
@@ -98,18 +99,21 @@ defmodule FleetMint.Repo.Migrations.AlignSchemasWithDb do
     # transactions
     drop_if_exists index(:transactions, [:reference_number])
     drop_if_exists index(:transactions, [:user_id, :payment_method])
+
     alter table(:transactions) do
       remove :payment_details
       remove :transaction_date
       remove :reference_number
       remove :status
     end
+
     rename table(:transactions), :payment_method, to: :type
     create index(:transactions, [:user_id, :type])
 
     # routes
     drop_if_exists index(:routes, [:end_location])
     drop_if_exists index(:routes, [:start_location])
+
     alter table(:routes) do
       remove :description
       remove :status
@@ -117,6 +121,7 @@ defmodule FleetMint.Repo.Migrations.AlignSchemasWithDb do
       remove :duration
       remove :distance
     end
+
     rename table(:routes), :start_location, to: :start_point
     rename table(:routes), :end_location, to: :end_point
     create index(:routes, [:start_point])
@@ -124,17 +129,20 @@ defmodule FleetMint.Repo.Migrations.AlignSchemasWithDb do
 
     # buses
     drop_if_exists index(:buses, [:registration_number])
+
     alter table(:buses) do
       remove :description
       remove :status
       remove :year
       remove :model
     end
+
     rename table(:buses), :registration_number, to: :number
     create unique_index(:buses, [:number])
 
     # users
     drop_if_exists index(:users, [:username])
+
     alter table(:users) do
       remove :last_login
       remove :active

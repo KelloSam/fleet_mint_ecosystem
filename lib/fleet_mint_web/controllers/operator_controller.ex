@@ -14,7 +14,9 @@ defmodule FleetMintWeb.OperatorController do
   plug :require_admin_or_manager when action in [:edit, :update, :delete]
 
   def index(conn, _params) do
-    operators = Routes.list_operators_with_route_counts(organisation_id: conn.assigns.organisation_scope)
+    operators =
+      Routes.list_operators_with_route_counts(organisation_id: conn.assigns.organisation_scope)
+
     render(conn, :index, operators: operators)
   end
 
@@ -66,6 +68,7 @@ defmodule FleetMintWeb.OperatorController do
       case Fleet.update_operator(op, params) do
         {:ok, op} ->
           conn |> put_flash(:info, "#{op.name} updated.") |> redirect(to: ~p"/operators")
+
         {:error, changeset} ->
           render(conn, :edit, operator: op, changeset: changeset)
       end
@@ -103,12 +106,19 @@ defmodule FleetMintWeb.OperatorController do
         ip_address: client_ip(conn)
       )
 
-      conn |> put_flash(:error, "Only Miway platform administrators can register a new organisation.") |> redirect(to: ~p"/operators") |> halt()
+      conn
+      |> put_flash(:error, "Only Miway platform administrators can register a new organisation.")
+      |> redirect(to: ~p"/operators")
+      |> halt()
     end
   end
 
   defp require_admin_or_manager(conn, _opts) do
-    if Authorization.authorized?(conn.assigns.current_user, ["platform_admin", "tenant_admin", "manager"]) do
+    if Authorization.authorized?(conn.assigns.current_user, [
+         "platform_admin",
+         "tenant_admin",
+         "manager"
+       ]) do
       conn
     else
       conn |> put_flash(:error, "Not authorised.") |> redirect(to: ~p"/operators") |> halt()
@@ -116,7 +126,10 @@ defmodule FleetMintWeb.OperatorController do
   end
 
   defp with_organisation_access(conn, %Operator{} = target_operator, fun) do
-    if Authorization.can_access_organisation?(conn.assigns.current_user, target_operator.organisation_id) do
+    if Authorization.can_access_organisation?(
+         conn.assigns.current_user,
+         target_operator.organisation_id
+       ) do
       fun.(conn)
     else
       Administration.log("cross_tenant_access_denied",

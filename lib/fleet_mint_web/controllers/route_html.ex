@@ -28,10 +28,12 @@ defmodule FleetMintWeb.RouteHTML do
   def format_distance(d), do: "#{Decimal.to_string(d)} km"
 
   def format_duration(nil), do: "—"
+
   def format_duration(mins) when mins >= 60 do
     h = div(mins, 60)
     m = rem(mins, 60)
     if m == 0, do: "#{h}h", else: "#{h}h #{m}m"
   end
+
   def format_duration(mins), do: "#{mins}m"
 end

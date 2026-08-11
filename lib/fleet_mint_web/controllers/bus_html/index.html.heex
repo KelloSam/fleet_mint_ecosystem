@@ -10,7 +10,6 @@
   </.link>
 </div>
 
-<%# Status filter tabs %>
 <div class="mb-4 flex gap-2">
   <%= for {label, val} <- [{"All", ""}, {"Active", "active"}, {"Maintenance", "maintenance"}, {"Inactive", "inactive"}] do %>
     <.link
@@ -31,8 +30,18 @@
 <div class="bg-white rounded-lg shadow overflow-hidden">
   <%= if @buses == [] do %>
     <div class="text-center py-16 text-gray-500">
-      <svg class="mx-auto h-12 w-12 text-gray-300 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7h8M8 11h5m-9 8h14a2 2 0 002-2V7a2 2 0 00-2-2H6a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+      <svg
+        class="mx-auto h-12 w-12 text-gray-300 mb-4"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="1.5"
+          d="M8 7h8M8 11h5m-9 8h14a2 2 0 002-2V7a2 2 0 00-2-2H6a2 2 0 00-2 2v10a2 2 0 002 2z"
+        />
       </svg>
       <p class="font-medium">No buses found</p>
       <p class="text-sm mt-1">Add your first bus to get started.</p>
@@ -41,18 +50,32 @@
     <table class="min-w-full divide-y divide-gray-200">
       <thead class="bg-gray-50">
         <tr>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reg Number</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Model</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Year</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Capacity</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-          <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            Reg Number
+          </th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            Model
+          </th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            Year
+          </th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            Capacity
+          </th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            Status
+          </th>
+          <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+            Actions
+          </th>
         </tr>
       </thead>
       <tbody class="bg-white divide-y divide-gray-100">
         <%= for bus <- @buses do %>
           <tr class="hover:bg-gray-50 cursor-pointer" phx-click={JS.navigate(~p"/buses/#{bus}")}>
-            <td class="px-6 py-4 text-sm font-semibold text-gray-900"><%= bus.registration_number %></td>
+            <td class="px-6 py-4 text-sm font-semibold text-gray-900">
+              <%= bus.registration_number %>
+            </td>
             <td class="px-6 py-4 text-sm text-gray-700"><%= bus.model || "—" %></td>
             <td class="px-6 py-4 text-sm text-gray-700"><%= bus.year || "—" %></td>
             <td class="px-6 py-4 text-sm text-gray-700"><%= bus.capacity %> seats</td>
@@ -60,10 +83,18 @@
               <.status_badge status={bus.status} />
             </td>
             <td class="px-6 py-4 text-right text-sm">
-              <.link navigate={~p"/buses/#{bus}/edit"} class="text-blue-600 hover:text-blue-800 font-medium mr-4">
+              <.link
+                navigate={~p"/buses/#{bus}/edit"}
+                class="text-blue-600 hover:text-blue-800 font-medium mr-4"
+              >
                 Edit
               </.link>
-              <.link href={~p"/buses/#{bus}"} method="delete" data-confirm={"Remove bus #{bus.registration_number}?"} class="text-red-500 hover:text-red-700 font-medium">
+              <.link
+                href={~p"/buses/#{bus}"}
+                method="delete"
+                data-confirm={"Remove bus #{bus.registration_number}?"}
+                class="text-red-500 hover:text-red-700 font-medium"
+              >
                 Delete
               </.link>
             </td>

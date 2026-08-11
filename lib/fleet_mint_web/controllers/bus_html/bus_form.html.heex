@@ -10,12 +10,7 @@
       label="Registration Number"
       placeholder="e.g. ABX1234"
     />
-    <.input
-      field={f[:model]}
-      type="text"
-      label="Model"
-      placeholder="e.g. Toyota Coaster"
-    />
+    <.input field={f[:model]} type="text" label="Model" placeholder="e.g. Toyota Coaster" />
     <.input
       field={f[:year]}
       type="number"
@@ -31,12 +26,7 @@
       min="1"
       placeholder="e.g. 30"
     />
-    <.input
-      field={f[:status]}
-      type="select"
-      label="Status"
-      options={status_options()}
-    />
+    <.input field={f[:status]} type="select" label="Status" options={status_options()} />
   </div>
 
   <.input

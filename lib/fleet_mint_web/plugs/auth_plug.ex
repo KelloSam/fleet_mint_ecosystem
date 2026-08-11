@@ -12,7 +12,7 @@ defmodule FleetMintWeb.Plugs.AuthPlug do
       {:ok, user} ->
         # User is authenticated, add user to conn.assigns
         assign(conn, :current_user, user)
-      
+
       _error ->
         # User is not authenticated, redirect to login
         conn
@@ -45,4 +45,3 @@ defmodule FleetMintWeb.Plugs.AuthPlug do
     end
   end
 end
-

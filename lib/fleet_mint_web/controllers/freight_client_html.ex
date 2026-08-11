@@ -21,7 +21,8 @@ defmodule FleetMintWeb.FreightClientHTML do
     """
   end
 
-  def status_options, do: [{"Active", "active"}, {"Suspended", "suspended"}, {"Blacklisted", "blacklisted"}]
+  def status_options,
+    do: [{"Active", "active"}, {"Suspended", "suspended"}, {"Blacklisted", "blacklisted"}]
 
   def type_label(type) do
     Enum.find_value(FleetMint.Cargo.Client.type_options(), type, fn {label, value} ->

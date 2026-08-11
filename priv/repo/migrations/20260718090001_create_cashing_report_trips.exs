@@ -28,7 +28,8 @@ defmodule FleetMint.Repo.Migrations.CreateCashingReportTrips do
     create index(:cashing_report_trips, [:trip_id])
 
     create constraint(:cashing_report_trips, :cashing_report_trips_match_method_check,
-             check: "match_method IN ('automatic','manual')")
+             check: "match_method IN ('automatic','manual')"
+           )
 
     # Composite FK: an allocation's trip_id must point at a Trip whose
     # organisation_id equals the allocation's own — a plain trip_id FK

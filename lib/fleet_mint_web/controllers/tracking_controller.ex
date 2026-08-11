@@ -9,9 +9,13 @@ defmodule FleetMintWeb.TrackingController do
     case Boarding.track_by_booking_reference(String.upcase(String.trim(ref))) do
       {:ok, result} ->
         render(conn, :result, result: result, ref: ref)
+
       {:error, :not_found} ->
         conn
-        |> put_flash(:error, "No booking found with reference \"#{ref}\". Check the reference and try again.")
+        |> put_flash(
+          :error,
+          "No booking found with reference \"#{ref}\". Check the reference and try again."
+        )
         |> render(:index, ref: ref)
     end
   end

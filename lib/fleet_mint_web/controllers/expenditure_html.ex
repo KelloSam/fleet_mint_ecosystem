@@ -41,11 +41,11 @@ defmodule FleetMintWeb.ExpenditureHTML do
 
   # Custom components
   # ---------------------------------------------------------------------------
-  
+
   attr :title, :string, required: true
   slot :subtitle, doc: "the optional subtitle to display under the title"
   slot :inner_block, required: false
-  
+
   def expenditure_header(assigns) do
     ~H"""
     <.header title={@title}>
@@ -79,7 +79,10 @@ defmodule FleetMintWeb.ExpenditureHTML do
 
   def expenditure_back_button(assigns) do
     ~H"""
-    <.link navigate={@navigate} class="text-sm font-semibold leading-6 text-zinc-600 hover:text-zinc-700">
+    <.link
+      navigate={@navigate}
+      class="text-sm font-semibold leading-6 text-zinc-600 hover:text-zinc-700"
+    >
       <.icon name="hero-arrow-left-solid" class="h-3 w-3" />
       <%= render_slot(@inner_block) %>
     </.link>
@@ -88,11 +91,12 @@ defmodule FleetMintWeb.ExpenditureHTML do
 
   # Helper functions
   # ---------------------------------------------------------------------------
-  
+
   @doc """
   Formats the date for display.
   """
   def format_date(date) when is_nil(date), do: "N/A"
+
   def format_date(date) do
     date
     |> Calendar.strftime("%Y-%m-%d")
@@ -104,6 +108,7 @@ defmodule FleetMintWeb.ExpenditureHTML do
   Formats the amount for display.
   """
   def format_amount(amount) when is_nil(amount), do: "N/A"
+
   def format_amount(amount) do
     "$#{Decimal.to_string(amount)}"
   rescue

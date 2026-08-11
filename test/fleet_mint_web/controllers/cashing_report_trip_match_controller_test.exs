@@ -24,8 +24,12 @@ defmodule FleetMintWeb.CashingReportTripMatchControllerTest do
       # A bus in org_a whose vehicle has never been scheduled — guaranteed
       # unmappable by the automatic matcher, so it lands in the queue.
       unmatched_vehicle = vehicle_fixture()
-      unmatched_bus = bus_fixture(organisation_id: org_a.organisation_id, vehicle_id: unmatched_vehicle.id)
-      unmatched_report = cashing_report_fixture(%{bus_id: unmatched_bus.id, report_date: ~D[2026-08-01]})
+
+      unmatched_bus =
+        bus_fixture(organisation_id: org_a.organisation_id, vehicle_id: unmatched_vehicle.id)
+
+      unmatched_report =
+        cashing_report_fixture(%{bus_id: unmatched_bus.id, report_date: ~D[2026-08-01]})
 
       other_org_unmatched_bus = bus_fixture(organisation_id: org_b.organisation_id)
       other_org_unmatched_report = cashing_report_fixture(%{bus_id: other_org_unmatched_bus.id})
@@ -61,7 +65,9 @@ defmodule FleetMintWeb.CashingReportTripMatchControllerTest do
       cashier_a: cashier_a,
       unmatched_report: unmatched_report
     } do
-      conn = conn |> log_in_user(cashier_a) |> get(~p"/cashing_reports/#{unmatched_report}/trip_match")
+      conn =
+        conn |> log_in_user(cashier_a) |> get(~p"/cashing_reports/#{unmatched_report}/trip_match")
+
       assert redirected_to(conn) == ~p"/cashing_reports"
       assert Phoenix.Flash.get(conn.assigns.flash, :error) =~ "not authorised"
     end
@@ -83,12 +89,13 @@ defmodule FleetMintWeb.CashingReportTripMatchControllerTest do
       assert reloaded.trip_mapping_status == "unmappable"
     end
 
-    test "authorised: admin manually matches an unmappable report to a trip in their own organisation", %{
-      conn: conn,
-      admin_a: admin_a,
-      unmatched_report: unmatched_report,
-      trip_a: trip_a
-    } do
+    test "authorised: admin manually matches an unmappable report to a trip in their own organisation",
+         %{
+           conn: conn,
+           admin_a: admin_a,
+           unmatched_report: unmatched_report,
+           trip_a: trip_a
+         } do
       conn =
         conn
         |> log_in_user(admin_a)
@@ -106,12 +113,13 @@ defmodule FleetMintWeb.CashingReportTripMatchControllerTest do
       assert allocation.matched_by_id == admin_a.id
     end
 
-    test "prohibited: matching to a trip in a different organisation is rejected and writes nothing", %{
-      conn: conn,
-      admin_a: admin_a,
-      unmatched_report: unmatched_report,
-      trip_b: trip_b
-    } do
+    test "prohibited: matching to a trip in a different organisation is rejected and writes nothing",
+         %{
+           conn: conn,
+           admin_a: admin_a,
+           unmatched_report: unmatched_report,
+           trip_b: trip_b
+         } do
       conn =
         conn
         |> log_in_user(admin_a)
@@ -131,13 +139,19 @@ defmodule FleetMintWeb.CashingReportTripMatchControllerTest do
       other_org_unmatched_report: other_org_unmatched_report,
       trip_a: trip_a
     } do
-      view_conn = conn |> log_in_user(admin_a) |> get(~p"/cashing_reports/#{other_org_unmatched_report}/trip_match")
+      view_conn =
+        conn
+        |> log_in_user(admin_a)
+        |> get(~p"/cashing_reports/#{other_org_unmatched_report}/trip_match")
+
       assert redirected_to(view_conn) == ~p"/cashing_reports/unmatched"
 
       match_conn =
         conn
         |> log_in_user(admin_a)
-        |> post(~p"/cashing_reports/#{other_org_unmatched_report}/trip_match", %{"trip_id" => trip_a.id})
+        |> post(~p"/cashing_reports/#{other_org_unmatched_report}/trip_match", %{
+          "trip_id" => trip_a.id
+        })
 
       assert redirected_to(match_conn) == ~p"/cashing_reports/unmatched"
       assert FleetMint.Repo.all(FleetMint.Finance.CashingReportTrip) == []

@@ -5,11 +5,31 @@
 
   <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
     <div class="sm:col-span-2">
-      <.input field={f[:company_name]} type="text" label="Company Name" placeholder="e.g. Copperbelt Mining Ltd" />
+      <.input
+        field={f[:company_name]}
+        type="text"
+        label="Company Name"
+        placeholder="e.g. Copperbelt Mining Ltd"
+      />
     </div>
-    <.input field={f[:client_type]} type="select" label="Client Type" options={FleetMint.Cargo.Client.type_options()} />
-    <.input field={f[:status]} type="select" label="Status" options={FleetMintWeb.FreightClientHTML.status_options()} />
-    <.input field={f[:contact_person]} type="text" label="Contact Person" placeholder="e.g. Mwansa Banda" />
+    <.input
+      field={f[:client_type]}
+      type="select"
+      label="Client Type"
+      options={FleetMint.Cargo.Client.type_options()}
+    />
+    <.input
+      field={f[:status]}
+      type="select"
+      label="Status"
+      options={FleetMintWeb.FreightClientHTML.status_options()}
+    />
+    <.input
+      field={f[:contact_person]}
+      type="text"
+      label="Contact Person"
+      placeholder="e.g. Mwansa Banda"
+    />
     <.input field={f[:phone]} type="tel" label="Phone" placeholder="+260 97x xxx xxx" />
     <.input field={f[:email]} type="email" label="Email" placeholder="optional" />
     <.input field={f[:tpin]} type="text" label="TPIN" placeholder="Tax ID (optional)" />

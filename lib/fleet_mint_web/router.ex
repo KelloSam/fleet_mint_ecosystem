@@ -7,19 +7,20 @@ defmodule FleetMintWeb.Router do
     plug :fetch_live_flash
     plug :put_root_layout, html: {FleetMintWeb.Layouts, :root}
     plug :protect_from_forgery
+
     plug :put_secure_browser_headers, %{
       "content-security-policy" =>
         "default-src 'self'; " <>
-        "script-src 'self' 'unsafe-inline'; " <>
-        "style-src 'self' 'unsafe-inline'; " <>
-        "img-src 'self' data: blob:; " <>
-        "connect-src 'self' ws: wss:; " <>
-        "frame-ancestors 'self'; " <>
-        "base-uri 'self'; " <>
-        "form-action 'self';"
+          "script-src 'self' 'unsafe-inline'; " <>
+          "style-src 'self' 'unsafe-inline'; " <>
+          "img-src 'self' data: blob:; " <>
+          "connect-src 'self' ws: wss:; " <>
+          "frame-ancestors 'self'; " <>
+          "base-uri 'self'; " <>
+          "form-action 'self';"
     }
   end
-  
+
   pipeline :auth do
     plug FleetMintWeb.Plugs.AuthPlug
     plug FleetMintWeb.Plugs.TenantScopePlug
@@ -68,34 +69,34 @@ defmodule FleetMintWeb.Router do
     get "/register", AuthController, :register
     post "/register", AuthController, :create
     delete "/logout", AuthController, :logout
-    get  "/login/verify", TwoFactorController, :verify
+    get "/login/verify", TwoFactorController, :verify
     post "/login/verify", TwoFactorController, :confirm
 
     # Password reset (public)
-    get  "/password-reset",        PasswordResetController, :new
-    post "/password-reset",        PasswordResetController, :create
-    get  "/password-reset/:token", PasswordResetController, :edit
-    put  "/password-reset/:token", PasswordResetController, :update
+    get "/password-reset", PasswordResetController, :new
+    post "/password-reset", PasswordResetController, :create
+    get "/password-reset/:token", PasswordResetController, :edit
+    put "/password-reset/:token", PasswordResetController, :update
 
     # Home page accessible without login
     get "/", PageController, :home
 
     # Public client booking portal
-    get  "/book",                          PublicBookingController, :index
-    get  "/book/ticket/:reference",        PublicBookingController, :ticket
-    get  "/book/:slug",                    PublicBookingController, :show
-    get  "/book/:slug/:schedule_id",       PublicBookingController, :book
-    post "/book/:slug/:schedule_id",       PublicBookingController, :create
+    get "/book", PublicBookingController, :index
+    get "/book/ticket/:reference", PublicBookingController, :ticket
+    get "/book/:slug", PublicBookingController, :show
+    get "/book/:slug/:schedule_id", PublicBookingController, :book
+    post "/book/:slug/:schedule_id", PublicBookingController, :create
 
     # Public bus / parcel tracking
-    get  "/track",                         TrackingController, :index
+    get "/track", TrackingController, :index
 
     # Public passenger feedback (complaint + suggestion box)
-    get  "/feedback/new",                  ComplaintController, :new
-    post "/feedback",                      ComplaintController, :create
-    get  "/feedback/thank_you",            ComplaintController, :thank_you
+    get "/feedback/new", ComplaintController, :new
+    post "/feedback", ComplaintController, :create
+    get "/feedback/thank_you", ComplaintController, :thank_you
   end
-  
+
   # Manager and admin — fleet management, freight, financial reports
   #
   # Declared BEFORE the "all authenticated users" scope below on purpose:
@@ -125,18 +126,20 @@ defmodule FleetMintWeb.Router do
     scope "/freight" do
       resources "/clients", FreightClientController
       resources "/orders", FreightOrderController
+
       resources "/trips", FreightTripController do
         post "/milestones", FreightTripController, :add_milestone
         patch "/status", FreightTripController, :update_status
       end
+
       resources "/invoices", FreightInvoiceController
     end
 
     # PDF and financial reports
-    get "/admin/reports",    PdfReportController, :index
-    get "/pdf/daily",        PdfReportController, :daily
-    get "/pdf/weekly/:id",   PdfReportController, :weekly
-    get "/pdf/receipt/:id",  PdfReportController, :receipt
+    get "/admin/reports", PdfReportController, :index
+    get "/pdf/daily", PdfReportController, :daily
+    get "/pdf/weekly/:id", PdfReportController, :weekly
+    get "/pdf/receipt/:id", PdfReportController, :receipt
     get "/pdf/expenditures", PdfReportController, :expenditures
   end
 
@@ -150,10 +153,10 @@ defmodule FleetMintWeb.Router do
     # Declared before the resources macro below so "unmatched" isn't
     # swallowed by the :id-shaped show route (same ordering concern noted
     # at the top of this file for :new).
-    get  "/cashing_reports/unmatched",        CashingReportController, :unmatched
+    get "/cashing_reports/unmatched", CashingReportController, :unmatched
     resources "/cashing_reports", CashingReportController
-    get  "/cashing_reports/:id/trip_match",   CashingReportController, :edit_trip_match
-    post "/cashing_reports/:id/trip_match",   CashingReportController, :match_trip
+    get "/cashing_reports/:id/trip_match", CashingReportController, :edit_trip_match
+    post "/cashing_reports/:id/trip_match", CashingReportController, :match_trip
     resources "/expenditures", ExpenditureController
     resources "/bookings", BookingController
     resources "/operation_logs", OperationLogController
@@ -184,8 +187,8 @@ defmodule FleetMintWeb.Router do
     get "/api/seats", ApiController, :available_seats
 
     # 2FA settings
-    get    "/settings/2fa",         TwoFactorController, :setup
-    post   "/settings/2fa/enable",  TwoFactorController, :enable
+    get "/settings/2fa", TwoFactorController, :setup
+    post "/settings/2fa/enable", TwoFactorController, :enable
     delete "/settings/2fa/disable", TwoFactorController, :disable
   end
 
@@ -202,7 +205,7 @@ defmodule FleetMintWeb.Router do
     pipe_through [:browser, :auth, :require_admin]
 
     resources "/users", UserController, except: [:delete]
-    post "/users/:id/activate",   UserController, :activate
+    post "/users/:id/activate", UserController, :activate
     post "/users/:id/deactivate", UserController, :deactivate
   end
 

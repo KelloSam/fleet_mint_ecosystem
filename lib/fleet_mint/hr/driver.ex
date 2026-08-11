@@ -21,7 +21,18 @@ defmodule FleetMint.HR.Driver do
 
   def changeset(driver, attrs) do
     driver
-    |> cast(attrs, [:name, :phone, :license_number, :license_expiry, :daily_rate, :date_hired, :status, :notes, :user_id, :organisation_id])
+    |> cast(attrs, [
+      :name,
+      :phone,
+      :license_number,
+      :license_expiry,
+      :daily_rate,
+      :date_hired,
+      :status,
+      :notes,
+      :user_id,
+      :organisation_id
+    ])
     |> validate_required([:name])
     |> validate_inclusion(:status, status_options() |> Keyword.values())
     |> unique_constraint(:license_number)
@@ -33,5 +44,7 @@ defmodule FleetMint.HR.Driver do
   end
 
   def license_expired?(%__MODULE__{license_expiry: nil}), do: false
-  def license_expired?(%__MODULE__{license_expiry: expiry}), do: Date.compare(expiry, Date.utc_today()) == :lt
+
+  def license_expired?(%__MODULE__{license_expiry: expiry}),
+    do: Date.compare(expiry, Date.utc_today()) == :lt
 end

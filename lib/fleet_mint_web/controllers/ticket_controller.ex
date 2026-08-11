@@ -4,7 +4,12 @@ defmodule FleetMintWeb.TicketController do
   alias FleetMint.Transport.Boarding
 
   def index(conn, params) do
-    bookings = Ticketing.list_bookings(status: params["status"], travel_date: params["date"] && Date.from_iso8601!(params["date"]))
+    bookings =
+      Ticketing.list_bookings(
+        status: params["status"],
+        travel_date: params["date"] && Date.from_iso8601!(params["date"])
+      )
+
     render(conn, :index, bookings: bookings)
   end
 
@@ -16,22 +21,30 @@ defmodule FleetMintWeb.TicketController do
   def validate(conn, %{"id" => id}) do
     booking = Ticketing.get_booking!(id)
     ticket = booking.ticket
+
     if ticket do
       case Boarding.validate_ticket(ticket.ticket_number, :static) do
         {:ok, _ticket} ->
-          conn |> put_flash(:info, "Ticket validated — passenger boarded.") |> redirect(to: ~p"/tickets/#{booking}")
+          conn
+          |> put_flash(:info, "Ticket validated — passenger boarded.")
+          |> redirect(to: ~p"/tickets/#{booking}")
+
         {:error, reason} ->
-          msg = case reason do
-            :already_boarded -> "Ticket already used — duplicate boarding attempt."
-            :expired -> "Ticket has expired."
-            :cancelled -> "Ticket was cancelled."
-            :booking_cancelled -> "Booking was cancelled — ticket is not valid for boarding."
-            :not_found -> "Ticket not found."
-          end
+          msg =
+            case reason do
+              :already_boarded -> "Ticket already used — duplicate boarding attempt."
+              :expired -> "Ticket has expired."
+              :cancelled -> "Ticket was cancelled."
+              :booking_cancelled -> "Booking was cancelled — ticket is not valid for boarding."
+              :not_found -> "Ticket not found."
+            end
+
           conn |> put_flash(:error, msg) |> redirect(to: ~p"/tickets/#{booking}")
       end
     else
-      conn |> put_flash(:error, "No ticket found for this booking.") |> redirect(to: ~p"/bookings")
+      conn
+      |> put_flash(:error, "No ticket found for this booking.")
+      |> redirect(to: ~p"/bookings")
     end
   end
 end

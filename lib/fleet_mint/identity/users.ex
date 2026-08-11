@@ -252,9 +252,11 @@ defmodule FleetMint.Identity.Users do
 
   """
   def list_users_by_role(role) when is_binary(role) do
-    query = from u in User,
-            where: u.role == ^role,
-            order_by: [asc: u.username]
+    query =
+      from u in User,
+        where: u.role == ^role,
+        order_by: [asc: u.username]
+
     Repo.all(query)
   end
 
@@ -262,19 +264,24 @@ defmodule FleetMint.Identity.Users do
 
   def list_on_duty_staff do
     today_start = NaiveDateTime.new!(Date.utc_today(), ~T[00:00:00])
+
     from(u in User,
-      where: u.role in ^@staff_roles
-        and u.active == true
-        and not is_nil(u.last_login)
-        and u.last_login >= ^today_start,
+      where:
+        u.role in ^@staff_roles and
+          u.active == true and
+          not is_nil(u.last_login) and
+          u.last_login >= ^today_start,
       order_by: [asc: u.role, asc: u.full_name]
-    ) |> Repo.all()
+    )
+    |> Repo.all()
   end
 
   def list_staff_with_phone do
-    query = from u in User,
-            where: u.role in ^@staff_roles and not is_nil(u.phone),
-            order_by: [asc: u.role, asc: u.full_name]
+    query =
+      from u in User,
+        where: u.role in ^@staff_roles and not is_nil(u.phone),
+        order_by: [asc: u.role, asc: u.full_name]
+
     Repo.all(query)
   end
 
@@ -288,9 +295,11 @@ defmodule FleetMint.Identity.Users do
 
   """
   def list_active_users do
-    query = from u in User,
-            where: u.active == true,
-            order_by: [asc: u.username]
+    query =
+      from u in User,
+        where: u.active == true,
+        order_by: [asc: u.username]
+
     Repo.all(query)
   end
 
@@ -304,9 +313,11 @@ defmodule FleetMint.Identity.Users do
 
   """
   def list_inactive_users do
-    query = from u in User,
-            where: u.active == false,
-            order_by: [asc: u.username]
+    query =
+      from u in User,
+        where: u.active == false,
+        order_by: [asc: u.username]
+
     Repo.all(query)
   end
 
@@ -322,9 +333,11 @@ defmodule FleetMint.Identity.Users do
   def list_recently_active_users(days) when is_integer(days) and days > 0 do
     cutoff_date = NaiveDateTime.add(NaiveDateTime.utc_now(), -days * 24 * 60 * 60, :second)
 
-    query = from u in User,
-            where: u.last_login >= ^cutoff_date,
-            order_by: [desc: u.last_login]
+    query =
+      from u in User,
+        where: u.last_login >= ^cutoff_date,
+        order_by: [desc: u.last_login]
+
     Repo.all(query)
   end
 
@@ -340,9 +353,11 @@ defmodule FleetMint.Identity.Users do
   def list_inactive_login_users(days) when is_integer(days) and days > 0 do
     cutoff_date = NaiveDateTime.add(NaiveDateTime.utc_now(), -days * 24 * 60 * 60, :second)
 
-    query = from u in User,
-            where: u.last_login < ^cutoff_date or is_nil(u.last_login),
-            order_by: [asc: u.username]
+    query =
+      from u in User,
+        where: u.last_login < ^cutoff_date or is_nil(u.last_login),
+        order_by: [asc: u.username]
+
     Repo.all(query)
   end
 
@@ -360,6 +375,7 @@ defmodule FleetMint.Identity.Users do
 
   defp maybe_filter_user_organisation(query, nil), do: query
   defp maybe_filter_user_organisation(query, :all), do: query
+
   defp maybe_filter_user_organisation(query, organisation_id) do
     where(query, [u], u.organisation_id == ^organisation_id)
   end

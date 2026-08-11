@@ -90,8 +90,19 @@ defmodule FleetMint.Transport.BoardingTest do
       operator = operator_fixture()
       schedule = schedule_fixture(operator_id: operator.id)
 
-      {:ok, cp1} = Boarding.post_checkpoint(%{"schedule_id" => schedule.id, "travel_date" => "2026-08-01", "location" => "Kabwe"})
-      {:ok, cp2} = Boarding.post_checkpoint(%{"schedule_id" => schedule.id, "travel_date" => "2026-08-01", "location" => "Kapiri"})
+      {:ok, cp1} =
+        Boarding.post_checkpoint(%{
+          "schedule_id" => schedule.id,
+          "travel_date" => "2026-08-01",
+          "location" => "Kabwe"
+        })
+
+      {:ok, cp2} =
+        Boarding.post_checkpoint(%{
+          "schedule_id" => schedule.id,
+          "travel_date" => "2026-08-01",
+          "location" => "Kapiri"
+        })
 
       assert cp1.trip_id == cp2.trip_id
     end
@@ -101,7 +112,11 @@ defmodule FleetMint.Transport.BoardingTest do
       schedule = schedule_fixture(operator_id: operator.id)
 
       assert {:error, changeset} =
-               Boarding.post_checkpoint(%{"schedule_id" => schedule.id, "travel_date" => "not-a-date", "location" => "Kabwe"})
+               Boarding.post_checkpoint(%{
+                 "schedule_id" => schedule.id,
+                 "travel_date" => "not-a-date",
+                 "location" => "Kabwe"
+               })
 
       assert "must be a valid date for an existing schedule" in errors_on(changeset).travel_date
     end

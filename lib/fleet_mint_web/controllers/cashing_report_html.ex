@@ -10,6 +10,7 @@ defmodule FleetMintWeb.CashingReportHTML do
   attr :changeset, Ecto.Changeset, required: true
   attr :action, :string, required: true
   attr :buses, :list, default: []
+
   def cashing_report_form(assigns) do
     ~H"""
     <.simple_form :let={f} for={@changeset} action={@action}>
@@ -17,9 +18,13 @@ defmodule FleetMintWeb.CashingReportHTML do
         Oops, something went wrong! Please check the errors below.
       </.error>
       <.input field={f[:report_date]} type="date" label="Report date" />
-      <.input field={f[:bus_id]} type="select" label="Bus"
+      <.input
+        field={f[:bus_id]}
+        type="select"
+        label="Bus"
         options={Enum.map(@buses, &{&1.registration_number, &1.id})}
-        prompt="Select bus" />
+        prompt="Select bus"
+      />
       <.input field={f[:days_worked]} type="number" label="Days worked" />
       <.input field={f[:expected_cashing]} type="number" label="Expected cashing" step="any" />
       <.input field={f[:received_cashing]} type="number" label="Received cashing" step="any" />
@@ -40,7 +45,9 @@ defmodule FleetMintWeb.CashingReportHTML do
   attr :title, :string, required: true
   attr :class, :string, default: nil
   slot :subtitle, required: false
-  slot :actions, required: false  # Add this line
+  # Add this line
+  slot :actions, required: false
+
   def header(assigns) do
     ~H"""
     <header class={[@class]}>
@@ -60,10 +67,14 @@ defmodule FleetMintWeb.CashingReportHTML do
   """
   attr :navigate, :string, required: true
   slot :inner_block, required: false
+
   def back(assigns) do
     ~H"""
     <div class="mt-16">
-      <.link navigate={@navigate} class="text-sm font-semibold leading-6 text-zinc-900 hover:text-zinc-700">
+      <.link
+        navigate={@navigate}
+        class="text-sm font-semibold leading-6 text-zinc-900 hover:text-zinc-700"
+      >
         <%= render_slot(@inner_block) || "Back to cashing reports" %>
       </.link>
     </div>
@@ -73,7 +84,9 @@ defmodule FleetMintWeb.CashingReportHTML do
   @doc """
   Tailwind classes for a cashing_report's `trip_mapping_status` badge.
   """
-  def mapping_status_badge("automatically_matched"), do: "text-green-700 bg-green-50 border-green-200"
+  def mapping_status_badge("automatically_matched"),
+    do: "text-green-700 bg-green-50 border-green-200"
+
   def mapping_status_badge("manually_matched"), do: "text-green-700 bg-green-50 border-green-200"
   def mapping_status_badge("ambiguous"), do: "text-amber-700 bg-amber-50 border-amber-200"
   def mapping_status_badge("unmappable"), do: "text-red-700 bg-red-50 border-red-200"
@@ -84,6 +97,7 @@ defmodule FleetMintWeb.CashingReportHTML do
   """
   attr :items, :list, required: true
   slot :item, required: true
+
   def item_list(assigns) do
     ~H"""
     <div class="mt-14">

@@ -43,7 +43,8 @@ defmodule FleetMint.Repo.Migrations.CreateTrips do
     create index(:trips, [:driver_id])
 
     create constraint(:trips, :trips_status_check,
-             check: "status IN ('planned','dispatched','active','completed','cancelled')")
+             check: "status IN ('planned','dispatched','active','completed','cancelled')"
+           )
   end
 
   def down do

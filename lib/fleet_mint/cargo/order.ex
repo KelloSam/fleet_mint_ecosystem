@@ -32,11 +32,25 @@ defmodule FleetMint.Cargo.Order do
 
   def changeset(order, attrs) do
     order
-    |> cast(attrs, [:cargo_type, :cargo_description, :weight_tons, :volume_cbm,
-                    :origin, :destination, :pickup_date, :delivery_deadline,
-                    :declared_value, :agreed_rate, :status, :special_instructions,
-                    :requires_refrigeration, :hazmat_class,
-                    :client_id, :assigned_trip_id, :created_by_id])
+    |> cast(attrs, [
+      :cargo_type,
+      :cargo_description,
+      :weight_tons,
+      :volume_cbm,
+      :origin,
+      :destination,
+      :pickup_date,
+      :delivery_deadline,
+      :declared_value,
+      :agreed_rate,
+      :status,
+      :special_instructions,
+      :requires_refrigeration,
+      :hazmat_class,
+      :client_id,
+      :assigned_trip_id,
+      :created_by_id
+    ])
     |> validate_required([:cargo_type, :origin, :destination, :client_id])
     |> validate_inclusion(:cargo_type, @cargo_types)
     |> validate_inclusion(:status, @statuses)
@@ -48,11 +62,19 @@ defmodule FleetMint.Cargo.Order do
 
   def cargo_type_options do
     [
-      {"Copper Ore", "copper_ore"}, {"Coal", "coal"}, {"Cobalt Ore", "cobalt_ore"},
-      {"Agricultural Produce", "agricultural_produce"}, {"Maize", "maize"},
-      {"Fertilizer", "fertilizer"}, {"Cement", "cement"}, {"Fuel", "fuel"},
-      {"General Cargo", "general_cargo"}, {"Hazardous Material", "hazardous"},
-      {"Refrigerated Goods", "refrigerated"}, {"Timber", "timber"}, {"Steel / Metal", "steel"}
+      {"Copper Ore", "copper_ore"},
+      {"Coal", "coal"},
+      {"Cobalt Ore", "cobalt_ore"},
+      {"Agricultural Produce", "agricultural_produce"},
+      {"Maize", "maize"},
+      {"Fertilizer", "fertilizer"},
+      {"Cement", "cement"},
+      {"Fuel", "fuel"},
+      {"General Cargo", "general_cargo"},
+      {"Hazardous Material", "hazardous"},
+      {"Refrigerated Goods", "refrigerated"},
+      {"Timber", "timber"},
+      {"Steel / Metal", "steel"}
     ]
   end
 
@@ -60,5 +82,6 @@ defmodule FleetMint.Cargo.Order do
     suffix = :crypto.strong_rand_bytes(4) |> Base.encode16()
     put_change(changeset, :order_reference, "ORD-#{suffix}")
   end
+
   defp generate_reference(changeset), do: changeset
 end

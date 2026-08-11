@@ -28,37 +28,45 @@ defmodule FleetMint.Reporting.PdfGenerator do
   ]
 
   def daily_report(date, reports) do
-    html = render("daily_report.html.eex",
-      date: date,
-      reports: reports,
-      generated_at: DateTime.utc_now() |> DateTime.to_naive()
-    )
+    html =
+      render("daily_report.html.eex",
+        date: date,
+        reports: reports,
+        generated_at: DateTime.utc_now() |> DateTime.to_naive()
+      )
+
     to_pdf(html, @pdf_opts)
   end
 
   def weekly_report(report) do
-    html = render("weekly_report.html.eex",
-      report: report,
-      generated_at: DateTime.utc_now() |> DateTime.to_naive()
-    )
+    html =
+      render("weekly_report.html.eex",
+        report: report,
+        generated_at: DateTime.utc_now() |> DateTime.to_naive()
+      )
+
     to_pdf(html, @pdf_opts)
   end
 
   def cashing_receipt(cr) do
-    html = render("cashing_receipt.html.eex",
-      cr: cr,
-      generated_at: DateTime.utc_now() |> DateTime.to_naive()
-    )
+    html =
+      render("cashing_receipt.html.eex",
+        cr: cr,
+        generated_at: DateTime.utc_now() |> DateTime.to_naive()
+      )
+
     to_pdf(html, @a5_opts)
   end
 
   def expenditure_report(start_date, end_date, data) do
-    html = render("expenditure_report.html.eex",
-      start_date: start_date,
-      end_date: end_date,
-      data: data,
-      generated_at: DateTime.utc_now() |> DateTime.to_naive()
-    )
+    html =
+      render("expenditure_report.html.eex",
+        start_date: start_date,
+        end_date: end_date,
+        data: data,
+        generated_at: DateTime.utc_now() |> DateTime.to_naive()
+      )
+
     to_pdf(html, @pdf_opts)
   end
 

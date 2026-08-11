@@ -1,6 +1,9 @@
 <.header title="Listing Cashing reports">
   <:actions>
-    <.link href={~p"/cashing_reports/unmatched"} class="text-sm font-medium text-gray-600 hover:text-gray-900 mr-3">
+    <.link
+      href={~p"/cashing_reports/unmatched"}
+      class="text-sm font-medium text-gray-600 hover:text-gray-900 mr-3"
+    >
       Trip matching queue
     </.link>
     <.link href={~p"/cashing_reports/new"}>
@@ -9,10 +12,18 @@
   </:actions>
 </.header>
 
-<.table id="cashing_reports" rows={@cashing_reports} row_click={&JS.navigate(~p"/cashing_reports/#{&1}")}>
+<.table
+  id="cashing_reports"
+  rows={@cashing_reports}
+  row_click={&JS.navigate(~p"/cashing_reports/#{&1}")}
+>
   <:col :let={cashing_report} label="Days worked"><%= cashing_report.days_worked %></:col>
-  <:col :let={cashing_report} label="Expected cashing"><%= cashing_report.expected_cashing %></:col>
-  <:col :let={cashing_report} label="Received cashing"><%= cashing_report.received_cashing %></:col>
+  <:col :let={cashing_report} label="Expected cashing">
+    <%= cashing_report.expected_cashing %>
+  </:col>
+  <:col :let={cashing_report} label="Received cashing">
+    <%= cashing_report.received_cashing %>
+  </:col>
   <:col :let={cashing_report} label="Airtel"><%= cashing_report.airtel_id %></:col>
   <:col :let={cashing_report} label="Debt balance"><%= cashing_report.debt_balance %></:col>
   <:col :let={cashing_report} label="Expenditure"><%= cashing_report.expenditure %></:col>
@@ -27,7 +38,11 @@
   </:action>
   <:action :let={cashing_report}>
     <%= if @current_user.role in ["platform_admin", "tenant_admin", "manager"] do %>
-      <.link href={~p"/cashing_reports/#{cashing_report}"} method="delete" data-confirm="Are you sure?">
+      <.link
+        href={~p"/cashing_reports/#{cashing_report}"}
+        method="delete"
+        data-confirm="Are you sure?"
+      >
         Delete
       </.link>
     <% end %>

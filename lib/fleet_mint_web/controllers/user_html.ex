@@ -8,12 +8,16 @@ defmodule FleetMintWeb.UserHTML do
   that still holds if this form is bypassed entirely.
   """
   def role_options(%{role: "platform_admin"}) do
-    [{"Platform Administrator", "platform_admin"}, {"Tenant Administrator", "tenant_admin"} | tenant_role_options()]
+    [
+      {"Platform Administrator", "platform_admin"},
+      {"Tenant Administrator", "tenant_admin"} | tenant_role_options()
+    ]
   end
 
   def role_options(_tenant_admin) do
     [{"Tenant Administrator", "tenant_admin"} | tenant_role_options()]
   end
 
-  defp tenant_role_options, do: [{"Manager", "manager"}, {"Cashier", "cashier"}, {"Operator", "operator"}]
+  defp tenant_role_options,
+    do: [{"Manager", "manager"}, {"Cashier", "cashier"}, {"Operator", "operator"}]
 end

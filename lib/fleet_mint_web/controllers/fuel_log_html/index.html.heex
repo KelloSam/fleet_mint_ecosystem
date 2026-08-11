@@ -1,7 +1,9 @@
 <.header>
   Fuel Logs
   <:actions>
-    <.link href={~p"/fuel_logs/new"}><.button>Add Fuel Log</.button></.link>
+    <.link href={~p"/fuel_logs/new"}>
+      <.button>Add Fuel Log</.button>
+    </.link>
   </:actions>
 </.header>
 
@@ -12,7 +14,11 @@
   <:col :let={f} label="Litres"><%= f.liters %> L</:col>
   <:col :let={f} label="Total Cost">ZMW <%= f.total_cost %></:col>
   <:col :let={f} label="Station"><%= f.fuel_station %></:col>
-  <:col :let={f} label="Driver"><%= f.driver && (f.driver.full_name || f.driver.username) %></:col>
+  <:col :let={f} label="Driver">
+    <%= f.driver && (f.driver.full_name || f.driver.username) %>
+  </:col>
   <:action :let={f}><.link navigate={~p"/fuel_logs/#{f}/edit"}>Edit</.link></:action>
-  <:action :let={f}><.link href={~p"/fuel_logs/#{f}"} method="delete" data-confirm="Delete?">Delete</.link></:action>
+  <:action :let={f}>
+    <.link href={~p"/fuel_logs/#{f}"} method="delete" data-confirm="Delete?">Delete</.link>
+  </:action>
 </.table>

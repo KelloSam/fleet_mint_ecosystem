@@ -37,7 +37,9 @@ defmodule FleetMintWeb.FreightTripHTML do
   def next_statuses("in_transit"), do: ["delivered"]
   def next_statuses(_), do: []
 
-  def vehicle_options(vehicles), do: Enum.map(vehicles, &{"#{&1.registration_number} (#{&1.make} #{&1.model})", &1.id})
+  def vehicle_options(vehicles),
+    do: Enum.map(vehicles, &{"#{&1.registration_number} (#{&1.make} #{&1.model})", &1.id})
+
   def driver_options(drivers), do: Enum.map(drivers, &{&1.name, &1.id})
 
   def format_money(nil), do: "—"

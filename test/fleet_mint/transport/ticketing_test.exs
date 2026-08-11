@@ -125,7 +125,12 @@ defmodule FleetMint.Transport.TicketingTest do
       assert refund.reverses_entry_id == revenue.id
       assert Decimal.equal?(refund.amount, revenue.amount)
 
-      net = Decimal.sub(Accounting.total_for("revenue", source_type: "Booking"), Accounting.total_for("refund", source_type: "Booking"))
+      net =
+        Decimal.sub(
+          Accounting.total_for("revenue", source_type: "Booking"),
+          Accounting.total_for("refund", source_type: "Booking")
+        )
+
       assert Decimal.equal?(net, Decimal.new(0))
     end
 
@@ -142,7 +147,9 @@ defmodule FleetMint.Transport.TicketingTest do
       booking = booking_fixture()
       assert {:ok, cancelled} = Ticketing.cancel_booking(booking)
 
-      ticket = FleetMint.Repo.get_by!(FleetMint.Transport.Ticketing.Ticket, booking_id: cancelled.id)
+      ticket =
+        FleetMint.Repo.get_by!(FleetMint.Transport.Ticketing.Ticket, booking_id: cancelled.id)
+
       assert ticket.status == "cancelled"
     end
 

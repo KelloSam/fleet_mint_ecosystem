@@ -1,7 +1,9 @@
 <.header>
   Drivers
   <:actions>
-    <.link href={~p"/drivers/new"}><.button>Add Driver</.button></.link>
+    <.link href={~p"/drivers/new"}>
+      <.button>Add Driver</.button>
+    </.link>
   </:actions>
 </.header>
 
@@ -11,7 +13,9 @@
   <:col :let={d} label="License No."><%= d.license_number %></:col>
   <:col :let={d} label="License Expiry">
     <%= if d.license_expiry do %>
-      <span class={if FleetMint.HR.Driver.license_expired?(d), do: "text-red-600 font-semibold", else: ""}>
+      <span class={
+        if FleetMint.HR.Driver.license_expired?(d), do: "text-red-600 font-semibold", else: ""
+      }>
         <%= d.license_expiry %>
         <%= if FleetMint.HR.Driver.license_expired?(d), do: " ⚠ EXPIRED" %>
       </span>
@@ -21,15 +25,19 @@
   </:col>
   <:col :let={d} label="Daily Rate">ZMW <%= d.daily_rate %></:col>
   <:col :let={d} label="Status">
-    <span class={["px-2 py-0.5 rounded-full text-xs font-semibold",
+    <span class={[
+      "px-2 py-0.5 rounded-full text-xs font-semibold",
       case d.status do
-        "active"    -> "bg-green-100 text-green-700"
+        "active" -> "bg-green-100 text-green-700"
         "suspended" -> "bg-red-100 text-red-700"
-        _           -> "bg-gray-100 text-gray-500"
-      end]}>
+        _ -> "bg-gray-100 text-gray-500"
+      end
+    ]}>
       <%= String.capitalize(d.status) %>
     </span>
   </:col>
   <:action :let={d}><.link navigate={~p"/drivers/#{d}/edit"}>Edit</.link></:action>
-  <:action :let={d}><.link href={~p"/drivers/#{d}"} method="delete" data-confirm="Remove driver?">Delete</.link></:action>
+  <:action :let={d}>
+    <.link href={~p"/drivers/#{d}"} method="delete" data-confirm="Remove driver?">Delete</.link>
+  </:action>
 </.table>
