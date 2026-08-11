@@ -16,6 +16,15 @@ defmodule FleetMint.Administration.Complaint do
 
     belongs_to :reviewed_by, FleetMint.Identity.User
 
+    # Derived server-side in Administration.create_complaint/1 by
+    # resolving booking_reference to a real booking, never accepted as a
+    # caller-supplied attr - the submission form is public/unauthenticated,
+    # so letting the client set this directly would let a submitter point
+    # a complaint at any organisation. nil means no resolvable booking
+    # (no reference given, or it didn't match a real one) and is
+    # correctly platform-only visible, not guessed into a tenant.
+    belongs_to :organisation, FleetMint.Identity.Organisation
+
     timestamps()
   end
 

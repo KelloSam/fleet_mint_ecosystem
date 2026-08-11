@@ -1,6 +1,7 @@
 defmodule FleetMintWeb.ComplaintController do
   use FleetMintWeb, :controller
   alias FleetMint.Administration
+  alias FleetMint.Identity.Authorization
 
   # Public: show submission form
   def new(conn, params) do
@@ -40,7 +41,8 @@ defmodule FleetMintWeb.ComplaintController do
     complaints =
       Administration.list_complaints(
         type: params["type"],
-        status: params["status"]
+        status: params["status"],
+        organisation_id: conn.assigns.organisation_scope
       )
 
     pending_count = Administration.count_pending_complaints()
@@ -56,31 +58,52 @@ defmodule FleetMintWeb.ComplaintController do
   # Staff: view single complaint
   def show(conn, %{"id" => id}) do
     complaint = Administration.get_complaint!(id)
-    render(conn, :show, complaint: complaint)
+
+    with_organisation_access(conn, complaint.organisation_id, fn conn ->
+      render(conn, :show, complaint: complaint)
+    end)
   end
 
   # Staff: resolve or update status
   def update(conn, %{"id" => id, "complaint" => params}) do
     complaint = Administration.get_complaint!(id)
-    update_params = Map.merge(params, %{"reviewed_by_id" => conn.assigns.current_user.id})
 
-    case Administration.update_complaint(complaint, update_params) do
-      {:ok, complaint} ->
-        conn
-        |> put_flash(:info, "Updated successfully.")
-        |> redirect(to: ~p"/complaints/#{complaint}")
+    with_organisation_access(conn, complaint.organisation_id, fn conn ->
+      update_params = Map.merge(params, %{"reviewed_by_id" => conn.assigns.current_user.id})
 
-      {:error, changeset} ->
-        render(conn, :show, complaint: complaint, changeset: changeset)
-    end
+      case Administration.update_complaint(complaint, update_params) do
+        {:ok, complaint} ->
+          conn
+          |> put_flash(:info, "Updated successfully.")
+          |> redirect(to: ~p"/complaints/#{complaint}")
+
+        {:error, changeset} ->
+          render(conn, :show, complaint: complaint, changeset: changeset)
+      end
+    end)
   end
 
   def delete(conn, %{"id" => id}) do
     complaint = Administration.get_complaint!(id)
-    {:ok, _} = Administration.delete_complaint(complaint)
 
-    conn
-    |> put_flash(:info, "Record deleted.")
-    |> redirect(to: ~p"/complaints")
+    with_organisation_access(conn, complaint.organisation_id, fn conn ->
+      {:ok, _} = Administration.delete_complaint(complaint)
+
+      conn
+      |> put_flash(:info, "Record deleted.")
+      |> redirect(to: ~p"/complaints")
+    end)
+  end
+
+  # ── Tenant scoping helpers ──────────────────────────────────────────────
+
+  defp with_organisation_access(conn, organisation_id, fun) do
+    if Authorization.can_access_organisation?(conn.assigns.current_user, organisation_id) do
+      fun.(conn)
+    else
+      conn
+      |> put_flash(:error, "That record belongs to a different organisation.")
+      |> redirect(to: ~p"/complaints")
+    end
   end
 end
