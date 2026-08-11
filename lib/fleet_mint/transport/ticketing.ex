@@ -115,9 +115,10 @@ defmodule FleetMint.Transport.Ticketing do
     end
   end
 
-  def list_bookings_since(%NaiveDateTime{} = since) do
+  def list_bookings_since(%NaiveDateTime{} = since, organisation_id \\ :all) do
     Booking
     |> where([b], b.inserted_at > ^since)
+    |> maybe_filter_organisation(organisation_id)
     |> order_by([b], desc: b.inserted_at)
     |> preload([:schedule])
     |> Repo.all()

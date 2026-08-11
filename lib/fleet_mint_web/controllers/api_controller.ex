@@ -3,7 +3,7 @@ defmodule FleetMintWeb.ApiController do
   alias FleetMint.Transport.Trips
   alias FleetMint.Transport.Ticketing
 
-  @pii_roles ~w(admin manager)
+  @pii_roles ~w(platform_admin tenant_admin manager)
 
   # GET /api/notifications?since=YYYY-MM-DDTHH:MM:SS
   def notifications(conn, %{"since" => since_str}) do
@@ -21,7 +21,7 @@ defmodule FleetMintWeb.ApiController do
           _ -> NaiveDateTime.add(NaiveDateTime.utc_now(), -60, :second)
         end
 
-      bookings = Ticketing.list_bookings_since(since)
+      bookings = Ticketing.list_bookings_since(since, conn.assigns.organisation_scope)
 
       data =
         Enum.map(bookings, fn b ->
