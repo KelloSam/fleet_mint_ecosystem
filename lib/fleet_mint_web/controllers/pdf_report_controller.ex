@@ -3,6 +3,7 @@ defmodule FleetMintWeb.PdfReportController do
 
   alias FleetMint.Finance
   alias FleetMint.Reporting.PdfGenerator
+  alias FleetMint.Identity.Authorization
 
   # GET /admin/reports — Reports hub page
   def index(conn, params) do
@@ -16,7 +17,7 @@ defmodule FleetMintWeb.PdfReportController do
   # GET /pdf/daily?date=YYYY-MM-DD
   def daily(conn, %{"date" => date_string}) do
     with {:ok, date} <- Date.from_iso8601(date_string) do
-      reports = Finance.list_cashing_reports_for_date(date)
+      reports = Finance.list_cashing_reports_for_date(date, conn.assigns.organisation_scope)
 
       case PdfGenerator.daily_report(date, reports) do
         {:ok, pdf} -> send_pdf(conn, pdf, "daily_report_#{date_string}.pdf")
@@ -31,24 +32,40 @@ defmodule FleetMintWeb.PdfReportController do
   # GET /pdf/weekly/:id
   def weekly(conn, %{"id" => id}) do
     report = Finance.get_report_with_cashing_details!(id)
+    org_ids = Finance.report_organisation_ids(id)
+    user = conn.assigns.current_user
 
-    case PdfGenerator.weekly_report(report) do
-      {:ok, pdf} ->
-        filename = "weekly_report_#{report.start_date}_to_#{report.end_date}.pdf"
-        send_pdf(conn, pdf, filename)
+    if Enum.all?(org_ids, &Authorization.can_access_organisation?(user, &1)) do
+      case PdfGenerator.weekly_report(report) do
+        {:ok, pdf} ->
+          filename = "weekly_report_#{report.start_date}_to_#{report.end_date}.pdf"
+          send_pdf(conn, pdf, filename)
 
-      {:error, _} ->
-        pdf_error(conn, ~p"/reports/#{id}")
+        {:error, _} ->
+          pdf_error(conn, ~p"/reports/#{id}")
+      end
+    else
+      conn
+      |> put_flash(:error, "That report includes cashing reports from a different organisation.")
+      |> redirect(to: ~p"/admin/reports")
     end
   end
 
   # GET /pdf/receipt/:id
   def receipt(conn, %{"id" => id}) do
     cr = Finance.get_cashing_report_with_details!(id)
+    user = conn.assigns.current_user
+    organisation_id = cr.bus && cr.bus.organisation_id
 
-    case PdfGenerator.cashing_receipt(cr) do
-      {:ok, pdf} -> send_pdf(conn, pdf, "cashing_receipt_#{id}.pdf")
-      {:error, _} -> pdf_error(conn, ~p"/cashing_reports/#{id}")
+    if Authorization.can_access_organisation?(user, organisation_id) do
+      case PdfGenerator.cashing_receipt(cr) do
+        {:ok, pdf} -> send_pdf(conn, pdf, "cashing_receipt_#{id}.pdf")
+        {:error, _} -> pdf_error(conn, ~p"/cashing_reports/#{id}")
+      end
+    else
+      conn
+      |> put_flash(:error, "That cashing report belongs to a different organisation.")
+      |> redirect(to: ~p"/admin/reports")
     end
   end
 
@@ -61,7 +78,8 @@ defmodule FleetMintWeb.PdfReportController do
 
     with {:ok, start_date} <- Date.from_iso8601(start_str),
          {:ok, end_date} <- Date.from_iso8601(end_str) do
-      data = Finance.get_expenditures_report(start_date, end_date)
+      data =
+        Finance.get_expenditures_report(start_date, end_date, conn.assigns.organisation_scope)
 
       case PdfGenerator.expenditure_report(start_date, end_date, data) do
         {:ok, pdf} ->

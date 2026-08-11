@@ -259,6 +259,67 @@ defmodule FleetMint.FinanceTest do
     end
   end
 
+  describe "list_cashing_reports_for_date/2 tenant scoping" do
+    import FleetMint.FinanceFixtures
+    import FleetMint.FleetFixtures
+
+    test "organisation_id filters to that organisation's buses only" do
+      org_a = operator_fixture()
+      org_b = operator_fixture()
+
+      bus_a = bus_fixture(organisation_id: org_a.organisation_id)
+      bus_b = bus_fixture(organisation_id: org_b.organisation_id)
+
+      today = Date.utc_today()
+      report_a = cashing_report_fixture(%{bus_id: bus_a.id, report_date: today})
+      cashing_report_fixture(%{bus_id: bus_b.id, report_date: today})
+
+      result = Finance.list_cashing_reports_for_date(today, org_a.organisation_id)
+
+      assert Enum.map(result, & &1.id) == [report_a.id]
+    end
+
+    test "defaults to :all (unscoped) when no organisation_id is given" do
+      org_a = operator_fixture()
+      org_b = operator_fixture()
+
+      bus_a = bus_fixture(organisation_id: org_a.organisation_id)
+      bus_b = bus_fixture(organisation_id: org_b.organisation_id)
+
+      today = Date.utc_today()
+      cashing_report_fixture(%{bus_id: bus_a.id, report_date: today})
+      cashing_report_fixture(%{bus_id: bus_b.id, report_date: today})
+
+      assert length(Finance.list_cashing_reports_for_date(today)) == 2
+    end
+  end
+
+  describe "get_expenditures_report/3 tenant scoping" do
+    import FleetMint.FinanceFixtures
+    import FleetMint.FleetFixtures
+
+    test "organisation_id filters through cashing_report -> bus to that organisation only" do
+      org_a = operator_fixture()
+      org_b = operator_fixture()
+
+      bus_a = bus_fixture(organisation_id: org_a.organisation_id)
+      bus_b = bus_fixture(organisation_id: org_b.organisation_id)
+
+      report_a = cashing_report_fixture(%{bus_id: bus_a.id})
+      report_b = cashing_report_fixture(%{bus_id: bus_b.id})
+
+      expenditure_a = expenditure_fixture(%{cashing_report_id: report_a.id})
+      expenditure_fixture(%{cashing_report_id: report_b.id})
+
+      today = Date.utc_today()
+
+      result =
+        Finance.get_expenditures_report(today, today, org_a.organisation_id)
+
+      assert Enum.map(result.expenditures, & &1.id) == [expenditure_a.id]
+    end
+  end
+
   describe "cashing_reports" do
     alias FleetMint.Finance.CashingReport
 

@@ -621,7 +621,7 @@ defmodule FleetMint.Finance do
       [%Expenditure{}, ...]
 
   """
-  def list_expenditures_by_date_range(start_date, end_date) do
+  def list_expenditures_by_date_range(start_date, end_date, organisation_id \\ :all) do
     start_datetime =
       start_date |> NaiveDateTime.new!(~T[00:00:00.000]) |> NaiveDateTime.truncate(:second)
 
@@ -633,7 +633,9 @@ defmodule FleetMint.Finance do
         where: e.date >= ^start_datetime and e.date <= ^end_datetime and is_nil(e.archived_at),
         order_by: [asc: e.date]
 
-    Repo.all(query)
+    query
+    |> maybe_filter_expenditure_organisation(organisation_id)
+    |> Repo.all()
   end
 
   @doc """
@@ -867,14 +869,16 @@ defmodule FleetMint.Finance do
 
   # ── PDF Report Queries ────────────────────────────────────────────────────
 
-  def list_cashing_reports_for_date(date) do
+  def list_cashing_reports_for_date(date, organisation_id \\ :all) do
     query =
       from cr in CashingReport,
         where: cr.report_date == ^date and is_nil(cr.archived_at),
         order_by: [asc: cr.inserted_at],
         preload: [:bus, :conductor, expenditures: ^active_expenditures_query()]
 
-    Repo.all(query)
+    query
+    |> maybe_filter_cashing_report_organisation(organisation_id)
+    |> Repo.all()
   end
 
   def get_report_with_cashing_details!(id) do
@@ -899,9 +903,10 @@ defmodule FleetMint.Finance do
   defp active_expenditures_query, do: from(e in Expenditure, where: is_nil(e.archived_at))
   defp active_cashing_reports_query, do: from(cr in CashingReport, where: is_nil(cr.archived_at))
 
-  def get_expenditures_report(start_date, end_date) do
+  def get_expenditures_report(start_date, end_date, organisation_id \\ :all) do
     expenditures =
-      list_expenditures_by_date_range(start_date, end_date) |> Repo.preload(:cashing_report)
+      list_expenditures_by_date_range(start_date, end_date, organisation_id)
+      |> Repo.preload(:cashing_report)
 
     total = Enum.reduce(expenditures, Decimal.new("0.00"), &Decimal.add(&2, &1.amount))
 
