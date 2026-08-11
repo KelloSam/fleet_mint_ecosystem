@@ -3,14 +3,25 @@ defmodule FleetMint.Transport.Trips do
   alias FleetMint.Repo
   alias FleetMint.Accounting
   alias FleetMint.Transport.Trips.{Schedule, MinibusTrip, Trip}
+  alias FleetMint.Transport.Fleet.Bus
 
   # ── Minibus Trips ─────────────────────────────────────────────────────────
 
-  def list_minibus_trips do
+  def list_minibus_trips(opts \\ []) do
     MinibusTrip
     |> order_by([t], desc: t.date)
+    |> maybe_filter_minibus_trip_organisation(opts[:organisation_id])
     |> preload([:bus, :route, :driver])
     |> Repo.all()
+  end
+
+  defp maybe_filter_minibus_trip_organisation(query, nil), do: query
+  defp maybe_filter_minibus_trip_organisation(query, :all), do: query
+
+  defp maybe_filter_minibus_trip_organisation(query, organisation_id) do
+    query
+    |> join(:inner, [t], b in Bus, on: b.id == t.bus_id)
+    |> where([t, b], b.organisation_id == ^organisation_id)
   end
 
   def get_minibus_trip!(id) do

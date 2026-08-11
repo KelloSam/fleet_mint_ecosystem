@@ -406,13 +406,32 @@ defmodule FleetMint.Transport.Fleet do
   defp maybe_filter_bus_organisation(query, organisation_id),
     do: where(query, [b], b.organisation_id == ^organisation_id)
 
+  defp maybe_filter_maintenance_organisation(query, nil), do: query
+  defp maybe_filter_maintenance_organisation(query, :all), do: query
+
+  defp maybe_filter_maintenance_organisation(query, organisation_id) do
+    query
+    |> join(:inner, [m], v in Vehicle, on: v.id == m.vehicle_id)
+    |> where([m, v], v.organisation_id == ^organisation_id)
+  end
+
+  defp maybe_filter_fuel_log_organisation(query, nil), do: query
+  defp maybe_filter_fuel_log_organisation(query, :all), do: query
+
+  defp maybe_filter_fuel_log_organisation(query, organisation_id) do
+    query
+    |> join(:inner, [f], v in Vehicle, on: v.id == f.vehicle_id)
+    |> where([f, v], v.organisation_id == ^organisation_id)
+  end
+
   # ── Vehicle Maintenance ────────────────────────────────────────────────────
 
   alias FleetMint.Transport.Fleet.VehicleMaintenance
 
-  def list_maintenances do
+  def list_maintenances(opts \\ []) do
     VehicleMaintenance
     |> order_by([m], desc: m.service_date)
+    |> maybe_filter_maintenance_organisation(opts[:organisation_id])
     |> preload([:vehicle, :recorded_by])
     |> Repo.all()
   end
@@ -475,9 +494,10 @@ defmodule FleetMint.Transport.Fleet do
 
   alias FleetMint.Transport.Fleet.FuelLog
 
-  def list_fuel_logs do
+  def list_fuel_logs(opts \\ []) do
     FuelLog
     |> order_by([f], desc: f.log_date)
+    |> maybe_filter_fuel_log_organisation(opts[:organisation_id])
     |> preload([:vehicle, :driver])
     |> Repo.all()
   end
