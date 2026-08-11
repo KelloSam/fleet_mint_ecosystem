@@ -40,7 +40,7 @@ defmodule FleetMintWeb.BookingController do
     schedules =
       Trips.list_schedules(status: "active", organisation_id: conn.assigns.organisation_scope)
 
-    staff = Users.list_staff_with_phone()
+    staff = Users.list_staff_with_phone(organisation_id: conn.assigns.organisation_scope)
 
     render(conn, :new,
       changeset: changeset,
@@ -64,7 +64,7 @@ defmodule FleetMintWeb.BookingController do
           |> redirect(to: ~p"/bookings/#{booking}")
 
         {:error, %Ecto.Changeset{} = changeset} ->
-          staff = Users.list_staff_with_phone()
+          staff = Users.list_staff_with_phone(organisation_id: conn.assigns.organisation_scope)
 
           render(conn, :new,
             changeset: changeset,
@@ -75,7 +75,7 @@ defmodule FleetMintWeb.BookingController do
       end
     else
       changeset = Ticketing.change_booking(%Booking{travel_date: Date.utc_today()})
-      staff = Users.list_staff_with_phone()
+      staff = Users.list_staff_with_phone(organisation_id: conn.assigns.organisation_scope)
 
       conn
       |> put_flash(:error, "That schedule is not available to you.")
@@ -105,7 +105,7 @@ defmodule FleetMintWeb.BookingController do
       schedules =
         Trips.list_schedules(status: "active", organisation_id: conn.assigns.organisation_scope)
 
-      staff = Users.list_staff_with_phone()
+      staff = Users.list_staff_with_phone(organisation_id: conn.assigns.organisation_scope)
 
       render(conn, :edit,
         booking: booking,
@@ -131,7 +131,7 @@ defmodule FleetMintWeb.BookingController do
               organisation_id: conn.assigns.organisation_scope
             )
 
-          staff = Users.list_staff_with_phone()
+          staff = Users.list_staff_with_phone(organisation_id: conn.assigns.organisation_scope)
 
           render(conn, :edit,
             booking: booking,

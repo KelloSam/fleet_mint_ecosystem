@@ -29,7 +29,7 @@ defmodule FleetMintWeb.PublicBookingController do
   # GET /book/:slug/:schedule_id?date=YYYY-MM-DD
   def book(conn, %{"slug" => slug, "schedule_id" => sid} = params) do
     operator = Fleet.get_operator_by_slug!(slug)
-    schedule = Trips.get_schedule!(sid)
+    schedule = Trips.get_schedule_for_operator!(sid, operator.id)
 
     date =
       case params["date"] && Date.from_iso8601(params["date"]) do
@@ -50,7 +50,7 @@ defmodule FleetMintWeb.PublicBookingController do
   # POST /book/:slug/:schedule_id
   def create(conn, %{"slug" => slug, "schedule_id" => sid, "booking" => booking_params}) do
     operator = Fleet.get_operator_by_slug!(slug)
-    schedule = Trips.get_schedule!(sid)
+    schedule = Trips.get_schedule_for_operator!(sid, operator.id)
 
     # Always use the server's fare — never trust the client-submitted amount.
     booking_params =

@@ -28,7 +28,7 @@ defmodule FleetMintWeb.ScheduleController do
         organisation_id: conn.assigns.organisation_scope
       )
 
-    operators = Fleet.list_operators()
+    operators = Fleet.list_operators(organisation_id: conn.assigns.organisation_scope)
 
     render(conn, :new,
       changeset: changeset,
@@ -55,7 +55,7 @@ defmodule FleetMintWeb.ScheduleController do
             organisation_id: conn.assigns.organisation_scope
           )
 
-        operators = Fleet.list_operators()
+        operators = Fleet.list_operators(organisation_id: conn.assigns.organisation_scope)
 
         render(conn, :new,
           changeset: changeset,
@@ -115,7 +115,7 @@ defmodule FleetMintWeb.ScheduleController do
           organisation_id: conn.assigns.organisation_scope
         )
 
-      operators = Fleet.list_operators()
+      operators = Fleet.list_operators(organisation_id: conn.assigns.organisation_scope)
 
       render(conn, :edit,
         schedule: schedule,
@@ -149,7 +149,7 @@ defmodule FleetMintWeb.ScheduleController do
               organisation_id: conn.assigns.organisation_scope
             )
 
-          operators = Fleet.list_operators()
+          operators = Fleet.list_operators(organisation_id: conn.assigns.organisation_scope)
 
           render(conn, :edit,
             schedule: schedule,

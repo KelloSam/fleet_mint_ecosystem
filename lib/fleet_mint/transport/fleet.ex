@@ -18,9 +18,17 @@ defmodule FleetMint.Transport.Fleet do
 
   # ── Operators (bus companies) ──────────────────────────────────────────────
 
-  def list_operators do
-    from(o in Operator, where: is_nil(o.archived_at), order_by: o.name) |> Repo.all()
+  def list_operators(opts \\ []) do
+    from(o in Operator, where: is_nil(o.archived_at), order_by: o.name)
+    |> maybe_filter_operator_organisation(opts[:organisation_id])
+    |> Repo.all()
   end
+
+  defp maybe_filter_operator_organisation(query, nil), do: query
+  defp maybe_filter_operator_organisation(query, :all), do: query
+
+  defp maybe_filter_operator_organisation(query, organisation_id),
+    do: where(query, [o], o.organisation_id == ^organisation_id)
 
   def list_operators_for_public do
     from(o in Operator,

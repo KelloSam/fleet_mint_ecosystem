@@ -123,6 +123,17 @@ defmodule FleetMint.Transport.Trips do
     do:
       Repo.get!(Schedule, id) |> Repo.preload([:route, :vehicle, :driver, :conductor, :operator])
 
+  @doc """
+  Like `get_schedule!/1`, but raises unless the schedule actually
+  belongs to `operator_id` — for the public booking flow, where
+  operator and schedule are both taken from the URL independently and
+  must be verified to agree rather than trusted together.
+  """
+  def get_schedule_for_operator!(id, operator_id),
+    do:
+      Repo.get_by!(Schedule, id: id, operator_id: operator_id)
+      |> Repo.preload([:route, :vehicle, :driver, :conductor, :operator])
+
   def create_schedule(attrs) do
     %Schedule{} |> Schedule.changeset(attrs) |> Repo.insert()
   end

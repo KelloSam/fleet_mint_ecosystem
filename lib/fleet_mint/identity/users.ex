@@ -276,13 +276,13 @@ defmodule FleetMint.Identity.Users do
     |> Repo.all()
   end
 
-  def list_staff_with_phone do
-    query =
-      from u in User,
-        where: u.role in ^@staff_roles and not is_nil(u.phone),
-        order_by: [asc: u.role, asc: u.full_name]
-
-    Repo.all(query)
+  def list_staff_with_phone(opts \\ []) do
+    from(u in User,
+      where: u.role in ^@staff_roles and not is_nil(u.phone),
+      order_by: [asc: u.role, asc: u.full_name]
+    )
+    |> maybe_filter_user_organisation(opts[:organisation_id])
+    |> Repo.all()
   end
 
   @doc """
