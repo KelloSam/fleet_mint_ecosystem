@@ -21,14 +21,18 @@ defmodule FleetMint.Finance.Reconciliation do
   For each cashing report on `date`, compares the conductor's self-reported
   `received_cashing` against the actual sum of `fare_collected` logged on
   that bus's minibus trips for the same date. Flags any mismatch.
+
+  `organisation_id` scopes both sides to buses in that organisation —
+  `nil`/`:all` (platform-level staff) sees everything.
   """
-  def minibus_variance_for_date(%Date{} = date) do
+  def minibus_variance_for_date(%Date{} = date, organisation_id \\ :all) do
     trip_totals =
       from(t in MinibusTrip,
         where: t.date == ^date,
-        group_by: t.bus_id,
-        select: {t.bus_id, sum(t.fare_collected)}
+        group_by: t.bus_id
       )
+      |> maybe_filter_trip_bus_organisation(organisation_id)
+      |> select([t], {t.bus_id, sum(t.fare_collected)})
       |> Repo.all()
       |> Map.new(fn {bus_id, total} -> {bus_id, total || Decimal.new(0)} end)
 
@@ -36,6 +40,7 @@ defmodule FleetMint.Finance.Reconciliation do
       where: cr.report_date == ^date,
       preload: [:bus, :conductor]
     )
+    |> maybe_filter_cashing_report_bus_organisation(organisation_id)
     |> Repo.all()
     |> Enum.map(fn cr ->
       trip_log_total = Map.get(trip_totals, cr.bus_id, Decimal.new(0))
@@ -58,7 +63,7 @@ defmodule FleetMint.Finance.Reconciliation do
   method. Excludes cancelled bookings, matching the convention already used
   by `Transport.Ticketing.revenue_today/0`.
   """
-  def intercity_collections_for_date(%Date{} = date) do
+  def intercity_collections_for_date(%Date{} = date, organisation_id \\ :all) do
     from(b in Booking,
       where: b.travel_date == ^date and b.status != "cancelled",
       join: u in assoc(b, :booked_by),
@@ -71,6 +76,7 @@ defmodule FleetMint.Finance.Reconciliation do
         booking_count: count(b.id)
       }
     )
+    |> maybe_filter_booking_organisation(organisation_id)
     |> Repo.all()
     |> Enum.group_by(& &1.cashier_name)
   end
@@ -79,11 +85,43 @@ defmodule FleetMint.Finance.Reconciliation do
   Counts and sums freight invoices by status, so outstanding vs paid is
   visible at a glance.
   """
-  def freight_invoice_aging do
-    from(i in Invoice,
-      group_by: i.status,
-      select: %{status: i.status, count: count(i.id), total: sum(i.total_amount)}
-    )
+  def freight_invoice_aging(organisation_id \\ :all) do
+    from(i in Invoice, group_by: i.status)
+    |> maybe_filter_invoice_organisation(organisation_id)
+    |> select([i], %{status: i.status, count: count(i.id), total: sum(i.total_amount)})
     |> Repo.all()
+  end
+
+  defp maybe_filter_trip_bus_organisation(query, id) when id in [nil, :all], do: query
+
+  defp maybe_filter_trip_bus_organisation(query, organisation_id) do
+    query
+    |> join(:inner, [t], b in assoc(t, :bus), as: :bus)
+    |> where([bus: b], b.organisation_id == ^organisation_id)
+  end
+
+  defp maybe_filter_cashing_report_bus_organisation(query, id) when id in [nil, :all], do: query
+
+  defp maybe_filter_cashing_report_bus_organisation(query, organisation_id) do
+    query
+    |> join(:inner, [cr], b in assoc(cr, :bus), as: :bus)
+    |> where([bus: b], b.organisation_id == ^organisation_id)
+  end
+
+  defp maybe_filter_booking_organisation(query, id) when id in [nil, :all], do: query
+
+  defp maybe_filter_booking_organisation(query, organisation_id) do
+    query
+    |> join(:inner, [b], s in assoc(b, :schedule), as: :schedule)
+    |> join(:inner, [schedule: s], o in assoc(s, :operator), as: :operator)
+    |> where([operator: o], o.organisation_id == ^organisation_id)
+  end
+
+  defp maybe_filter_invoice_organisation(query, id) when id in [nil, :all], do: query
+
+  defp maybe_filter_invoice_organisation(query, organisation_id) do
+    query
+    |> join(:inner, [i], c in assoc(i, :client), as: :client)
+    |> where([client: c], c.organisation_id == ^organisation_id)
   end
 end

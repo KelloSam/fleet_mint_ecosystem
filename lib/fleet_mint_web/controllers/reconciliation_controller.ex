@@ -10,11 +10,13 @@ defmodule FleetMintWeb.ReconciliationController do
         _ -> Date.utc_today()
       end
 
+    scope = conn.assigns.organisation_scope
+
     render(conn, :index,
       date: date,
-      minibus_variances: Reconciliation.minibus_variance_for_date(date),
-      intercity_collections: Reconciliation.intercity_collections_for_date(date),
-      freight_aging: Reconciliation.freight_invoice_aging()
+      minibus_variances: Reconciliation.minibus_variance_for_date(date, scope),
+      intercity_collections: Reconciliation.intercity_collections_for_date(date, scope),
+      freight_aging: Reconciliation.freight_invoice_aging(scope)
     )
   end
 end
