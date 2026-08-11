@@ -333,6 +333,25 @@ defmodule FleetMint.Finance do
     Repo.all(query)
   end
 
+  @doc """
+  Distinct organisation ids among the cashing reports currently filed
+  under a weekly report — a weekly report has no organisation of its
+  own (it's a shared date-range bucket every tenant's cashing reports
+  get matched into), so ownership for access-control purposes is
+  derived from what's actually attached to it. Empty list means the
+  report is either brand new or holds no bus-linked cashing reports.
+  """
+  def report_organisation_ids(report_id) do
+    from(cr in CashingReport,
+      join: b in FleetMint.Transport.Fleet.Bus,
+      on: b.id == cr.bus_id,
+      where: cr.report_id == ^report_id,
+      distinct: true,
+      select: b.organisation_id
+    )
+    |> Repo.all()
+  end
+
   alias FleetMint.Finance.Report
 
   @doc """
