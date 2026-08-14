@@ -2,6 +2,11 @@ defmodule FleetMintWeb.ExpenditureControllerTest do
   use FleetMintWeb.ConnCase
 
   import FleetMint.FinanceFixtures
+  import FleetMint.IdentityFixtures
+
+  setup %{conn: conn} do
+    {:ok, conn: log_in_user(conn, user_fixture())}
+  end
 
   # We need a valid cashing_report_id for these tests
   @create_attrs %{
@@ -86,9 +91,10 @@ defmodule FleetMintWeb.ExpenditureControllerTest do
       conn = delete(conn, ~p"/expenditures/#{expenditure}")
       assert redirected_to(conn) == ~p"/expenditures"
 
-      assert_error_sent 404, fn ->
-        get(conn, ~p"/expenditures/#{expenditure}")
-      end
+      # Deletion is a soft delete (archived_at set) — the record survives
+      # for audit purposes but drops out of the normal listing.
+      refute expenditure.id in Enum.map(FleetMint.Finance.list_expenditures(), & &1.id)
+      assert FleetMint.Repo.get!(FleetMint.Finance.Expenditure, expenditure.id).archived_at
     end
   end
 

@@ -7,6 +7,28 @@ defmodule FleetMint.FinanceTest do
   alias FleetMint.Repo
   alias FleetMint.Transport.Trips
 
+  # Decimal columns come back from Postgres at the column's stored scale
+  # (e.g. "120.5" round-trips as "120.50"), so struct `==` against an
+  # in-memory, freshly-inserted record is never reliable for these two
+  # schemas. Compare the fields that matter instead, using Decimal.equal?/2
+  # for value equality on the money columns.
+  defp assert_cashing_report_equal(a, b) do
+    assert a.id == b.id
+    assert a.description == b.description
+    assert a.days_worked == b.days_worked
+    assert a.airtel_id == b.airtel_id
+    assert Decimal.equal?(a.expected_cashing, b.expected_cashing)
+    assert Decimal.equal?(a.received_cashing, b.received_cashing)
+    assert Decimal.equal?(a.debt_balance, b.debt_balance)
+    assert Decimal.equal?(a.expenditure, b.expenditure)
+  end
+
+  defp assert_expenditure_equal(a, b) do
+    assert a.id == b.id
+    assert a.description == b.description
+    assert Decimal.equal?(a.amount, b.amount)
+  end
+
   describe "attempt_trip_match/1 (Phase 2b cashing_report <-> Trip reconciliation)" do
     import FleetMint.FinanceFixtures
     import FleetMint.FleetFixtures
@@ -337,12 +359,13 @@ defmodule FleetMint.FinanceTest do
 
     test "list_cashing_reports/0 returns all cashing_reports" do
       cashing_report = cashing_report_fixture()
-      assert Finance.list_cashing_reports() == [cashing_report]
+      assert [listed] = Finance.list_cashing_reports()
+      assert_cashing_report_equal(listed, cashing_report)
     end
 
     test "get_cashing_report!/1 returns the cashing_report with given id" do
       cashing_report = cashing_report_fixture()
-      assert Finance.get_cashing_report!(cashing_report.id) == cashing_report
+      assert_cashing_report_equal(Finance.get_cashing_report!(cashing_report.id), cashing_report)
     end
 
     test "create_cashing_report/1 with valid data creates a cashing_report" do
@@ -357,7 +380,8 @@ defmodule FleetMint.FinanceTest do
         airtel_id: "some airtel_id",
         debt_balance: "120.5",
         expenditure: "120.5",
-        report_id: report.id
+        report_id: report.id,
+        report_date: report.start_date
       }
 
       assert {:ok, %CashingReport{} = cashing_report} = Finance.create_cashing_report(valid_attrs)
@@ -405,7 +429,7 @@ defmodule FleetMint.FinanceTest do
       assert {:error, %Ecto.Changeset{}} =
                Finance.update_cashing_report(cashing_report, @invalid_attrs)
 
-      assert cashing_report == Finance.get_cashing_report!(cashing_report.id)
+      assert_cashing_report_equal(Finance.get_cashing_report!(cashing_report.id), cashing_report)
     end
 
     test "delete_cashing_report/1 archives (soft-deletes) the cashing_report" do
@@ -464,16 +488,19 @@ defmodule FleetMint.FinanceTest do
 
     test "list_expenditures/0 returns all expenditures" do
       expenditure = expenditure_fixture()
-      assert Finance.list_expenditures() == [expenditure]
+      assert [listed] = Finance.list_expenditures()
+      assert_expenditure_equal(listed, expenditure)
     end
 
     test "get_expenditure!/1 returns the expenditure with given id" do
       expenditure = expenditure_fixture()
-      assert Finance.get_expenditure!(expenditure.id) == expenditure
+      assert_expenditure_equal(Finance.get_expenditure!(expenditure.id), expenditure)
     end
 
     test "create_expenditure/1 with valid data creates a expenditure" do
       # Create a cashing report first to get a valid cashing_report_id
+      report = FleetMint.FinanceFixtures.report_fixture()
+
       {:ok, cashing_report} =
         Finance.create_cashing_report(%{
           description: "some description",
@@ -483,7 +510,8 @@ defmodule FleetMint.FinanceTest do
           airtel_id: "some airtel_id",
           debt_balance: "120.5",
           expenditure: "120.5",
-          report_id: FleetMint.FinanceFixtures.report_fixture().id
+          report_id: report.id,
+          report_date: report.start_date
         })
 
       valid_attrs = %{
@@ -516,7 +544,7 @@ defmodule FleetMint.FinanceTest do
     test "update_expenditure/2 with invalid data returns error changeset" do
       expenditure = expenditure_fixture()
       assert {:error, %Ecto.Changeset{}} = Finance.update_expenditure(expenditure, @invalid_attrs)
-      assert expenditure == Finance.get_expenditure!(expenditure.id)
+      assert_expenditure_equal(Finance.get_expenditure!(expenditure.id), expenditure)
     end
 
     test "delete_expenditure/1 archives (soft-deletes) the expenditure" do

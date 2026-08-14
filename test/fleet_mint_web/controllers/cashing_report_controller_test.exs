@@ -2,10 +2,13 @@ defmodule FleetMintWeb.CashingReportControllerTest do
   use FleetMintWeb.ConnCase
 
   import FleetMint.FinanceFixtures
+  import FleetMint.IdentityFixtures
+  import FleetMint.FleetFixtures
 
-  setup do
+  setup %{conn: conn} do
     report = report_fixture()
-    {:ok, report: report}
+    bus = bus_fixture()
+    {:ok, conn: log_in_user(conn, user_fixture()), report: report, bus: bus}
   end
 
   @create_attrs %{
@@ -15,7 +18,8 @@ defmodule FleetMintWeb.CashingReportControllerTest do
     received_cashing: 120.5,
     airtel_id: "some airtel_id",
     debt_balance: 120.5,
-    expenditure: 120.5
+    expenditure: 120.5,
+    report_date: ~D[2025-03-03]
   }
   @update_attrs %{
     description: "some updated description",
@@ -61,9 +65,12 @@ defmodule FleetMintWeb.CashingReportControllerTest do
   describe "create cashing_report" do
     test "successfully creates a cashing report and redirects to show page", %{
       conn: conn,
-      report: report
+      report: report,
+      bus: bus
     } do
-      create_attrs = Map.put(@create_attrs, :report_id, report.id)
+      create_attrs =
+        @create_attrs |> Map.put(:report_id, report.id) |> Map.put(:bus_id, bus.id)
+
       conn = post(conn, ~p"/cashing_reports", cashing_report: create_attrs)
 
       assert %{id: id} = redirected_params(conn)
@@ -79,8 +86,9 @@ defmodule FleetMintWeb.CashingReportControllerTest do
       assert response =~ "120.5"
     end
 
-    test "renders errors when submitted data is invalid", %{conn: conn} do
-      conn = post(conn, ~p"/cashing_reports", cashing_report: @invalid_attrs)
+    test "renders errors when submitted data is invalid", %{conn: conn, bus: bus} do
+      invalid_attrs = Map.put(@invalid_attrs, :bus_id, bus.id)
+      conn = post(conn, ~p"/cashing_reports", cashing_report: invalid_attrs)
       response = html_response(conn, 200)
       assert response =~ "New Cashing report"
       assert response =~ "can&#39;t be blank"
@@ -150,12 +158,13 @@ defmodule FleetMintWeb.CashingReportControllerTest do
 
       # Verify flash message if redirected to index
       next_conn = get(recycle(conn), ~p"/cashing_reports")
-      assert html_response(next_conn, 200) =~ "Cashing report deleted successfully"
+      response = html_response(next_conn, 200)
+      assert response =~ "Cashing report deleted successfully"
 
-      # Verify the report no longer exists
-      assert_error_sent 404, fn ->
-        get(conn, ~p"/cashing_reports/#{id}")
-      end
+      # Deletion is a soft delete (archived_at set) — the record survives
+      # for audit purposes but drops out of the normal listing.
+      refute id in Enum.map(FleetMint.Finance.list_cashing_reports(), & &1.id)
+      assert FleetMint.Repo.get!(FleetMint.Finance.CashingReport, id).archived_at
     end
   end
 

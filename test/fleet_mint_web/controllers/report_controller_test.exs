@@ -6,6 +6,10 @@ defmodule FleetMintWeb.ReportControllerTest do
   import FleetMint.IdentityFixtures
   import FleetMint.FinanceFixtures, only: [cashing_report_fixture: 1]
 
+  setup %{conn: conn} do
+    {:ok, conn: log_in_user(conn, user_fixture())}
+  end
+
   @create_attrs %{start_date: ~D[2025-03-03], end_date: ~D[2025-03-03]}
   @update_attrs %{start_date: ~D[2025-03-04], end_date: ~D[2025-03-04]}
   @invalid_attrs %{start_date: nil, end_date: nil}
@@ -32,7 +36,7 @@ defmodule FleetMintWeb.ReportControllerTest do
       assert redirected_to(conn) == ~p"/reports/#{id}"
 
       conn = get(conn, ~p"/reports/#{id}")
-      assert html_response(conn, 200) =~ "Report #{id}"
+      assert html_response(conn, 200) =~ "Report ##{id}"
     end
 
     test "renders errors when data is invalid", %{conn: conn} do

@@ -8,6 +8,8 @@ defmodule FleetMintWeb.PageController do
   alias FleetMint.Transport.Trips
   alias FleetMint.Transport.Ticketing
 
+  plug :put_layout, [html: {FleetMintWeb.Layouts, :public}] when action in [:home]
+
   def home(conn, _params) do
     if FleetMintWeb.Plugs.AuthPlug.logged_in?(conn) do
       redirect(conn, to: ~p"/dashboard")
