@@ -359,14 +359,15 @@ definition):
   Mazhandu Family Bus Services designated; see item 9 above.
 - ~~Verify Decision Queue item 8 (AuthController layout).~~ Done
   2026-08-15.
-- **Still open, now unblocked rather than closed:** the §3.17 pilot
-  definition itself (scope, dates, data rules, support arrangements,
-  training, success measures, known limitations, incident procedures,
-  feedback process, exit conditions) — a pilot organisation is named, but
-  the pilot definition document doesn't exist yet. This is the one Stage A
-  deliverable that didn't get produced in this pass and should be written
-  as its own short artefact before a pilot is actually authorised per
-  §3.9's "Authorise pilot" gate.
+- ~~The §3.17 pilot definition itself.~~ **Drafted 2026-08-15**:
+  `docs/pilot/PILOT_DEFINITION.md`. Not the same as "resolved" — the
+  document is a draft with several sections explicitly marked **OPEN**
+  (most load-bearing: whether Mazhandu has actually agreed to
+  participate, production hosting, named support contact, and real
+  success-threshold numbers). Per §3.9's "Authorise pilot" gate, a pilot
+  is not authorised until those OPEN items close and the document itself
+  is formally approved — writing it is what makes those business
+  decisions visible and named, not a substitute for making them.
 
 ### Stage B — Branch/Terminal implementation — CLOSED 2026-08-15
 
