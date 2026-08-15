@@ -12,6 +12,26 @@
 > architecture as explicitly identified target or proposal. Future design
 > shall never be represented as implemented capability.
 
+> **Development environment reproducibility (added 2026-08-15).** The
+> FleetMint development environment shall be reproducible from source
+> control, migrations, documented configuration and deterministic
+> development seeds. No architectural or implementation decision shall
+> depend upon irreplaceable local development data.
+>
+> Added after a real incident: a routine migration-rehearsal drop/recreate
+> of the dev database during Stage B destroyed the only copy of the
+> project's seed data (28 fictional operators, including the one Stage A's
+> pilot-organisation decision was evaluated against). Recovery turned out
+> to be blocked, not just inconvenient — the seed scripts that were
+> supposed to regenerate it (`priv/repo/seeds_intercity.exs` and two
+> others) had been silently broken since the 2026-07-04 platform reorg and
+> predated the entire Organisation/tenancy model besides, so a "just
+> re-run it" recovery wasn't actually available. Replaced with a single
+> `priv/repo/seeds.exs` (two fictional tenants — see its own header
+> comment) that is exercised by being run, not just left to bit-rot; keep
+> it current as the domain model grows, the same discipline this document
+> asks of itself.
+
 This is the document to consult when asking "where did we stop, and what do
 we build next." It sits between the governance documents (the Blueprint
 defines *how* Miway engineers; the Constitution defines *what FleetMint is*)
