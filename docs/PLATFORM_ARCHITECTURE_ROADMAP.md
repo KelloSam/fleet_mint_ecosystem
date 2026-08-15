@@ -197,11 +197,65 @@ Architecture, Ch. VI–XIX).
 Unresolved questions, named explicitly as decisions to make — not
 resolved here, and not assumed away by silence elsewhere.
 
-1. **Branch/Terminal fate.** Wire the existing schema/context up to a real
-   controller, route, and org-scoped access guard (bringing it in line
-   with every other Phase 1+ entity) — or formally shelve it as
-   not-yet-needed and say so in a checkpoint, rather than leaving it
-   half-built and undocumented. Either is legitimate; silence is not.
+1. ~~**Branch/Terminal fate.**~~ **Resolved 2026-08-15: retain, design
+   properly, do not shelve.** Decision (Kello Sam): the target architecture
+   clearly benefits from a proper organisational hierarchy — bus operators,
+   depots/stations, school transport bases, logistics hubs, and government
+   departments all need it. The model must be defined precisely before
+   implementation resumes, not built vaguely. Defined model, recorded here
+   as the approved near-term architecture (§ rule at top of document —
+   this is *approved direction*, not yet *as-built fact* until Stage B
+   ships it):
+
+   - **Company (`Identity.Organisation`)** — unchanged from Phase 1. The
+     tenant root and the only hard security/isolation boundary. Every
+     Branch and Terminal traces to exactly one Organisation.
+   - **Branch** — a physical operating location *within* one Organisation:
+     a depot, a bus station's home base, a logistics hub, a district
+     transport office. An operational subdivision, not a security boundary
+     of its own.
+     **Change required:** re-parent from `belongs_to :operator` to
+     `belongs_to :organisation`. As built (commit `afee844`), a Branch can
+     only exist for an Organisation that also has an Operator
+     (passenger-transport) profile — but the examples motivating this
+     feature (logistics hubs, government departments, school transport
+     bases) are exactly the kind of Organisation the Constitution and
+     Phase 1 both established may have **no** Operator profile at all.
+     Branch inherited the identical defect Phase 1 already corrected
+     Operator itself out of (see `docs/phase1_tenancy_checkpoint.md`,
+     "first pass elevated Operator directly to tenant root... corrected").
+   - **Terminal** — a specific service point within one Branch: a boarding
+     point, a loading dock, a collection counter. Always `belongs_to
+     :branch` (required) — cannot exist independently of a Branch.
+     **Change required:** drop the redundant direct `belongs_to :operator`
+     on Terminal. Tenant derivation should go through `terminal → branch →
+     organisation` (one hop through Branch) — matching the established
+     rule from Phase 1: "if a table's tenant is one hop away via an
+     association, join through it rather than denormalizing a redundant
+     column."
+   - **Which records scope to each level:**
+     - *Organisation* — the security boundary. Every table's tenant-
+       isolation check stops here (unchanged).
+     - *Branch* — an operational grouping, not an access-control boundary.
+       Candidates to carry an optional `branch_id`: `Driver` (home branch
+       — the Constitution's own HR chapter draft already names "companies,
+       branches, departments" as required HR structure), `Vehicle`/`Bus`
+       (home depot).
+     - *Terminal* — the most granular level. Candidates to carry a
+       `terminal_id`: `Booking` (pickup terminal — schema already has
+       `bookings.terminal_id`, unused since 2026-07-17), `Schedule`
+       (origin/destination terminal, not yet modelled), freight
+       `Order`/`Trip` (collection/delivery point — directly relevant to
+       the "logistics hub" use case named above, not yet modelled).
+   - **Access control:** once re-parented, `get_branch!/1`/`get_terminal!/1`
+     need the same `with_organisation_access`-style guard every other
+     Phase 1+ entity has — currently neither has any, since no controller
+     ever called them.
+
+   **Not decided here:** which of Driver/Vehicle/Booking/Schedule/Order
+   actually gets wired to `branch_id`/`terminal_id` first — that's Stage
+   B's implementation-slice question (§4), informed by what the named
+   pilot organisation (below) actually needs.
 2. **Logistics scope.** Is `Cargo` (freight only) the intended full scope
    of the Mobility/Logistics split, or does the Constitution's broader
    vision (courier, warehousing) belong on the roadmap at all for a
@@ -234,10 +288,38 @@ resolved here, and not assumed away by silence elsewhere.
    `verify`/`confirm` actions (its `setup`/`enable`/`disable` actions are
    authenticated `/settings/2fa` pages and correctly keep the `:app`
    sidebar). Verified empirically per-route, not assumed from the pattern.
-9. **Pilot organisation.** Not named anywhere in repo evidence or the
-   documents reviewed. This is a business decision, not a technical one,
-   but it blocks Stage 6→7 (§3.17 of MIW-EIB-001 requires a pilot to name
-   its participating organisation before it can formally begin).
+9. ~~**Pilot organisation.**~~ **Resolved 2026-08-15: Mazhandu Family Bus
+   Services** (`operators.id = 7`, `organisation_id = 35`, slug
+   `mazhandu`) is designated the FleetMint pilot organisation.
+
+   Instruction was to pick whichever existing tenant has "the richest
+   realistic data and most complete operational setup," with Jordan and
+   Likili named as candidate front-runners. Queried the dev database
+   directly (`fleet_mint_dev`) rather than guessing: **neither Jordan nor
+   Likili is actually the richest.** Every one of the 28 seeded operators
+   is thin on real operational data — zero buses, vehicles, drivers,
+   bookings, cashing reports, or staff for all but one (Power Tools, 4
+   staff, otherwise empty) — the seed data models route/schedule structure
+   only, not full operational history. On the one dimension that does
+   differ (schedule count and route diversity) plus profile completeness
+   (real `contact_email`, a specific founding-year tagline vs. a generic
+   one), **Mazhandu (12 schedules, 9 distinct routes, tagline "Zambia's
+   Most Trusted Long-Distance Bus", real contact email) and CR Carriers
+   (11 schedules, 10 distinct routes, tagline "Reliable Transport Since
+   1972", real contact email) are both meaningfully ahead of Jordan (5
+   schedules) and Likili (4 schedules)**, which have generic taglines and
+   no contact email on file. Mazhandu is designated over CR Carriers by
+   the narrowest margin (one more schedule); either would have been
+   defensible.
+
+   **Caveat, stated plainly:** this is a designation of *which name* the
+   pilot will use, not evidence that Mazhandu already has real pilot-grade
+   data — it doesn't, and neither does anything else in the dev database.
+   The richness this decision was supposed to select for will come from
+   actually running the pilot, not from which seed rows happened to exist
+   first. The §3.17 pilot definition (scope, dates, data rules, success
+   measures, exit conditions — still not written, see Stage A) is what
+   turns this designation into an actual controlled pilot.
 
 ---
 
@@ -246,39 +328,57 @@ resolved here, and not assumed away by silence elsewhere.
 Per this document's own rule: only the next stage is specified in detail.
 Later stages get objectives and dependencies, not invented schemas.
 
-### Stage A — Close the pilot-readiness gate (next)
+### Stage A — Close the pilot-readiness gate — CLOSED 2026-08-15
 
-Directly targets MIW-EIB-001 §3.16 (MVP governance) and §3.17 (pilot
-definition), both still open per the Blueprint cross-reference:
+Directly targeted MIW-EIB-001 §3.16 (MVP governance) and §3.17 (pilot
+definition):
 
-- Resolve Decision Queue item 1 (Branch/Terminal) — build or shelve,
-  explicitly.
-- Resolve Decision Queue item 9 (name a pilot organisation) — a business
-  decision this document cannot make.
-- Once a pilot organisation is named: write the §3.17 pilot definition
-  (scope, dates, data rules, support arrangements, training, success
-  measures, known limitations, incident procedures, feedback process,
-  exit conditions) as a short, separate artefact — not invented here in
-  advance of the decision it depends on.
+- ~~Resolve Decision Queue item 1 (Branch/Terminal).~~ Done — retain,
+  design properly; model recorded in item 1 above.
+- ~~Resolve Decision Queue item 9 (name a pilot organisation).~~ Done —
+  Mazhandu Family Bus Services designated; see item 9 above.
 - ~~Verify Decision Queue item 8 (AuthController layout).~~ Done
   2026-08-15.
+- **Still open, now unblocked rather than closed:** the §3.17 pilot
+  definition itself (scope, dates, data rules, support arrangements,
+  training, success measures, known limitations, incident procedures,
+  feedback process, exit conditions) — a pilot organisation is named, but
+  the pilot definition document doesn't exist yet. This is the one Stage A
+  deliverable that didn't get produced in this pass and should be written
+  as its own short artefact before a pilot is actually authorised per
+  §3.9's "Authorise pilot" gate.
 
-**Dependency:** item 9 (pilot org) gates everything else in this stage
-becoming concrete rather than directional.
+### Stage B — Branch/Terminal implementation (next, concrete)
 
-### Stage B — First domain deepening (following Stage A)
+No longer directional — item 1's decision makes this a fully-specified
+slice:
 
-Objective only, not designed here: once a pilot organisation is named,
-Stage A's own findings will show which single domain gap (most likely
-Accounting depth, HR depth, or Logistics scope — Decision Queue items 3/4/2)
-actually blocks that organisation's real operations. That domain becomes
-the next fully-specified implementation slice, using the same cycle this
-project has used since Phase 1: architecture decision → implementation →
-tests/CI → checkpoint evidence → this document's status updated.
+1. Migration: re-parent `branches.operator_id` → `branches.organisation_id`.
+   Verified 2026-08-15: `branches`/`terminals` both have 0 rows in
+   `fleet_mint_dev` — no backfill needed, a clean rename-and-refill
+   migration is sufficient.
+2. Migration: drop `terminals.operator_id` (redundant once Terminal derives
+   tenant through `branch → organisation`).
+3. Add `with_organisation_access`-style guards to `get_branch!/1` and
+   `get_terminal!/1`, matching the Phase 1 pattern exactly.
+4. Build `BranchController`/`TerminalController` (routes, HTML, tests) —
+   the first real UI surface for this feature.
+5. Wire exactly one consuming record type end-to-end as the proof this
+   isn't just more orphaned schema — `Booking.terminal_id` is the
+   strongest candidate (schema already has the column, sitting unused
+   since 2026-07-17).
+6. Checkpoint this slice the same way Phases 1–5 were checkpointed:
+   reproducible test evidence, not prose claims.
 
-Domains not identified as pilot-blocking (Compliance, Localization,
-Customer, Analytics, AI) remain named-but-undesigned until their own
-architecture-decision gate is reached.
+Driver/Vehicle branch-assignment and Schedule/Order terminal-assignment
+(named as candidates in item 1) are explicitly **not** in this slice —
+each is its own future decision once Branch/Terminal has a real,
+tenant-scoped UI to build on.
+
+Domains not touched by this slice (Accounting depth, HR depth, Logistics
+scope, Compliance, Localization, Customer, Analytics, AI) remain
+named-but-undesigned until their own architecture-decision gate is
+reached — unchanged from before this update.
 
 ---
 
