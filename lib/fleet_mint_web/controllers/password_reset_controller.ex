@@ -3,6 +3,8 @@ defmodule FleetMintWeb.PasswordResetController do
   alias FleetMint.Identity.Authentication
   alias FleetMint.Notifications
 
+  plug :put_layout, html: {FleetMintWeb.Layouts, :public}
+
   def new(conn, _params) do
     render(conn, :new)
   end

@@ -224,9 +224,16 @@ resolved here, and not assumed away by silence elsewhere.
 7. **Multi-driver/relief-crew trip assignments.** Trip currently has simple
    nullable single-value overrides; a `trip_crew_assignments` many-to-many
    model was named and deferred at Phase 2b.
-8. **`AuthController` layout.** Flagged, not verified, in the Phase 5
-   checkpoint: `/login`/`/register` likely have the same missing
-   `:public`-layout issue `PageController` had before this session's fix.
+8. ~~**`AuthController` layout.**~~ **Resolved 2026-08-15.** Verified and
+   fixed: `/login`, `/register`, `/password-reset`, `/password-reset/:token`,
+   and `/login/verify` all had the same missing `:public`-layout issue
+   `PageController` had — each rendered wrapped in the internal admin
+   sidebar. Fixed by scoping the `:public` layout to `AuthController` (whole
+   controller — every action is pre-auth) and `PasswordResetController`
+   (whole controller — same reason), and to just `TwoFactorController`'s
+   `verify`/`confirm` actions (its `setup`/`enable`/`disable` actions are
+   authenticated `/settings/2fa` pages and correctly keep the `:app`
+   sidebar). Verified empirically per-route, not assumed from the pattern.
 9. **Pilot organisation.** Not named anywhere in repo evidence or the
    documents reviewed. This is a business decision, not a technical one,
    but it blocks Stage 6→7 (§3.17 of MIW-EIB-001 requires a pilot to name
@@ -253,7 +260,8 @@ definition), both still open per the Blueprint cross-reference:
   measures, known limitations, incident procedures, feedback process,
   exit conditions) as a short, separate artefact — not invented here in
   advance of the decision it depends on.
-- Verify Decision Queue item 8 (AuthController layout).
+- ~~Verify Decision Queue item 8 (AuthController layout).~~ Done
+  2026-08-15.
 
 **Dependency:** item 9 (pilot org) gates everything else in this stage
 becoming concrete rather than directional.

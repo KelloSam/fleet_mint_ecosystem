@@ -6,6 +6,9 @@ defmodule FleetMintWeb.TwoFactorController do
   alias FleetMint.Identity.Guardian
   alias FleetMint.Administration
 
+  plug :put_layout,
+       [html: {FleetMintWeb.Layouts, :public}] when action in [:verify, :confirm]
+
   # ── 2FA verify step (after password, before full session) ──────────────────
 
   def verify(conn, _params) do

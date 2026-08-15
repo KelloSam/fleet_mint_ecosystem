@@ -6,6 +6,8 @@ defmodule FleetMintWeb.AuthController do
   alias FleetMint.Identity.Guardian
   alias FleetMint.Administration
 
+  plug :put_layout, html: {FleetMintWeb.Layouts, :public}
+
   def register(conn, _params) do
     changeset = Users.change_user(%User{})
     render(conn, :register, changeset: changeset)
