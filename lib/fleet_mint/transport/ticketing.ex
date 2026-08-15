@@ -31,7 +31,9 @@ defmodule FleetMint.Transport.Ticketing do
   end
 
   def get_booking!(id),
-    do: Repo.get!(Booking, id) |> Repo.preload([:booked_by, :ticket, schedule: :operator])
+    do:
+      Repo.get!(Booking, id)
+      |> Repo.preload([:booked_by, :ticket, :terminal, schedule: [:operator, :route]])
 
   def get_booking_by_reference!(ref),
     do: Repo.get_by!(Booking, booking_reference: ref) |> Repo.preload([:schedule, :ticket])

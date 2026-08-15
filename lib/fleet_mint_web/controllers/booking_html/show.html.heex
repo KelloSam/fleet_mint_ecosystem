@@ -76,6 +76,12 @@
           <dt class="text-gray-500">Seat</dt>
           <dd class="font-bold text-blue-700 text-lg"><%= @booking.seat_number || "—" %></dd>
         </div>
+        <div class="py-2 flex justify-between">
+          <dt class="text-gray-500">Pickup Terminal</dt>
+          <dd class="font-medium">
+            <%= if @booking.terminal, do: @booking.terminal.name, else: "—" %>
+          </dd>
+        </div>
       </dl>
     </div>
 

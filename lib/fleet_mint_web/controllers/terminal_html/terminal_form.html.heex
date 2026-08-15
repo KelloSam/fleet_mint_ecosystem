@@ -1,0 +1,30 @@
+<.simple_form :let={f} for={@changeset} action={@action}>
+  <.error :if={@changeset.action}>
+    Oops, something went wrong! Please check the errors below.
+  </.error>
+
+  <.input
+    field={f[:branch_id]}
+    type="select"
+    label="Branch"
+    options={Enum.map(@branches, &{&1.name, &1.id})}
+  />
+  <.input
+    field={f[:name]}
+    type="text"
+    label="Terminal Name"
+    placeholder="e.g. Main Boarding Point"
+  />
+  <.input
+    field={f[:address]}
+    type="text"
+    label="Address (optional)"
+    placeholder="e.g. Great East Road"
+  />
+
+  <:actions>
+    <.button class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg">
+      Save Terminal
+    </.button>
+  </:actions>
+</.simple_form>

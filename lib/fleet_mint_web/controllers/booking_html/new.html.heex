@@ -55,6 +55,22 @@
             required
           />
         </div>
+        <%= if @terminals != [] do %>
+          <div class="md:col-span-2">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Pickup Terminal</label>
+            <select
+              name="booking[terminal_id]"
+              class="block w-full rounded-md border-gray-300 shadow-sm text-sm py-2 px-3 border focus:border-blue-500 focus:ring-blue-500"
+            >
+              <option value="">— No specific terminal —</option>
+              <%= for terminal <- @terminals do %>
+                <option value={terminal.id}>
+                  <%= terminal.branch.name %> — <%= terminal.name %>
+                </option>
+              <% end %>
+            </select>
+          </div>
+        <% end %>
       </div>
     </div>
 

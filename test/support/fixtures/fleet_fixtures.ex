@@ -35,12 +35,14 @@ defmodule FleetMint.FleetFixtures do
 
   def branch_fixture(attrs \\ %{}) do
     attrs = Map.new(attrs)
-    operator = attrs[:operator] || operator_fixture()
+    organisation_id = attrs[:organisation_id] || operator_fixture().organisation_id
 
     {:ok, branch} =
       attrs
-      |> Map.delete(:operator)
-      |> Enum.into(%{name: "Head Office", operator_id: operator.id})
+      |> Enum.into(%{
+        name: "Head Office #{System.unique_integer([:positive])}",
+        organisation_id: organisation_id
+      })
       |> Fleet.create_branch()
 
     branch
@@ -53,7 +55,10 @@ defmodule FleetMint.FleetFixtures do
     {:ok, terminal} =
       attrs
       |> Map.delete(:branch)
-      |> Enum.into(%{name: "Main Terminal", branch_id: branch.id, operator_id: branch.operator_id})
+      |> Enum.into(%{
+        name: "Main Terminal #{System.unique_integer([:positive])}",
+        branch_id: branch.id
+      })
       |> Fleet.create_terminal()
 
     terminal

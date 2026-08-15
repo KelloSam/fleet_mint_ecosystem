@@ -1,0 +1,91 @@
+<div class="mb-6 flex items-center justify-between">
+  <div>
+    <h1 class="text-2xl font-bold text-gray-800">Terminals</h1>
+    <p class="text-sm text-gray-500 mt-1">
+      Boarding points, loading docks and collection counters
+    </p>
+  </div>
+  <.link href={~p"/terminals/new"}>
+    <.button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
+      + Add Terminal
+    </.button>
+  </.link>
+</div>
+
+<div class="bg-white rounded-lg shadow overflow-hidden">
+  <%= if @terminals == [] do %>
+    <div class="text-center py-16 text-gray-500">
+      <svg
+        class="mx-auto h-12 w-12 text-gray-300 mb-4"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="1.5"
+          d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z"
+        />
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="1.5"
+          d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+        />
+      </svg>
+      <p class="font-medium">No terminals found</p>
+      <p class="text-sm mt-1">Add a branch first, then add its terminals here.</p>
+    </div>
+  <% else %>
+    <table class="min-w-full divide-y divide-gray-200">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            Name
+          </th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            Branch
+          </th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            Address
+          </th>
+          <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+            Actions
+          </th>
+        </tr>
+      </thead>
+      <tbody class="bg-white divide-y divide-gray-100">
+        <%= for terminal <- @terminals do %>
+          <tr
+            class="hover:bg-gray-50 cursor-pointer"
+            phx-click={JS.navigate(~p"/terminals/#{terminal}")}
+          >
+            <td class="px-6 py-4 text-sm font-semibold text-gray-900"><%= terminal.name %></td>
+            <td class="px-6 py-4 text-sm text-gray-700"><%= terminal.branch.name %></td>
+            <td class="px-6 py-4 text-sm text-gray-700"><%= terminal.address || "—" %></td>
+            <td class="px-6 py-4 text-right text-sm">
+              <.link
+                navigate={~p"/terminals/#{terminal}/edit"}
+                class="text-blue-600 hover:text-blue-800 font-medium mr-4"
+              >
+                Edit
+              </.link>
+              <.link
+                href={~p"/terminals/#{terminal}"}
+                method="delete"
+                data-confirm={"Remove terminal #{terminal.name}?"}
+                class="text-red-500 hover:text-red-700 font-medium"
+              >
+                Delete
+              </.link>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+    <div class="px-6 py-3 bg-gray-50 border-t text-xs text-gray-500">
+      <%= length(@terminals) %> terminal<%= if length(@terminals) != 1, do: "s", else: "" %> shown
+    </div>
+  <% end %>
+</div>

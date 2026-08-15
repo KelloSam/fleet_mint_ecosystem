@@ -1,0 +1,14 @@
+<.simple_form :let={f} for={@changeset} action={@action}>
+  <.error :if={@changeset.action}>
+    Oops, something went wrong! Please check the errors below.
+  </.error>
+
+  <.input field={f[:name]} type="text" label="Branch Name" placeholder="e.g. Lusaka Depot" />
+  <.input field={f[:city]} type="text" label="City (optional)" placeholder="e.g. Lusaka" />
+
+  <:actions>
+    <.button class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg">
+      Save Branch
+    </.button>
+  </:actions>
+</.simple_form>

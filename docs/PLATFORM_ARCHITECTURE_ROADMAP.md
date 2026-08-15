@@ -348,37 +348,53 @@ definition):
   as its own short artefact before a pilot is actually authorised per
   §3.9's "Authorise pilot" gate.
 
-### Stage B — Branch/Terminal implementation (next, concrete)
+### Stage B — Branch/Terminal implementation — CLOSED 2026-08-15
 
-No longer directional — item 1's decision makes this a fully-specified
-slice:
+All six steps shipped in one pass. Full evidence:
+`docs/stage_b_branch_terminal_checkpoint.md`.
 
-1. Migration: re-parent `branches.operator_id` → `branches.organisation_id`.
-   Verified 2026-08-15: `branches`/`terminals` both have 0 rows in
-   `fleet_mint_dev` — no backfill needed, a clean rename-and-refill
-   migration is sufficient.
-2. Migration: drop `terminals.operator_id` (redundant once Terminal derives
-   tenant through `branch → organisation`).
-3. Add `with_organisation_access`-style guards to `get_branch!/1` and
-   `get_terminal!/1`, matching the Phase 1 pattern exactly.
-4. Build `BranchController`/`TerminalController` (routes, HTML, tests) —
-   the first real UI surface for this feature.
-5. Wire exactly one consuming record type end-to-end as the proof this
-   isn't just more orphaned schema — `Booking.terminal_id` is the
-   strongest candidate (schema already has the column, sitting unused
-   since 2026-07-17).
-6. Checkpoint this slice the same way Phases 1–5 were checkpointed:
-   reproducible test evidence, not prose claims.
+1. ~~Migration: re-parent `branches.operator_id` → `branches.organisation_id`.~~
+   Done — `20260815100001_reparent_branches_to_organisation.exs`. Confirmed
+   `branches`/`terminals` both had 0 rows in `fleet_mint_dev` before writing
+   it, so this was a straight swap, not a data migration.
+2. ~~Migration: drop `terminals.operator_id`.~~ Done —
+   `20260815100002_drop_terminals_operator_id.exs`. Terminal now derives
+   tenant through `branch → organisation` only.
+3. ~~Add `with_organisation_access`-style guards.~~ Done —
+   `Fleet.list_branches/1`/`list_terminals/1` accept `:all` or a real
+   `organisation_id` (same `maybe_filter_*_organisation/2` pattern as
+   `Bus`); `get_terminal!/1` preloads `:branch` so controllers can check
+   `terminal.branch.organisation_id`.
+4. ~~Build `BranchController`/`TerminalController`.~~ Done — full CRUD,
+   HTML views, routes under the manager+ scope, 17 new tenant-isolation
+   tests across both controllers.
+5. ~~Wire `Booking.terminal_id` end-to-end.~~ Done — a "Pickup Terminal"
+   select on the booking creation form, scoped to the caller's own
+   organisation, an org-scoping guard on create (`terminal_allowed?/2`),
+   and display on the booking show page. 2 new tests. Booking's edit form
+   is a pre-existing stub ("under construction") — untouched, out of
+   scope.
+6. ~~Checkpoint this slice.~~ Done —
+   `docs/stage_b_branch_terminal_checkpoint.md`. Full suite: 261 tests, 0
+   failures. Migrations rehearsed up/down/up clean. Also fixed one real
+   pre-existing bug surfaced while testing this (unrelated to
+   Branch/Terminal itself): `get_booking!/1` never preloaded
+   `schedule.route`, which `booking_html/show.html.heex` reads directly —
+   would have crashed any real booking's show page; no prior test
+   exercised that route.
 
 Driver/Vehicle branch-assignment and Schedule/Order terminal-assignment
-(named as candidates in item 1) are explicitly **not** in this slice —
-each is its own future decision once Branch/Terminal has a real,
-tenant-scoped UI to build on.
+(named as candidates in Decision Queue item 1) remain explicitly **not**
+built — each is its own future decision once a real pilot-org need for
+them surfaces.
 
-Domains not touched by this slice (Accounting depth, HR depth, Logistics
-scope, Compliance, Localization, Customer, Analytics, AI) remain
-named-but-undesigned until their own architecture-decision gate is
-reached — unchanged from before this update.
+### Stage C — not yet designed
+
+Per this document's own rule, only the next stage is specified in detail
+once its dependency closes. Domains not touched by Stage B (Accounting
+depth, HR depth, Logistics scope, Compliance, Localization, Customer,
+Analytics, AI) remain named-but-undesigned until their own
+architecture-decision gate is reached.
 
 ---
 

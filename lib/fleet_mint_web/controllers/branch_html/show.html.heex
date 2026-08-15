@@ -1,0 +1,68 @@
+<div class="mb-6 flex items-start justify-between">
+  <div>
+    <.link
+      navigate={~p"/branches"}
+      class="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1"
+    >
+      <.icon name="hero-arrow-left-solid" class="h-3 w-3" /> Branches
+    </.link>
+    <h1 class="text-2xl font-bold text-gray-800 mt-2"><%= @branch.name %></h1>
+  </div>
+  <div class="flex gap-3">
+    <.link navigate={~p"/branches/#{@branch}/edit"}>
+      <.button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm">
+        Edit Branch
+      </.button>
+    </.link>
+    <.link
+      href={~p"/branches/#{@branch}"}
+      method="delete"
+      data-confirm={"Remove branch #{@branch.name}?"}
+    >
+      <.button class="bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-4 py-2 rounded-lg text-sm">
+        Delete
+      </.button>
+    </.link>
+  </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+  <div class="bg-white rounded-lg shadow p-6">
+    <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">
+      Branch Details
+    </h2>
+    <dl class="divide-y divide-gray-100">
+      <div class="py-3 flex justify-between text-sm">
+        <dt class="text-gray-500 font-medium">Name</dt>
+        <dd class="text-gray-900 font-semibold"><%= @branch.name %></dd>
+      </div>
+      <div class="py-3 flex justify-between text-sm">
+        <dt class="text-gray-500 font-medium">City</dt>
+        <dd class="text-gray-900"><%= @branch.city || "—" %></dd>
+      </div>
+    </dl>
+  </div>
+
+  <div class="bg-white rounded-lg shadow p-6">
+    <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">
+      Terminals at this Branch
+    </h2>
+    <%= if @terminals == [] do %>
+      <p class="text-sm text-gray-400 italic">No terminals added yet.</p>
+    <% else %>
+      <ul class="divide-y divide-gray-100">
+        <%= for terminal <- @terminals do %>
+          <li class="py-2 text-sm">
+            <.link
+              navigate={~p"/terminals/#{terminal}"}
+              class="text-blue-600 hover:text-blue-800 font-medium"
+            >
+              <%= terminal.name %>
+            </.link>
+            <span class="text-gray-400"><%= terminal.address %></span>
+          </li>
+        <% end %>
+      </ul>
+    <% end %>
+  </div>
+</div>

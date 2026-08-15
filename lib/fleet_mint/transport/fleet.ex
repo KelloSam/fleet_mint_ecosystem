@@ -90,9 +90,16 @@ defmodule FleetMint.Transport.Fleet do
 
   # ── Branches and Terminals (tenant org hierarchy) ───────────────────────────
 
-  def list_branches(operator_id) do
-    from(b in Branch, where: b.operator_id == ^operator_id, order_by: b.name) |> Repo.all()
+  def list_branches(organisation_id) do
+    from(b in Branch, order_by: b.name)
+    |> maybe_filter_branch_organisation(organisation_id)
+    |> Repo.all()
   end
+
+  defp maybe_filter_branch_organisation(query, :all), do: query
+
+  defp maybe_filter_branch_organisation(query, organisation_id),
+    do: where(query, [b], b.organisation_id == ^organisation_id)
 
   def get_branch!(id), do: Repo.get!(Branch, id)
 
@@ -108,15 +115,27 @@ defmodule FleetMint.Transport.Fleet do
 
   def change_branch(%Branch{} = branch, attrs \\ %{}), do: Branch.changeset(branch, attrs)
 
-  def list_terminals(operator_id) do
-    from(t in Terminal, where: t.operator_id == ^operator_id, order_by: t.name) |> Repo.all()
+  @doc """
+  Lists terminals for an organisation, joined through their owning branch
+  (Terminal has no direct organisation column — tenant is derived one hop
+  through Branch).
+  """
+  def list_terminals(organisation_id) do
+    from(t in Terminal, join: b in assoc(t, :branch), order_by: t.name, preload: [branch: b])
+    |> maybe_filter_terminal_organisation(organisation_id)
+    |> Repo.all()
   end
+
+  defp maybe_filter_terminal_organisation(query, :all), do: query
+
+  defp maybe_filter_terminal_organisation(query, organisation_id),
+    do: where(query, [t, b], b.organisation_id == ^organisation_id)
 
   def list_terminals_for_branch(branch_id) do
     from(t in Terminal, where: t.branch_id == ^branch_id, order_by: t.name) |> Repo.all()
   end
 
-  def get_terminal!(id), do: Repo.get!(Terminal, id)
+  def get_terminal!(id), do: Repo.get!(Terminal, id) |> Repo.preload(:branch)
 
   def create_terminal(attrs \\ %{}) do
     %Terminal{} |> Terminal.changeset(attrs) |> Repo.insert()

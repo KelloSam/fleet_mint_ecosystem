@@ -121,6 +121,8 @@ defmodule FleetMintWeb.Router do
     resources "/schedules", ScheduleController, except: [:index, :show]
     resources "/operators", OperatorController, except: [:index, :show]
     resources "/buses", BusController, except: [:index, :show]
+    resources "/branches", BranchController
+    resources "/terminals", TerminalController
 
     # Freight management
     scope "/freight" do
