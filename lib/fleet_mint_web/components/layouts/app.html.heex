@@ -492,7 +492,7 @@
           </div>
           <div class="min-w-0">
             <p class="text-sm font-medium text-white truncate"><%= @current_user.full_name %></p>
-            <p class="text-xs text-gray-400 truncate capitalize"><%= @current_user.role %></p>
+            <p class="text-xs text-gray-400 truncate"><%= role_label(@current_user.role) %></p>
           </div>
         </div>
       <% end %>

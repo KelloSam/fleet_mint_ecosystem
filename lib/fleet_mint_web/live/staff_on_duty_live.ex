@@ -108,7 +108,7 @@ defmodule FleetMintWeb.StaffOnDutyLive do
                     </span>
                   </p>
                   <div class="flex items-center gap-2 mt-0.5">
-                    <span class="text-xs text-gray-500 capitalize"><%= u.role %></span>
+                    <span class="text-xs text-gray-500"><%= role_label(u.role) %></span>
                     <span class="text-gray-300">·</span>
                     <span class="text-xs font-mono text-gray-500">
                       STAFF-<%= u.id |> Integer.to_string() |> String.pad_leading(4, "0") %>

@@ -236,7 +236,7 @@
                 />
               </svg>
               <span class="font-medium"><%= u.full_name %></span>
-              <span class="text-amber-700 capitalize">(<%= u.role %>)</span>
+              <span class="text-amber-700">(<%= role_label(u.role) %>)</span>
               <a
                 href={"tel:#{u.phone}"}
                 class="font-mono font-semibold text-amber-800 hover:text-amber-600"

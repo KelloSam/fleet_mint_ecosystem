@@ -527,4 +527,17 @@ defmodule FleetMintWeb.CoreComponents do
     </svg>
     """
   end
+
+  @doc """
+  Formats a role enum value ("tenant_admin") as a display label
+  ("Tenant Admin") instead of relying on CSS `capitalize`, which only
+  capitalizes the first letter and leaves the underscore visible.
+  """
+  def role_label(nil), do: ""
+
+  def role_label(role) when is_binary(role) do
+    role
+    |> String.split("_")
+    |> Enum.map_join(" ", &String.capitalize/1)
+  end
 end
