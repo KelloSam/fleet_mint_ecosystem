@@ -132,17 +132,19 @@ defmodule FleetMintWeb.RoutesLive do
               <span :if={@current_user.role in ["platform_admin", "tenant_admin", "manager"]}>
                 <.link
                   navigate={~p"/routes/#{route}/edit"}
-                  class="text-blue-600 hover:text-blue-800 font-medium mr-4"
+                  title="Edit"
+                  class="text-gray-400 hover:text-blue-600 mr-3"
                 >
-                  Edit
+                  <.icon name="hero-pencil-square" class="h-4 w-4" /> <span class="sr-only">Edit</span>
                 </.link>
                 <.link
                   href={~p"/routes/#{route}"}
                   method="delete"
                   data-confirm={"Delete route \"#{route.name}\"?"}
-                  class="text-red-500 hover:text-red-700 font-medium"
+                  title="Delete"
+                  class="text-gray-400 hover:text-red-600"
                 >
-                  Delete
+                  <.icon name="hero-trash" class="h-4 w-4" /> <span class="sr-only">Delete</span>
                 </.link>
               </span>
             </td>
