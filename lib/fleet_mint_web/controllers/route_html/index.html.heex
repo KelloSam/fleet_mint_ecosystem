@@ -28,7 +28,7 @@
 </div>
 
 <div class="bg-white rounded-lg shadow overflow-hidden">
-  <%= if @routes == [] do %>
+  <%= if @paged.entries == [] do %>
     <div class="text-center py-16 text-gray-500">
       <svg
         class="mx-auto h-12 w-12 text-gray-300 mb-4"
@@ -74,7 +74,7 @@
         </tr>
       </thead>
       <tbody class="bg-white divide-y divide-gray-100">
-        <%= for route <- @routes do %>
+        <%= for route <- @paged.entries do %>
           <tr
             class="hover:bg-gray-50 cursor-pointer"
             phx-click={JS.navigate(~p"/routes/#{route}")}
@@ -118,7 +118,16 @@
       </tbody>
     </table>
     <div class="px-6 py-3 bg-gray-50 border-t text-xs text-gray-500">
-      <%= length(@routes) %> route<%= if length(@routes) != 1, do: "s", else: "" %> shown
+      <%= @paged.total %> route<%= if @paged.total != 1, do: "s", else: "" %> total
     </div>
+    <.pagination
+      page={@paged.page}
+      total_pages={@paged.total_pages}
+      path={
+        &(if @filter_status == "",
+            do: ~p"/routes?page=#{&1}",
+            else: ~p"/routes?page=#{&1}&status=#{@filter_status}")
+      }
+    />
   <% end %>
 </div>

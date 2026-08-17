@@ -28,6 +28,20 @@ defmodule FleetMint.Transport.Routes do
   end
 
   @doc """
+  Paginated route listing for the index page, optionally filtered by
+  `:status`. Mirrors `Ticketing.list_bookings_paginated/2`.
+  """
+  def list_routes_paginated(page \\ 1, opts \\ []) do
+    from(r in Route, where: is_nil(r.archived_at), order_by: r.name)
+    |> maybe_filter_status(opts[:status])
+    |> FleetMint.Pagination.paginate(page)
+  end
+
+  defp maybe_filter_status(query, nil), do: query
+  defp maybe_filter_status(query, ""), do: query
+  defp maybe_filter_status(query, status), do: where(query, [r], r.status == ^status)
+
+  @doc """
   Gets a single route.
 
   Raises `Ecto.NoResultsError` if the Route does not exist.

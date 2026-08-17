@@ -327,6 +327,44 @@ defmodule FleetMintWeb.CoreComponents do
   end
 
   @doc """
+  Renders Prev / page-of-total / Next controls for a
+  `FleetMint.Pagination.paginate/3` result. `path` is a 1-arity function
+  from a page number to the URL for that page, so the caller decides
+  which other query params (filters, search terms) ride along.
+
+  ## Examples
+
+      <.pagination page={@paged.page} total_pages={@paged.total_pages} path={&~p"/routes?page=\#{&1}"} />
+  """
+  attr :page, :integer, required: true
+  attr :total_pages, :integer, required: true
+  attr :path, :any, required: true, doc: "function from page number to that page's URL"
+
+  def pagination(assigns) do
+    ~H"""
+    <div :if={@total_pages > 1} class="flex items-center justify-center gap-2 py-4">
+      <.link
+        :if={@page > 1}
+        navigate={@path.(@page - 1)}
+        class="px-3 py-1.5 rounded bg-white border text-sm hover:bg-gray-50"
+      >
+        ← Prev
+      </.link>
+      <span class="px-3 py-1.5 rounded bg-blue-600 text-white text-sm font-medium">
+        <%= @page %> / <%= @total_pages %>
+      </span>
+      <.link
+        :if={@page < @total_pages}
+        navigate={@path.(@page + 1)}
+        class="px-3 py-1.5 rounded bg-white border text-sm hover:bg-gray-50"
+      >
+        Next →
+      </.link>
+    </div>
+    """
+  end
+
+  @doc """
   Renders an error message.
 
   ## Examples

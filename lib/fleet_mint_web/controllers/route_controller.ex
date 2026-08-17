@@ -23,13 +23,11 @@ defmodule FleetMintWeb.RouteController do
 
   def index(conn, params) do
     status = Map.get(params, "status")
+    page = FleetMint.Pagination.parse_page(params)
 
-    routes =
-      if status && status != "",
-        do: Routes.list_routes_by_status(status),
-        else: Routes.list_routes()
+    paged = Routes.list_routes_paginated(page, status: status)
 
-    render(conn, :index, routes: routes, filter_status: status || "")
+    render(conn, :index, paged: paged, filter_status: status || "")
   end
 
   def new(conn, _params) do

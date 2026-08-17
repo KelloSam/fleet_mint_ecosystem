@@ -92,6 +92,16 @@ defmodule FleetMint.Administration do
     |> Repo.all()
   end
 
+  @doc """
+  Paginated audit log listing for the `/audit-log` index page. Same
+  `:organisation_id` scoping as `list_recent_audit_logs/2`.
+  """
+  def list_audit_logs_paginated(page \\ 1, opts \\ []) do
+    from(l in AuditLog, order_by: [desc: l.inserted_at])
+    |> maybe_filter_audit_log_organisation(opts[:organisation_id])
+    |> FleetMint.Pagination.paginate(page)
+  end
+
   defp maybe_filter_audit_log_organisation(query, nil), do: query
   defp maybe_filter_audit_log_organisation(query, :all), do: query
 
