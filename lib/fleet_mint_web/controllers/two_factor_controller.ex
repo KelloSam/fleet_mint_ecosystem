@@ -56,10 +56,11 @@ defmodule FleetMintWeb.TwoFactorController do
     secret = TwoFactor.generate_totp_secret()
     uri = TwoFactor.totp_uri(user, secret)
     qr_svg = uri |> EQRCode.encode() |> EQRCode.svg(width: 220)
+    manual_key = Base.encode32(secret, padding: false)
 
     conn
     |> put_session(:pending_totp_secret, Base.encode64(secret))
-    |> render(:setup, user: user, qr_svg: qr_svg)
+    |> render(:setup, user: user, qr_svg: qr_svg, manual_key: manual_key)
   end
 
   def enable(conn, %{"totp" => %{"code" => code}}) do

@@ -71,7 +71,8 @@
               <span class="flex-shrink-0 w-5 h-5 rounded-full bg-blue-100 text-blue-700 text-xs font-bold flex items-center justify-center">
                 2
               </span>
-              Scan the QR code with your phone's camera or the app's scanner.
+              Scan the QR code, or enter the key below manually if scanning a code
+              off a screen doesn't work.
             </li>
             <li class="flex gap-2">
               <span class="flex-shrink-0 w-5 h-5 rounded-full bg-blue-100 text-blue-700 text-xs font-bold flex items-center justify-center">
@@ -80,6 +81,13 @@
               Enter the 6-digit code shown in the app to confirm.
             </li>
           </ol>
+
+          <div class="mb-5">
+            <p class="text-xs font-medium text-gray-500 mb-1">Manual entry key</p>
+            <code class="block bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 text-sm font-mono tracking-widest text-gray-900 break-all">
+              <%= @manual_key %>
+            </code>
+          </div>
 
           <form action={~p"/settings/2fa/enable"} method="post" class="space-y-3">
             <input type="hidden" name="_csrf_token" value={Plug.CSRFProtection.get_csrf_token()} />
