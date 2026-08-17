@@ -290,6 +290,43 @@ defmodule FleetMintWeb.CoreComponents do
   end
 
   @doc """
+  Renders a sidebar navigation link with a consistent padded/card-style
+  interaction pattern (hover, focus-visible, active) so every item in
+  `FleetMintWeb.Layouts` app.html.heex sidebar behaves the same way
+  instead of each link re-declaring its own class list.
+
+  ## Examples
+
+      <.nav_link navigate={~p"/dashboard"} active={String.starts_with?(path, "/dashboard")}>
+        <:icon><svg>...</svg></:icon>
+        Dashboard
+      </.nav_link>
+  """
+  attr :navigate, :string, required: true
+  attr :active, :boolean, required: true
+  attr :active_class, :string, default: "bg-blue-600 text-white"
+
+  slot :icon, required: true
+  slot :inner_block, required: true
+
+  def nav_link(assigns) do
+    ~H"""
+    <.link
+      navigate={@navigate}
+      aria-current={@active && "page"}
+      class={[
+        "flex items-center gap-3 px-3 py-2 rounded-lg font-medium transition-colors",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900",
+        if(@active, do: @active_class, else: "text-gray-300 hover:bg-gray-800 hover:text-white")
+      ]}
+    >
+      <span class="h-4 w-4 flex-shrink-0"><%= render_slot(@icon) %></span>
+      <%= render_slot(@inner_block) %>
+    </.link>
+    """
+  end
+
+  @doc """
   Renders an error message.
 
   ## Examples
