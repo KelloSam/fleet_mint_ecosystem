@@ -24,7 +24,7 @@ defmodule FleetMint.Transport.Ticketing do
       |> maybe_filter_date(opts[:travel_date])
       |> maybe_filter_status(opts[:status])
       |> maybe_filter_organisation(opts[:organisation_id])
-      |> preload([:schedule, :booked_by, ticket: []])
+      |> preload([:booked_by, ticket: [], schedule: [:route]])
       |> order_by([b], desc: b.inserted_at)
 
     FleetMint.Pagination.paginate(query, page)
