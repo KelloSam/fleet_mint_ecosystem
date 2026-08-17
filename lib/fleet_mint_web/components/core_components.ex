@@ -504,7 +504,13 @@ defmodule FleetMintWeb.CoreComponents do
   end
 
   @doc """
-  Renders an icon.
+  Renders a Heroicon, e.g. `<.icon name="hero-x-mark-solid" />`.
+
+  Heroicons are compiled into `app.css` (see `assets/tailwind.config.js`)
+  as CSS mask classes, not an SVG sprite, so this renders a plain `<span>`
+  wearing the icon name as its class rather than `<svg><use></use></svg>`
+  — the previous `<use href="#hero-...">` had no sprite/`<symbol>`
+  anywhere in the app to resolve against and rendered nothing at all.
 
   ## Examples
 
@@ -515,17 +521,7 @@ defmodule FleetMintWeb.CoreComponents do
 
   def icon(assigns) do
     ~H"""
-    <svg
-      class="h-5 w-5"
-      xmlns="http://www.w3.org/2000/svg"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      aria-hidden="true"
-      {@rest}
-    >
-      <use href={"#{"#"}{@name}"} />
-    </svg>
+    <span class={[@name, "h-5 w-5"]} aria-hidden="true" {@rest} />
     """
   end
 
