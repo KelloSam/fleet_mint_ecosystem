@@ -126,20 +126,22 @@ defmodule FleetMint.Transport.Ticketing do
     |> Repo.all()
   end
 
-  def count_bookings_today do
+  def count_bookings_today(organisation_id \\ :all) do
     today = Date.utc_today()
 
     Booking
     |> where([b], b.travel_date == ^today and b.status != "cancelled")
+    |> maybe_filter_organisation(organisation_id)
     |> Repo.aggregate(:count, :id)
   end
 
-  def revenue_today do
+  def revenue_today(organisation_id \\ :all) do
     today = Date.utc_today()
 
     result =
       Booking
       |> where([b], b.travel_date == ^today and b.status != "cancelled")
+      |> maybe_filter_organisation(organisation_id)
       |> select([b], sum(b.fare_paid))
       |> Repo.one()
 

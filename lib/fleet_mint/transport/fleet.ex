@@ -322,8 +322,10 @@ defmodule FleetMint.Transport.Fleet do
       12
 
   """
-  def count_buses do
-    Repo.aggregate(Bus, :count, :id)
+  def count_buses(organisation_id \\ :all) do
+    Bus
+    |> maybe_filter_bus_organisation(organisation_id)
+    |> Repo.aggregate(:count, :id)
   end
 
   # ── Vehicles (unified fleet: buses + trucks) ──────────────────────────────
@@ -598,22 +600,25 @@ defmodule FleetMint.Transport.Fleet do
     |> Kernel.||(Decimal.new(0))
   end
 
-  def fuel_cost_today do
+  def fuel_cost_today(organisation_id \\ :all) do
     today = Date.utc_today()
 
-    Repo.aggregate(from(f in FuelLog, where: f.log_date == ^today), :sum, :total_cost)
+    from(f in FuelLog, where: f.log_date == ^today)
+    |> maybe_filter_fuel_log_organisation(organisation_id)
+    |> Repo.aggregate(:sum, :total_cost)
     |> Kernel.||(Decimal.new(0))
   end
 
-  def count_pending_maintenances do
-    Repo.aggregate(
-      from(m in VehicleMaintenance, where: m.status in ["scheduled", "in_progress"]),
-      :count
-    )
+  def count_pending_maintenances(organisation_id \\ :all) do
+    from(m in VehicleMaintenance, where: m.status in ["scheduled", "in_progress"])
+    |> maybe_filter_maintenance_organisation(organisation_id)
+    |> Repo.aggregate(:count)
   end
 
-  def count_vehicles do
-    Repo.aggregate(Vehicle, :count, :id)
+  def count_vehicles(organisation_id \\ :all) do
+    Vehicle
+    |> maybe_filter_vehicle_organisation(organisation_id)
+    |> Repo.aggregate(:count, :id)
   end
 
   # ── Private ledger helpers ─────────────────────────────────────────────────

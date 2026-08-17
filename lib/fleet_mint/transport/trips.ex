@@ -98,15 +98,20 @@ defmodule FleetMint.Transport.Trips do
   def change_minibus_trip(%MinibusTrip{} = trip, attrs \\ %{}),
     do: MinibusTrip.changeset(trip, attrs)
 
-  def count_minibus_trips_today do
+  def count_minibus_trips_today(organisation_id \\ :all) do
     today = Date.utc_today()
-    Repo.aggregate(from(t in MinibusTrip, where: t.date == ^today), :count)
+
+    from(t in MinibusTrip, where: t.date == ^today)
+    |> maybe_filter_minibus_trip_organisation(organisation_id)
+    |> Repo.aggregate(:count)
   end
 
-  def minibus_revenue_today do
+  def minibus_revenue_today(organisation_id \\ :all) do
     today = Date.utc_today()
 
-    Repo.aggregate(from(t in MinibusTrip, where: t.date == ^today), :sum, :fare_collected)
+    from(t in MinibusTrip, where: t.date == ^today)
+    |> maybe_filter_minibus_trip_organisation(organisation_id)
+    |> Repo.aggregate(:sum, :fare_collected)
     |> Kernel.||(Decimal.new(0))
   end
 

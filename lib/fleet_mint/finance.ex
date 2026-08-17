@@ -884,8 +884,11 @@ defmodule FleetMint.Finance do
       42
 
   """
-  def count_expenditures do
-    Expenditure |> where([e], is_nil(e.archived_at)) |> Repo.aggregate(:count, :id)
+  def count_expenditures(organisation_id \\ :all) do
+    Expenditure
+    |> where([e], is_nil(e.archived_at))
+    |> maybe_filter_expenditure_organisation(organisation_id)
+    |> Repo.aggregate(:count, :id)
   end
 
   # ── PDF Report Queries ────────────────────────────────────────────────────
