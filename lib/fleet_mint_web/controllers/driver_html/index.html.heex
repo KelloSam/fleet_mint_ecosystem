@@ -36,8 +36,20 @@
       <%= String.capitalize(d.status) %>
     </span>
   </:col>
-  <:action :let={d}><.link navigate={~p"/drivers/#{d}/edit"}>Edit</.link></:action>
   <:action :let={d}>
-    <.link href={~p"/drivers/#{d}"} method="delete" data-confirm="Remove driver?">Delete</.link>
+    <.link navigate={~p"/drivers/#{d}/edit"} title="Edit" class="text-gray-400 hover:text-blue-600">
+      <.icon name="hero-pencil-square" class="h-4 w-4" /> <span class="sr-only">Edit</span>
+    </.link>
+  </:action>
+  <:action :let={d}>
+    <.link
+      href={~p"/drivers/#{d}"}
+      method="delete"
+      data-confirm="Remove driver?"
+      title="Delete"
+      class="text-gray-400 hover:text-red-600"
+    >
+      <.icon name="hero-trash" class="h-4 w-4" /> <span class="sr-only">Delete</span>
+    </.link>
   </:action>
 </.table>

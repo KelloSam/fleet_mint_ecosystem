@@ -33,7 +33,13 @@
       <.link navigate={~p"/cashing_reports/#{cashing_report}"}>Show</.link>
     </div>
     <%= if @current_user.role in ["platform_admin", "tenant_admin", "manager"] do %>
-      <.link navigate={~p"/cashing_reports/#{cashing_report}/edit"}>Edit</.link>
+      <.link
+        navigate={~p"/cashing_reports/#{cashing_report}/edit"}
+        title="Edit"
+        class="text-gray-400 hover:text-blue-600"
+      >
+        <.icon name="hero-pencil-square" class="h-4 w-4" /> <span class="sr-only">Edit</span>
+      </.link>
     <% end %>
   </:action>
   <:action :let={cashing_report}>
@@ -42,8 +48,10 @@
         href={~p"/cashing_reports/#{cashing_report}"}
         method="delete"
         data-confirm="Are you sure?"
+        title="Delete"
+        class="text-gray-400 hover:text-red-600"
       >
-        Delete
+        <.icon name="hero-trash" class="h-4 w-4" /> <span class="sr-only">Delete</span>
       </.link>
     <% end %>
   </:action>

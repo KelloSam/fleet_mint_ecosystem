@@ -17,9 +17,21 @@
   <:col :let={f} label="Driver">
     <%= f.driver && (f.driver.full_name || f.driver.username) %>
   </:col>
-  <:action :let={f}><.link navigate={~p"/fuel_logs/#{f}/edit"}>Edit</.link></:action>
   <:action :let={f}>
-    <.link href={~p"/fuel_logs/#{f}"} method="delete" data-confirm="Delete?">Delete</.link>
+    <.link navigate={~p"/fuel_logs/#{f}/edit"} title="Edit" class="text-gray-400 hover:text-blue-600">
+      <.icon name="hero-pencil-square" class="h-4 w-4" /> <span class="sr-only">Edit</span>
+    </.link>
+  </:action>
+  <:action :let={f}>
+    <.link
+      href={~p"/fuel_logs/#{f}"}
+      method="delete"
+      data-confirm="Delete?"
+      title="Delete"
+      class="text-gray-400 hover:text-red-600"
+    >
+      <.icon name="hero-trash" class="h-4 w-4" /> <span class="sr-only">Delete</span>
+    </.link>
   </:action>
 </.table>
 

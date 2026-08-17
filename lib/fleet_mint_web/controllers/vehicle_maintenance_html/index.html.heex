@@ -27,8 +27,24 @@
       <%= String.replace(m.status, "_", " ") |> String.capitalize() %>
     </span>
   </:col>
-  <:action :let={m}><.link navigate={~p"/maintenances/#{m}/edit"}>Edit</.link></:action>
   <:action :let={m}>
-    <.link href={~p"/maintenances/#{m}"} method="delete" data-confirm="Delete?">Delete</.link>
+    <.link
+      navigate={~p"/maintenances/#{m}/edit"}
+      title="Edit"
+      class="text-gray-400 hover:text-blue-600"
+    >
+      <.icon name="hero-pencil-square" class="h-4 w-4" /> <span class="sr-only">Edit</span>
+    </.link>
+  </:action>
+  <:action :let={m}>
+    <.link
+      href={~p"/maintenances/#{m}"}
+      method="delete"
+      data-confirm="Delete?"
+      title="Delete"
+      class="text-gray-400 hover:text-red-600"
+    >
+      <.icon name="hero-trash" class="h-4 w-4" /> <span class="sr-only">Delete</span>
+    </.link>
   </:action>
 </.table>

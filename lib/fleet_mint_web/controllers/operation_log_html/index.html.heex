@@ -29,10 +29,24 @@
   <:col :let={l} label="Logged By">
     <%= l.logged_by && (l.logged_by.full_name || l.logged_by.username) %>
   </:col>
-  <:action :let={l}><.link navigate={~p"/operation_logs/#{l}/edit"}>Edit</.link></:action>
   <:action :let={l}>
-    <.link href={~p"/operation_logs/#{l}"} method="delete" data-confirm="Delete entry?">
-      Delete
+    <.link
+      navigate={~p"/operation_logs/#{l}/edit"}
+      title="Edit"
+      class="text-gray-400 hover:text-blue-600"
+    >
+      <.icon name="hero-pencil-square" class="h-4 w-4" /> <span class="sr-only">Edit</span>
+    </.link>
+  </:action>
+  <:action :let={l}>
+    <.link
+      href={~p"/operation_logs/#{l}"}
+      method="delete"
+      data-confirm="Delete entry?"
+      title="Delete"
+      class="text-gray-400 hover:text-red-600"
+    >
+      <.icon name="hero-trash" class="h-4 w-4" /> <span class="sr-only">Delete</span>
     </.link>
   </:action>
 </.table>

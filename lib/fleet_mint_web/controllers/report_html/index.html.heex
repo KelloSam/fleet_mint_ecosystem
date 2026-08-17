@@ -18,11 +18,23 @@
     <div class="sr-only">
       <.link navigate={~p"/reports/#{report}"}>Show</.link>
     </div>
-    <.link navigate={~p"/reports/#{report}/edit"}>Edit</.link>
+    <.link
+      navigate={~p"/reports/#{report}/edit"}
+      title="Edit"
+      class="text-gray-400 hover:text-blue-600"
+    >
+      <.icon name="hero-pencil-square" class="h-4 w-4" /> <span class="sr-only">Edit</span>
+    </.link>
   </:action>
   <:action :let={report}>
-    <.link href={~p"/reports/#{report}"} method="delete" data-confirm="Are you sure?">
-      Delete
+    <.link
+      href={~p"/reports/#{report}"}
+      method="delete"
+      data-confirm="Are you sure?"
+      title="Delete"
+      class="text-gray-400 hover:text-red-600"
+    >
+      <.icon name="hero-trash" class="h-4 w-4" /> <span class="sr-only">Delete</span>
     </.link>
   </:action>
 </.table>
