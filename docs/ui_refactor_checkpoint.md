@@ -132,7 +132,7 @@ Kalemba), `admin@chibolya.example` (tenant_admin, org Chibolya), and
 `platform@miway.example` (platform_admin). Not a curl/HTTP check — actual
 clicks, actual rendered pixels, actual live interactions.
 
-### 7.1 Defect: Operator page's "Scheduled Trips" can silently show nothing despite a real, active schedule existing
+### 7.1 Defect: Operator page's "Scheduled Trips" can silently show nothing despite a real, active schedule existing — FIXED 2026-08-17
 
 The UI-4 "Scheduled Trips" section on the Bus Company show page
 (`operator_html/show.html.heex`) is nested inside the loop over
@@ -151,15 +151,20 @@ populated, renders the identical feature correctly — expanding "Lusaka →
 Chipata" shows "SCHEDULED TRIPS: 11:30, BAO 2004, 65 seats available, ZMW
 387.50, Active" exactly as designed.
 
-**Not fixed yet.** Two honest options, not decided here: (a) have the
-Scheduled Trips section query `Schedule` directly by
-`route_id`+`operator_id` regardless of `operator_routes`, so it can't drift
-from reality — the more correct fix, since `operator_routes` becomes
-redundant for this purpose; or (b) treat the missing `operator_routes` row
-as its own data-integrity bug (a schedule should never exist without its
-operator+route being linked) and backfill/enforce that instead. (a) is
-smaller and doesn't require touching the write path; recommend it if this
-gets picked up.
+**Fixed via option (a).** `Routes.get_operator_with_routes!/1`
+(`lib/fleet_mint/transport/routes.ex`) now builds `operator.routes` from
+the union of the `operator_routes` join and any route with a real
+`Schedule` for that operator, rather than the join alone — a route that
+has a schedule but no `operator_routes` row (or vice versa) still shows.
+`operator_routes` was left as-is, not backfilled or enforced (option (b)
+was not taken) — the write path is untouched, so the same drift can
+recur, it just no longer hides data when it does. Two controller tests
+added in `operator_controller_test.exs` covering both directions: a
+schedule with no join row (the Kalemba case) and a join row with no
+schedule yet (the pre-existing empty-state path). Full suite green
+(269 tests, plus these 2, minus one pre-existing unrelated flaky test —
+a random fixture-name collision in the tenant-listing test, reproducibly
+passes in isolation).
 
 ### 7.2 UX Adjustments (not blocking)
 

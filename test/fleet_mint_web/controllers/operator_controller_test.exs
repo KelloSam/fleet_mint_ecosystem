@@ -3,6 +3,7 @@ defmodule FleetMintWeb.OperatorControllerTest do
 
   import FleetMint.FleetFixtures
   import FleetMint.IdentityFixtures
+  import FleetMint.TicketingFixtures, only: [schedule_fixture: 1]
 
   describe "platform-only tenant onboarding" do
     setup do
@@ -114,6 +115,48 @@ defmodule FleetMintWeb.OperatorControllerTest do
 
       assert html =~ org_a.name
       refute html =~ org_b.name
+    end
+  end
+
+  describe "show: routes served must reflect real schedules, not just operator_routes" do
+    test "a route with a real schedule but no operator_routes link still renders on the operator page",
+         %{conn: conn} do
+      operator = operator_fixture()
+      platform_admin = user_fixture(organisation_id: nil)
+
+      route = route_fixture(name: "Lusaka - Livingstone")
+
+      schedule =
+        schedule_fixture(%{
+          route_id: route.id,
+          operator_id: operator.id,
+          fare: "270.00"
+        })
+
+      # Deliberately no FleetMint.Transport.Routes.add_route_to_operator/2 call —
+      # this is the exact drift checkpoint §7.1 found live (Kalemba Coachlines
+      # had a real schedule with zero operator_routes rows).
+      html = conn |> log_in_user(platform_admin) |> get(~p"/operators/#{operator}") |> html_response(200)
+
+      refute html =~ "No routes assigned yet"
+      assert html =~ route.start_location
+      assert html =~ route.end_location
+      assert html =~ Time.to_string(schedule.departure_time) |> String.slice(0, 5)
+    end
+
+    test "a route linked via operator_routes but with no schedule yet still renders", %{
+      conn: conn
+    } do
+      operator = operator_fixture()
+      platform_admin = user_fixture(organisation_id: nil)
+      route = route_fixture(name: "Lusaka - Ndola")
+
+      FleetMint.Transport.Routes.add_route_to_operator(operator, route)
+
+      html = conn |> log_in_user(platform_admin) |> get(~p"/operators/#{operator}") |> html_response(200)
+
+      refute html =~ "No routes assigned yet"
+      assert html =~ "No schedules yet on this route"
     end
   end
 

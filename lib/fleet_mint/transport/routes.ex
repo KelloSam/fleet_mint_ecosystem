@@ -13,6 +13,7 @@ defmodule FleetMint.Transport.Routes do
   alias FleetMint.Repo
   alias FleetMint.Transport.Fleet.Operator
   alias FleetMint.Transport.Routes.Route
+  alias FleetMint.Transport.Trips.Schedule
 
   @doc """
   Returns the list of routes.
@@ -279,10 +280,31 @@ defmodule FleetMint.Transport.Routes do
 
   # ── operator_routes (operator <-> route join) ──────────────────────────────
 
+  @doc """
+  Fetches an operator with the routes it actually serves: the
+  `operator_routes` join, unioned with any route that has a real
+  `Schedule` for this operator. A schedule can exist without its
+  operator_routes row ever being backfilled (see checkpoint §7.1) — that
+  must not make a real, bookable schedule invisible on the operator's
+  page.
+  """
   def get_operator_with_routes!(id) do
-    Operator
-    |> Repo.get!(id)
-    |> Repo.preload(routes: from(r in Route, order_by: r.name))
+    operator = Repo.get!(Operator, id)
+
+    routes =
+      from(r in Route,
+        left_join: link in "operator_routes",
+        on: link.route_id == r.id and link.operator_id == ^operator.id,
+        left_join: s in Schedule,
+        on: s.route_id == r.id and s.operator_id == ^operator.id,
+        where: not is_nil(link.operator_id) or not is_nil(s.id),
+        distinct: true,
+        order_by: r.name,
+        select: r
+      )
+      |> Repo.all()
+
+    %{operator | routes: routes}
   end
 
   def list_operators_with_route_counts(opts \\ []) do
