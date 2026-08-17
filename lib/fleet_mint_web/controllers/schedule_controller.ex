@@ -8,13 +8,16 @@ defmodule FleetMintWeb.ScheduleController do
   alias FleetMint.Identity.Authorization
 
   def index(conn, params) do
-    schedules =
-      Trips.list_schedules(
-        status: params["status"],
+    page = FleetMint.Pagination.parse_page(params)
+    status = Map.get(params, "status")
+
+    paged =
+      Trips.list_schedules_paginated(page,
+        status: status,
         organisation_id: conn.assigns.organisation_scope
       )
 
-    render(conn, :index, schedules: schedules)
+    render(conn, :index, paged: paged, filter_status: status || "")
   end
 
   def new(conn, _params) do

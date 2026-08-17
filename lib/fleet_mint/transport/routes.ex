@@ -42,6 +42,24 @@ defmodule FleetMint.Transport.Routes do
   defp maybe_filter_status(query, status), do: where(query, [r], r.status == ^status)
 
   @doc """
+  `%{route_id => {min_fare, max_fare}}` across every operator's real
+  schedules for each route in `route_ids` — the fare range the global
+  Routes page shows, since a route's own `fare` is just a reference
+  price and each operator schedules its own. Routes with no schedules
+  yet are absent from the map; callers fall back to the route's own
+  `fare` for those.
+  """
+  def fare_ranges_for_routes(route_ids) do
+    from(s in FleetMint.Transport.Trips.Schedule,
+      where: s.route_id in ^route_ids,
+      group_by: s.route_id,
+      select: {s.route_id, {min(s.fare), max(s.fare)}}
+    )
+    |> Repo.all()
+    |> Map.new()
+  end
+
+  @doc """
   Gets a single route.
 
   Raises `Ecto.NoResultsError` if the Route does not exist.

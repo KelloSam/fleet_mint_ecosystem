@@ -3,6 +3,7 @@ defmodule FleetMintWeb.OperatorController do
   alias FleetMint.Transport.Fleet
   alias FleetMint.Transport.Fleet.Operator
   alias FleetMint.Transport.Routes
+  alias FleetMint.Transport.Trips
   alias FleetMint.Identity.Authorization
   alias FleetMint.Administration
 
@@ -24,7 +25,10 @@ defmodule FleetMintWeb.OperatorController do
     operator = Routes.get_operator_with_routes!(id)
 
     with_organisation_access(conn, operator, fn conn ->
-      render(conn, :show, operator: operator)
+      schedules_by_route =
+        Trips.list_schedules(operator_id: operator.id) |> Enum.group_by(& &1.route_id)
+
+      render(conn, :show, operator: operator, schedules_by_route: schedules_by_route)
     end)
   end
 

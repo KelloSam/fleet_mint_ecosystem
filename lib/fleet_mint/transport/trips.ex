@@ -116,9 +116,23 @@ defmodule FleetMint.Transport.Trips do
     Schedule
     |> maybe_filter_status(opts[:status])
     |> maybe_filter_organisation(opts[:organisation_id])
+    |> maybe_filter_schedule_operator(opts[:operator_id])
     |> preload([:route, :vehicle, :driver, :conductor, :operator])
     |> order_by([s], s.departure_time)
     |> Repo.all()
+  end
+
+  @doc """
+  Paginated schedule listing for the index page.
+  """
+  def list_schedules_paginated(page \\ 1, opts \\ []) do
+    Schedule
+    |> maybe_filter_status(opts[:status])
+    |> maybe_filter_organisation(opts[:organisation_id])
+    |> maybe_filter_schedule_operator(opts[:operator_id])
+    |> preload([:route, :vehicle, :driver, :conductor, :operator])
+    |> order_by([s], s.departure_time)
+    |> FleetMint.Pagination.paginate(page)
   end
 
   def list_public_schedules_for_operator(operator_id) do
@@ -254,6 +268,11 @@ defmodule FleetMint.Transport.Trips do
     |> join(:inner, [s], o in assoc(s, :operator), as: :operator)
     |> where([operator: o], o.organisation_id == ^organisation_id)
   end
+
+  defp maybe_filter_schedule_operator(query, nil), do: query
+
+  defp maybe_filter_schedule_operator(query, operator_id),
+    do: where(query, [s], s.operator_id == ^operator_id)
 
   # ── Private ledger helpers ─────────────────────────────────────────────────
 

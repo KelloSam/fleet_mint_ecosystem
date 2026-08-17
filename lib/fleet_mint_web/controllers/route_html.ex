@@ -24,6 +24,21 @@ defmodule FleetMintWeb.RouteHTML do
   def format_fare(nil), do: "—"
   def format_fare(fare), do: "ZMW #{Decimal.to_string(fare)}"
 
+  @doc """
+  Fare range across every operator's real schedules for a route
+  (`fare_ranges[route.id]`), falling back to the route's own reference
+  fare when no operator has scheduled a trip on it yet.
+  """
+  def format_fare_range(nil, base_fare), do: "From #{format_fare(base_fare)}"
+
+  def format_fare_range({min_fare, max_fare}, _base_fare) do
+    if Decimal.equal?(min_fare, max_fare) do
+      format_fare(min_fare)
+    else
+      "ZMW #{Decimal.to_string(min_fare)} – #{Decimal.to_string(max_fare)}"
+    end
+  end
+
   def format_distance(nil), do: "—"
   def format_distance(d), do: "#{Decimal.to_string(d)} km"
 

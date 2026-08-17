@@ -63,7 +63,7 @@
             Duration
           </th>
           <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-            Fare
+            Fare Range
           </th>
           <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
             Status
@@ -92,7 +92,7 @@
               <%= format_duration(route.duration) %>
             </td>
             <td class="px-6 py-4 text-sm font-medium text-gray-900">
-              <%= format_fare(route.fare) %>
+              <%= format_fare_range(@fare_ranges[route.id], route.fare) %>
             </td>
             <td class="px-6 py-4">
               <.status_badge status={route.status} />
@@ -124,9 +124,9 @@
       page={@paged.page}
       total_pages={@paged.total_pages}
       path={
-        &(if @filter_status == "",
-            do: ~p"/routes?page=#{&1}",
-            else: ~p"/routes?page=#{&1}&status=#{@filter_status}")
+        &if @filter_status == "",
+          do: ~p"/routes?page=#{&1}",
+          else: ~p"/routes?page=#{&1}&status=#{@filter_status}"
       }
     />
   <% end %>

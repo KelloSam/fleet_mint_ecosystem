@@ -26,8 +26,9 @@ defmodule FleetMintWeb.RouteController do
     page = FleetMint.Pagination.parse_page(params)
 
     paged = Routes.list_routes_paginated(page, status: status)
+    fare_ranges = Routes.fare_ranges_for_routes(Enum.map(paged.entries, & &1.id))
 
-    render(conn, :index, paged: paged, filter_status: status || "")
+    render(conn, :index, paged: paged, filter_status: status || "", fare_ranges: fare_ranges)
   end
 
   def new(conn, _params) do
@@ -49,7 +50,8 @@ defmodule FleetMintWeb.RouteController do
 
   def show(conn, %{"id" => id}) do
     route = Routes.get_route!(id)
-    render(conn, :show, route: route)
+    fare_range = Routes.fare_ranges_for_routes([route.id])[route.id]
+    render(conn, :show, route: route, fare_range: fare_range)
   end
 
   def edit(conn, %{"id" => id}) do
