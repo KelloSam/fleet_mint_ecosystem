@@ -8,7 +8,7 @@
   </:actions>
 </.header>
 
-<.table id="operation_logs" rows={@logs} row_click={&JS.navigate(~p"/operation_logs/#{&1}")}>
+<.table id="operation_logs" rows={@paged.entries} row_click={&JS.navigate(~p"/operation_logs/#{&1}")}>
   <:col :let={l} label="Date"><%= l.date %></:col>
   <:col :let={l} label="Title"><%= l.title %></:col>
   <:col :let={l} label="Category">
@@ -36,3 +36,9 @@
     </.link>
   </:action>
 </.table>
+
+<.pagination
+  page={@paged.page}
+  total_pages={@paged.total_pages}
+  path={&~p"/operation_logs?page=#{&1}"}
+/>

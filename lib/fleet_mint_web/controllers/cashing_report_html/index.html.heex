@@ -14,7 +14,7 @@
 
 <.table
   id="cashing_reports"
-  rows={@cashing_reports}
+  rows={@paged.entries}
   row_click={&JS.navigate(~p"/cashing_reports/#{&1}")}
 >
   <:col :let={cashing_report} label="Days worked"><%= cashing_report.days_worked %></:col>
@@ -48,3 +48,9 @@
     <% end %>
   </:action>
 </.table>
+
+<.pagination
+  page={@paged.page}
+  total_pages={@paged.total_pages}
+  path={&~p"/cashing_reports?page=#{&1}"}
+/>

@@ -42,7 +42,7 @@ defmodule FleetMintWeb.OperationLogControllerTest do
       conn = conn |> log_in_user(staff_a) |> get(~p"/operation_logs")
       html_response(conn, 200)
 
-      listed_ids = Enum.map(conn.assigns.logs, & &1.id)
+      listed_ids = Enum.map(conn.assigns.paged.entries, & &1.id)
       assert log_a.id in listed_ids
       refute log_b.id in listed_ids
     end

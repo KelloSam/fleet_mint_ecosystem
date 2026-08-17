@@ -7,7 +7,7 @@
   </:actions>
 </.header>
 
-<.table id="minibus_trips" rows={@trips} row_click={&JS.navigate(~p"/minibus_trips/#{&1}")}>
+<.table id="minibus_trips" rows={@paged.entries} row_click={&JS.navigate(~p"/minibus_trips/#{&1}")}>
   <:col :let={t} label="Date"><%= t.date %></:col>
   <:col :let={t} label="Bus"><%= t.bus && t.bus.registration_number %></:col>
   <:col :let={t} label="Route"><%= t.route && t.route.name %></:col>
@@ -34,3 +34,9 @@
     <.link href={~p"/minibus_trips/#{t}"} method="delete" data-confirm="Delete?">Delete</.link>
   </:action>
 </.table>
+
+<.pagination
+  page={@paged.page}
+  total_pages={@paged.total_pages}
+  path={&~p"/minibus_trips?page=#{&1}"}
+/>

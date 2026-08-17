@@ -5,7 +5,7 @@
     </.link>
   </:actions>
 </.header>
-<.table id="expenditures" rows={@expenditures} row_click={&JS.navigate(~p"/expenditures/#{&1}")}>
+<.table id="expenditures" rows={@paged.entries} row_click={&JS.navigate(~p"/expenditures/#{&1}")}>
   <:col :let={expenditure} label="Amount"><%= format_amount(expenditure.amount) %></:col>
   <:col :let={expenditure} label="Description"><%= expenditure.description %></:col>
   <:col :let={expenditure} label="Date"><%= format_date(expenditure.date) %></:col>
@@ -45,3 +45,9 @@
     </.link>
   </:action>
 </.table>
+
+<.pagination
+  page={@paged.page}
+  total_pages={@paged.total_pages}
+  path={&~p"/expenditures?page=#{&1}"}
+/>

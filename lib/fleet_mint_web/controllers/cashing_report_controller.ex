@@ -11,11 +11,15 @@ defmodule FleetMintWeb.CashingReportController do
   plug :require_admin_or_manager
        when action in [:edit, :update, :delete, :edit_trip_match, :match_trip]
 
-  def index(conn, _params) do
-    cashing_reports =
-      Finance.list_cashing_reports(organisation_id: conn.assigns.organisation_scope)
+  def index(conn, params) do
+    page = FleetMint.Pagination.parse_page(params)
 
-    render(conn, :index, cashing_reports: cashing_reports)
+    paged =
+      Finance.list_cashing_reports_paginated(page,
+        organisation_id: conn.assigns.organisation_scope
+      )
+
+    render(conn, :index, paged: paged)
   end
 
   def new(conn, _params) do

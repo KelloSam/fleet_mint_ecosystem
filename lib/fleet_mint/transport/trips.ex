@@ -15,6 +15,17 @@ defmodule FleetMint.Transport.Trips do
     |> Repo.all()
   end
 
+  @doc """
+  Paginated minibus trip listing for the index page.
+  """
+  def list_minibus_trips_paginated(page \\ 1, opts \\ []) do
+    MinibusTrip
+    |> order_by([t], desc: t.date)
+    |> maybe_filter_minibus_trip_organisation(opts[:organisation_id])
+    |> preload([:bus, :route, :driver])
+    |> FleetMint.Pagination.paginate(page)
+  end
+
   defp maybe_filter_minibus_trip_organisation(query, nil), do: query
   defp maybe_filter_minibus_trip_organisation(query, :all), do: query
 

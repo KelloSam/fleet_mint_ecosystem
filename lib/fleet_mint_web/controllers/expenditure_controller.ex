@@ -12,12 +12,15 @@ defmodule FleetMintWeb.ExpenditureController do
   # with nobody else in the loop.
   plug :require_admin_or_manager when action in [:edit, :update, :delete]
 
-  def index(conn, _params) do
-    expenditures =
-      Finance.list_expenditures(organisation_id: conn.assigns.organisation_scope)
-      |> FleetMint.Repo.preload([:cashing_report, :created_by])
+  def index(conn, params) do
+    page = FleetMint.Pagination.parse_page(params)
 
-    render(conn, :index, expenditures: expenditures)
+    paged =
+      Finance.list_expenditures_paginated(page,
+        organisation_id: conn.assigns.organisation_scope
+      )
+
+    render(conn, :index, paged: paged)
   end
 
   def new(conn, _params) do

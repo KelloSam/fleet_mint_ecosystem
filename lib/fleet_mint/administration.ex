@@ -14,6 +14,17 @@ defmodule FleetMint.Administration do
     |> Repo.all()
   end
 
+  @doc """
+  Paginated operation log listing for the index page.
+  """
+  def list_operation_logs_paginated(page \\ 1, opts \\ []) do
+    OperationLog
+    |> order_by([l], desc: l.date)
+    |> maybe_filter_operation_log_organisation(opts[:organisation_id])
+    |> preload(:logged_by)
+    |> FleetMint.Pagination.paginate(page)
+  end
+
   def list_recent_logs(limit \\ 10, opts \\ []) do
     OperationLog
     |> order_by([l], desc: l.date, desc: l.inserted_at)

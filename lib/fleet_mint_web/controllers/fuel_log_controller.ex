@@ -6,9 +6,13 @@ defmodule FleetMintWeb.FuelLogController do
   alias FleetMint.HR
   alias FleetMint.Identity.Authorization
 
-  def index(conn, _params) do
-    fuel_logs = Fleet.list_fuel_logs(organisation_id: conn.assigns.organisation_scope)
-    render(conn, :index, fuel_logs: fuel_logs)
+  def index(conn, params) do
+    page = FleetMint.Pagination.parse_page(params)
+
+    paged =
+      Fleet.list_fuel_logs_paginated(page, organisation_id: conn.assigns.organisation_scope)
+
+    render(conn, :index, paged: paged)
   end
 
   def new(conn, _params) do

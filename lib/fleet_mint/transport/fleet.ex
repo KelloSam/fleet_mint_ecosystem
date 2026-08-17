@@ -529,6 +529,17 @@ defmodule FleetMint.Transport.Fleet do
     |> Repo.all()
   end
 
+  @doc """
+  Paginated fuel log listing for the index page.
+  """
+  def list_fuel_logs_paginated(page \\ 1, opts \\ []) do
+    FuelLog
+    |> order_by([f], desc: f.log_date)
+    |> maybe_filter_fuel_log_organisation(opts[:organisation_id])
+    |> preload([:vehicle, :driver])
+    |> FleetMint.Pagination.paginate(page)
+  end
+
   def list_fuel_logs_for_vehicle(vehicle_id) do
     from(f in FuelLog,
       where: f.vehicle_id == ^vehicle_id,

@@ -8,9 +8,13 @@ defmodule FleetMintWeb.MinibusTripController do
   alias FleetMint.HR
   alias FleetMint.Identity.Authorization
 
-  def index(conn, _params) do
-    trips = Trips.list_minibus_trips(organisation_id: conn.assigns.organisation_scope)
-    render(conn, :index, trips: trips)
+  def index(conn, params) do
+    page = FleetMint.Pagination.parse_page(params)
+
+    paged =
+      Trips.list_minibus_trips_paginated(page, organisation_id: conn.assigns.organisation_scope)
+
+    render(conn, :index, paged: paged)
   end
 
   def new(conn, _params) do

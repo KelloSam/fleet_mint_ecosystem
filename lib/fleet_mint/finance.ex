@@ -28,6 +28,17 @@ defmodule FleetMint.Finance do
   end
 
   @doc """
+  Paginated cashing report listing for the index page.
+  """
+  def list_cashing_reports_paginated(page \\ 1, opts \\ []) do
+    CashingReport
+    |> where([c], is_nil(c.archived_at))
+    |> order_by([c], desc: c.inserted_at)
+    |> maybe_filter_cashing_report_organisation(opts[:organisation_id])
+    |> FleetMint.Pagination.paginate(page)
+  end
+
+  @doc """
   Gets a single cashing_report.
 
   Raises if the Cashing report does not exist.
@@ -460,6 +471,16 @@ defmodule FleetMint.Finance do
     from(e in Expenditure, where: is_nil(e.archived_at), order_by: [desc: e.date])
     |> maybe_filter_expenditure_organisation(opts[:organisation_id])
     |> Repo.all()
+  end
+
+  @doc """
+  Paginated expenditure listing for the index page.
+  """
+  def list_expenditures_paginated(page \\ 1, opts \\ []) do
+    from(e in Expenditure, where: is_nil(e.archived_at), order_by: [desc: e.date])
+    |> maybe_filter_expenditure_organisation(opts[:organisation_id])
+    |> preload([:cashing_report, :created_by])
+    |> FleetMint.Pagination.paginate(page)
   end
 
   @doc """

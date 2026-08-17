@@ -7,7 +7,7 @@
   </:actions>
 </.header>
 
-<.table id="fuel_logs" rows={@fuel_logs} row_click={&JS.navigate(~p"/fuel_logs/#{&1}")}>
+<.table id="fuel_logs" rows={@paged.entries} row_click={&JS.navigate(~p"/fuel_logs/#{&1}")}>
   <:col :let={f} label="Date"><%= f.log_date %></:col>
   <:col :let={f} label="Vehicle"><%= f.vehicle && f.vehicle.registration_number %></:col>
   <:col :let={f} label="Fuel Type"><%= String.capitalize(f.fuel_type) %></:col>
@@ -22,3 +22,5 @@
     <.link href={~p"/fuel_logs/#{f}"} method="delete" data-confirm="Delete?">Delete</.link>
   </:action>
 </.table>
+
+<.pagination page={@paged.page} total_pages={@paged.total_pages} path={&~p"/fuel_logs?page=#{&1}"} />
