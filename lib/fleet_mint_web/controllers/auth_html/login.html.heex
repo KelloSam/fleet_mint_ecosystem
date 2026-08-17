@@ -175,10 +175,10 @@
               <button
                 :for={
                   email <-
-                    ~w(kellosaa30@gmail.com director@fleetmint.local manager@fleetmint.local accountant@fleetmint.local)
+                    ~w(kellosaa30@gmail.com admin@kalemba.example manager@kalemba.example cashier@kalemba.example)
                 }
                 type="button"
-                onclick={"document.getElementById('user_email').value=#{Jason.encode!(email)};document.getElementById('user_password').focus();"}
+                onclick={"document.getElementById('user_email').value=#{Jason.encode!(email)};document.getElementById('user_password').value=#{Jason.encode!("Admin@Fleetmint1")};document.getElementById('user_password').focus();"}
                 class="text-xs px-2.5 py-1 rounded-md bg-slate-700 hover:bg-slate-600 text-slate-200 transition-colors"
               >
                 <%= email %>
