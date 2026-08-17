@@ -1,5 +1,5 @@
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-6">
-  <div class="lg:col-span-2 bg-gradient-to-br from-blue-700 to-blue-900 rounded-xl shadow-lg p-4 text-white flex flex-col justify-center">
+  <div class="lg:col-span-2 h-[180px] bg-gradient-to-br from-blue-700 to-blue-900 rounded-xl shadow-lg p-4 text-white flex flex-col justify-center">
     <div class="flex items-center gap-4">
       <div class="h-12 w-12 rounded-xl bg-white/20 flex items-center justify-center text-lg font-extrabold flex-shrink-0 tracking-tight">
         <%= (@current_user.full_name || @current_user.username || "?")
@@ -55,11 +55,11 @@
     </div>
   </div>
 
-  <div class="flex flex-col gap-3">
-    <div class="bg-white rounded-xl shadow p-4 flex items-center gap-3">
-      <div class="h-10 w-10 rounded-xl bg-emerald-100 flex items-center justify-center flex-shrink-0">
+  <div class="grid grid-cols-2 gap-3">
+    <div class="bg-white rounded-xl shadow p-3 flex items-center gap-2 min-w-0">
+      <div class="h-8 w-8 rounded-xl bg-emerald-100 flex items-center justify-center flex-shrink-0">
         <svg
-          class="h-5 w-5 text-emerald-600"
+          class="h-4 w-4 text-emerald-600"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -72,14 +72,14 @@
           />
         </svg>
       </div>
-      <div>
-        <p class="text-xs text-gray-500 uppercase tracking-wider">Bookings Today</p>
-        <p class="text-xl font-bold text-gray-800"><%= @bookings_today %></p>
+      <div class="min-w-0">
+        <p class="text-xs text-gray-500 uppercase truncate" title="Bookings Today">Bookings Today</p>
+        <p class="text-lg font-bold text-gray-800"><%= @bookings_today %></p>
       </div>
     </div>
-    <div class="bg-white rounded-xl shadow p-4 flex items-center gap-3">
-      <div class="h-10 w-10 rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0">
-        <svg class="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <div class="bg-white rounded-xl shadow p-3 flex items-center gap-2 min-w-0">
+      <div class="h-8 w-8 rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0">
+        <svg class="h-4 w-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path
             stroke-linecap="round"
             stroke-linejoin="round"
@@ -88,14 +88,14 @@
           />
         </svg>
       </div>
-      <div>
-        <p class="text-xs text-gray-500 uppercase tracking-wider">Ticket Revenue</p>
-        <p class="text-lg font-bold text-gray-800">ZMW <%= @revenue_today %></p>
+      <div class="min-w-0">
+        <p class="text-xs text-gray-500 uppercase truncate">Ticket Revenue</p>
+        <p class="text-sm font-bold text-gray-800 truncate">ZMW <%= @revenue_today %></p>
       </div>
     </div>
-    <div class="bg-white rounded-xl shadow p-4 flex items-center gap-3">
-      <div class="h-10 w-10 rounded-xl bg-violet-100 flex items-center justify-center flex-shrink-0">
-        <svg class="h-5 w-5 text-violet-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <div class="bg-white rounded-xl shadow p-3 flex items-center gap-2 min-w-0">
+      <div class="h-8 w-8 rounded-xl bg-violet-100 flex items-center justify-center flex-shrink-0">
+        <svg class="h-4 w-4 text-violet-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path
             stroke-linecap="round"
             stroke-linejoin="round"
@@ -104,18 +104,18 @@
           />
         </svg>
       </div>
-      <div>
-        <p class="text-xs text-gray-500 uppercase tracking-wider">Trip Fare Today</p>
-        <p class="text-lg font-bold text-gray-800">ZMW <%= @minibus_revenue_today %></p>
+      <div class="min-w-0">
+        <p class="text-xs text-gray-500 uppercase truncate" title="Trip Fare Today">Trip Fare Today</p>
+        <p class="text-sm font-bold text-gray-800 truncate">ZMW <%= @minibus_revenue_today %></p>
       </div>
     </div>
 
     <.link
       navigate={~p"/staff/on-duty"}
-      class="bg-white rounded-xl shadow p-4 flex items-center gap-3 hover:shadow-md transition-shadow"
+      class="bg-white rounded-xl shadow p-3 flex items-center gap-2 min-w-0 hover:shadow-md transition-shadow"
     >
-      <div class="h-10 w-10 rounded-xl bg-teal-100 flex items-center justify-center flex-shrink-0">
-        <svg class="h-5 w-5 text-teal-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <div class="h-8 w-8 rounded-xl bg-teal-100 flex items-center justify-center flex-shrink-0">
+        <svg class="h-4 w-4 text-teal-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path
             stroke-linecap="round"
             stroke-linejoin="round"
@@ -125,7 +125,7 @@
         </svg>
       </div>
       <div class="flex-1 min-w-0">
-        <p class="text-xs text-gray-500 uppercase tracking-wider">Staff On Duty</p>
+        <p class="text-xs text-gray-500 uppercase truncate">Staff On Duty</p>
         <div class="flex items-center justify-between">
           <p class="text-xl font-bold text-gray-800"><%= length(@on_duty) %></p>
           <%= if @on_duty != [] do %>
