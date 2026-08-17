@@ -414,39 +414,43 @@ defmodule FleetMintWeb.CoreComponents do
 
   def table(assigns) do
     ~H"""
-    <table class="min-w-full divide-y divide-gray-200">
-      <thead>
-        <tr>
-          <th
-            :for={col <- @col}
-            class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
-          >
-            <%= col[:label] %>
-          </th>
-          <th :if={@action != []} class="relative p-0 pb-4">
-            <span class="sr-only">Actions</span>
-          </th>
-        </tr>
-      </thead>
-      <tbody class="divide-y divide-gray-200">
-        <tr :for={row <- @rows} id={@row_id && @row_id.(row)} class="group hover:bg-gray-50">
-          <td :for={col <- @col} class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-            <%= render_slot(col, row) %>
-          </td>
-          <td
-            :if={@action != []}
-            class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium"
-          >
-            <div class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium">
-              <span class="absolute -inset-y-px -right-4 left-0 group-hover:bg-gray-50 sm:rounded-r-xl" />
-              <span class="relative inline-flex gap-3">
-                <%= render_slot(@action, row) %>
-              </span>
-            </div>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead>
+            <tr>
+              <th
+                :for={col <- @col}
+                class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
+              >
+                <%= col[:label] %>
+              </th>
+              <th :if={@action != []} class="relative p-0 pb-4">
+                <span class="sr-only">Actions</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200">
+            <tr :for={row <- @rows} id={@row_id && @row_id.(row)} class="group hover:bg-gray-50">
+              <td :for={col <- @col} class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+                <%= render_slot(col, row) %>
+              </td>
+              <td
+                :if={@action != []}
+                class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium"
+              >
+                <div class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium">
+                  <span class="absolute -inset-y-px -right-4 left-0 group-hover:bg-gray-50 sm:rounded-r-xl" />
+                  <span class="relative inline-flex gap-3">
+                    <%= render_slot(@action, row) %>
+                  </span>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
     """
   end
 
