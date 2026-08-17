@@ -166,21 +166,34 @@ schedule yet (the pre-existing empty-state path). Full suite green
 a random fixture-name collision in the tenant-listing test, reproducibly
 passes in isolation).
 
-### 7.2 UX Adjustments (not blocking)
+### 7.2 UX Adjustments
 
-- Role badge on the dashboard hero and elsewhere renders the raw role enum
-  through CSS `capitalize`, so `tenant_admin` displays as "Tenant_admin"
-  (visible underscore) instead of "Tenant Admin". Visible on every login,
-  every account.
-- The hero card has noticeably more empty vertical space than its
-  stat-column neighbor for tenant_admin/manager accounts — not broken, just
-  visually unbalanced now that both were changed independently across
-  UI-1/UI-2.
-- The "Welcome back, {name}!" success flash toast does not auto-dismiss or
-  respond to its close button on plain controller-rendered pages (only
-  LiveView pages get a working `phx-click="lv:clear-flash"`). Pre-existing
-  framework-level behavior, not introduced by UI-1..6, but worth a note
-  since it's visible on every login.
+- **FIXED 2026-08-17** (`1b7c063`): Role badge on the dashboard hero and
+  elsewhere rendered the raw role enum through CSS `capitalize`, so
+  `tenant_admin` displayed as "Tenant_admin" (visible underscore) instead
+  of "Tenant Admin", visible on every login, every account.
+  `CoreComponents.role_label/1` now title-cases each word; applied at every
+  render site that used the `capitalize` class (dashboard hero, sidebar
+  footer, user show page, staff-on-duty list, booking driver picker).
+  Re-verified live, logged in as `admin@kalemba.example`: sidebar and hero
+  both now read "Tenant Admin".
+- **FIXED 2026-08-17** (`2269926`): The hero card had noticeably more empty
+  vertical space than its stat-column neighbor for tenant_admin/manager
+  accounts, because the card stretches to the grid row's full height (its
+  stat-column neighbor's height) while its own content is naturally
+  shorter. Centered the header/detail block vertically instead
+  (`flex flex-col justify-center`). Re-verified live — no more dead space
+  under the hero content.
+- **FIXED 2026-08-17** (`96dbbc7`): The "Welcome back, {name}!" success
+  flash toast did not auto-dismiss or respond to its close button on plain
+  controller-rendered pages (only LiveView pages had a working
+  `phx-click="lv:clear-flash"`, and even there nothing auto-dismissed).
+  Added a plain-JS dismiss in `app.js` (`initFlashDismiss`, keyed off a new
+  `data-flash` attribute) that hides the toast on click or after 6s,
+  regardless of whether a LiveView socket is mounted; the existing
+  `phx-click` is untouched so LiveView pages still clear flash state
+  server-side too. Re-verified live: toast disappeared after ~6-9s
+  unprompted, and a fresh toast dismissed instantly on click.
 - Chibolya (tenant_admin `admin@chibolya.example`) has no Bus Company
   record at all ("No companies yet") and consequently no cashing
   reports/expenditures/buses either. Not treated as a defect — may be
@@ -220,12 +233,15 @@ passes in isolation).
 ### 7.4 Not verified this session — tooling limitation, not a pass/fail result
 
 - **Narrow-viewport rendering** (wide-table horizontal scroll, dashboard
-  grid stacking): the `resize_window` browser tool did not change the
-  rendered viewport in this environment — screenshots stayed a fixed width
-  regardless of the requested size. The `overflow-x-auto` fix from UI-6 is
-  confirmed present on the right element by inspection, just not
-  re-verified at an actual narrow width. Needs a different environment or
-  tool to close out.
+  grid stacking): tried again 2026-08-17 — `resize_window` reports success
+  (390×844) but the actual screenshot viewport still stayed fixed at the
+  original size, same failure as the first attempt. Confirmed reproducible,
+  not a one-off. The `overflow-x-auto` wrapper on the shared `table`
+  component (`ebc15ab`) and the dashboard grid's `grid-cols-1 lg:grid-cols-3`
+  (stacks to 1 column below Tailwind's `lg` breakpoint) are both correct by
+  inspection, just still not visually re-verified at an actual narrow
+  width. Needs a different tool/environment (real device emulation, not
+  this extension's `resize_window`) to close out — not an app-side fix.
 - **Routes pagination Prev/Next interaction**: only 16 routes exist in dev
   seed data against a 25/page size, so pagination controls never render to
   click. The live status-filter patch (§7.3) exercises the same
