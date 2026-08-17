@@ -3,6 +3,7 @@ defmodule FleetMintWeb.ExpenditureControllerTest do
 
   import FleetMint.FinanceFixtures
   import FleetMint.IdentityFixtures
+  import FleetMint.FleetFixtures
 
   setup %{conn: conn} do
     {:ok, conn: log_in_user(conn, user_fixture())}
@@ -27,6 +28,39 @@ defmodule FleetMintWeb.ExpenditureControllerTest do
     test "lists all expenditures", %{conn: conn} do
       conn = get(conn, ~p"/expenditures")
       assert html_response(conn, 200) =~ "Listing Expenditures"
+    end
+  end
+
+  describe "tenant scoping" do
+    setup do
+      org_a = operator_fixture()
+      org_b = operator_fixture()
+
+      bus_a = bus_fixture(%{organisation_id: org_a.organisation_id})
+      bus_b = bus_fixture(%{organisation_id: org_b.organisation_id})
+
+      report_a = cashing_report_fixture(%{bus_id: bus_a.id})
+      report_b = cashing_report_fixture(%{bus_id: bus_b.id})
+
+      expenditure_a = expenditure_fixture(%{cashing_report_id: report_a.id})
+      expenditure_b = expenditure_fixture(%{cashing_report_id: report_b.id})
+
+      staff_a = user_fixture(role: "cashier", organisation_id: org_a.organisation_id)
+
+      %{expenditure_a: expenditure_a, expenditure_b: expenditure_b, staff_a: staff_a}
+    end
+
+    test "index only lists the caller's own organisation's expenditures", %{
+      conn: conn,
+      staff_a: staff_a,
+      expenditure_a: expenditure_a,
+      expenditure_b: expenditure_b
+    } do
+      conn = conn |> log_in_user(staff_a) |> get(~p"/expenditures")
+      response = html_response(conn, 200)
+
+      assert response =~ "expenditures/#{expenditure_a.id}\""
+      refute response =~ "expenditures/#{expenditure_b.id}\""
     end
   end
 

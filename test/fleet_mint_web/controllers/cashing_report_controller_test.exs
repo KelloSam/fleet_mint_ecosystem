@@ -50,6 +50,36 @@ defmodule FleetMintWeb.CashingReportControllerTest do
     end
   end
 
+  describe "tenant scoping" do
+    setup do
+      org_a = operator_fixture()
+      org_b = operator_fixture()
+
+      bus_a = bus_fixture(%{organisation_id: org_a.organisation_id})
+      bus_b = bus_fixture(%{organisation_id: org_b.organisation_id})
+
+      report_a = cashing_report_fixture(%{bus_id: bus_a.id})
+      report_b = cashing_report_fixture(%{bus_id: bus_b.id})
+
+      staff_a = user_fixture(role: "cashier", organisation_id: org_a.organisation_id)
+
+      %{report_a: report_a, report_b: report_b, staff_a: staff_a}
+    end
+
+    test "index only lists the caller's own organisation's cashing reports", %{
+      conn: conn,
+      staff_a: staff_a,
+      report_a: report_a,
+      report_b: report_b
+    } do
+      conn = conn |> log_in_user(staff_a) |> get(~p"/cashing_reports")
+      response = html_response(conn, 200)
+
+      assert response =~ "cashing_reports/#{report_a.id}\""
+      refute response =~ "cashing_reports/#{report_b.id}\""
+    end
+  end
+
   describe "new cashing_report" do
     test "renders the new cashing report form", %{conn: conn} do
       conn = get(conn, ~p"/cashing_reports/new")
