@@ -61,6 +61,28 @@ document.addEventListener("submit", e => {
   }
 })
 
+// The flash toast's phx-click (JS.push("lv:clear-flash") |> JS.hide(...))
+// only fires reliably when a LiveView socket is actually mounted on the
+// page. Most of this app is still classic controller-rendered pages
+// (e.g. straight after login), where that click handler and the button
+// inside it are inert and the toast just sits there forever. Handle
+// dismiss (click or the close button) and a timed auto-dismiss here in
+// plain JS instead, so both dead and live pages behave the same way.
+function initFlashDismiss() {
+  document.querySelectorAll("[data-flash]").forEach(el => {
+    if (el.dataset.flashBound) return
+    el.dataset.flashBound = "true"
+
+    const dismiss = () => { el.style.display = "none" }
+
+    el.addEventListener("click", dismiss)
+    setTimeout(dismiss, 6000)
+  })
+}
+
+document.addEventListener("DOMContentLoaded", initFlashDismiss)
+window.addEventListener("phx:page-loading-stop", initFlashDismiss)
+
 // connect if there are any LiveViews on the page
 liveSocket.connect()
 
