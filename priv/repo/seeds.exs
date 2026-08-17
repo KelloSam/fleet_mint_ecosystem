@@ -259,6 +259,41 @@ kalemba_org_id = kalemba_operator.organisation_id
     kalemba_cashier.id
   )
 
+# 5 more weekly report periods before the one above, so the dashboard's
+# weekly-revenue chart has more than a single point to plot. Same
+# report/cashing_report pattern, just repeated across non-overlapping
+# earlier weeks with varying (still fictional) figures.
+[
+  {35, "6800.00", "7300.00"},
+  {28, "7400.00", "7900.00"},
+  {21, "6200.00", "6700.00"},
+  {14, "8900.00", "9400.00"}
+]
+|> Enum.each(fn {days_ago, received, expected} ->
+  {:ok, week_report} =
+    Finance.create_report(%{
+      start_date: Date.add(Date.utc_today(), -(days_ago + 7)),
+      end_date: Date.add(Date.utc_today(), -days_ago)
+    })
+
+  {:ok, _cashing_report} =
+    Finance.create_cashing_report(
+      %{
+        days_worked: 6,
+        expected_cashing: expected,
+        received_cashing: received,
+        debt_balance: "0.00",
+        expenditure: "500.00",
+        description:
+          "Week of #{Date.add(Date.utc_today(), -(days_ago + 7))} — Lusaka-Ndola route",
+        report_id: week_report.id,
+        report_date: Date.add(Date.utc_today(), -days_ago),
+        bus_id: kalemba_bus.id
+      },
+      kalemba_cashier.id
+    )
+end)
+
 {:ok, _kalemba_expenditure} =
   Finance.create_expenditure(
     %{

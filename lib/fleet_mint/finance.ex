@@ -836,43 +836,48 @@ defmodule FleetMint.Finance do
   end
 
   @doc """
-  Returns the most recent reports for the dashboard.
+  Revenue per weekly report period, most recent `weeks` periods, oldest
+  first (chart-ready order). A weekly report has no organisation of its
+  own — it's a shared date-range bucket (see `report_organisation_ids/1`)
+  — so for a specific `organisation_id` this sums only that
+  organisation's own `cashing_reports` within each period, via their bus;
+  a period with none of that organisation's cashing reports still
+  appears, with `revenue: 0`, rather than being dropped. Pass `:all` (the
+  default) for a platform-wide total across every organisation.
 
   ## Examples
 
-      iex> list_recent_reports(5)
-      [%Report{}, ...]
+      iex> weekly_revenue_trend(organisation_id, 6)
+      [%{start_date: ~D[2026-07-04], end_date: ~D[2026-07-11], revenue: #Decimal<6800.00>}, ...]
 
   """
-  def list_recent_reports(limit \\ 5) do
+  def weekly_revenue_trend(organisation_id \\ :all, weeks \\ 6) do
     from(r in Report,
-      order_by: [desc: r.inserted_at],
-      limit: ^limit,
-      preload: [:cashing_reports]
+      left_join: c in assoc(r, :cashing_reports),
+      as: :cashing_report
     )
+    |> maybe_filter_report_organisation(organisation_id)
+    |> group_by([r], [r.id, r.start_date, r.end_date])
+    |> order_by([r], desc: r.start_date)
+    |> limit(^weeks)
+    |> select([r, cashing_report: c], %{
+      start_date: r.start_date,
+      end_date: r.end_date,
+      revenue: coalesce(sum(c.received_cashing), 0)
+    })
     |> Repo.all()
+    |> Enum.reverse()
   end
 
-  @doc """
-  Returns the most recent transactions for the dashboard.
+  defp maybe_filter_report_organisation(query, :all), do: query
 
-  ## Examples
-
-      iex> list_recent_transactions(5)
-      [%{id: 1, type: "income", amount: #Decimal<100.00>, inserted_at: ~N[2025-04-06 10:00:00]}, ...]
-
-  """
-  def list_recent_transactions(limit \\ 5) do
-    Accounting.list_entries()
-    |> Enum.take(limit)
-    |> Enum.map(fn entry ->
-      %{
-        id: entry.id,
-        type: if(entry.entry_type == "revenue", do: "income", else: entry.entry_type),
-        amount: entry.amount,
-        inserted_at: entry.inserted_at
-      }
-    end)
+  defp maybe_filter_report_organisation(query, organisation_id) do
+    query
+    |> join(:left, [cashing_report: c], b in assoc(c, :bus), as: :bus)
+    |> where(
+      [cashing_report: c, bus: b],
+      is_nil(c.id) or (is_nil(c.archived_at) and b.organisation_id == ^organisation_id)
+    )
   end
 
   @doc """
