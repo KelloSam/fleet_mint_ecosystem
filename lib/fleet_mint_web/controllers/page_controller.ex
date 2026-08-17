@@ -27,7 +27,7 @@ defmodule FleetMintWeb.PageController do
     total_routes = Routes.count_routes()
     total_vehicles = Fleet.count_vehicles()
     total_expenditures = Finance.count_expenditures()
-    on_duty = Users.list_on_duty_staff()
+    on_duty = Users.list_on_duty_staff(organisation_id: conn.assigns.organisation_scope)
     bookings_today = Ticketing.count_bookings_today()
     revenue_today = Ticketing.revenue_today()
     trips_today = Trips.count_minibus_trips_today()

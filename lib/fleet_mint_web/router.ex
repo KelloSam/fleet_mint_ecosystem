@@ -150,6 +150,7 @@ defmodule FleetMintWeb.Router do
     pipe_through [:browser, :auth]
 
     get "/dashboard", PageController, :dashboard
+    get "/staff/on-duty", StaffController, :on_duty
 
     # Cashier-owned resources — full CRUD
     # Declared before the resources macro below so "unmatched" isn't

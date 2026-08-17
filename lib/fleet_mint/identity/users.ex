@@ -262,7 +262,14 @@ defmodule FleetMint.Identity.Users do
 
   @staff_roles ["platform_admin", "tenant_admin", "manager", "cashier"]
 
-  def list_on_duty_staff do
+  @doc """
+  Staff who have logged in today. Scoped by `:organisation_id` the same
+  way `list_staff_with_phone/1` is — pass the caller's
+  `organisation_scope` (`:all` for platform-level staff, an id for
+  tenant staff) so a tenant user only ever sees their own organisation's
+  on-duty staff, never another tenant's.
+  """
+  def list_on_duty_staff(opts \\ []) do
     today_start = NaiveDateTime.new!(Date.utc_today(), ~T[00:00:00])
 
     from(u in User,
@@ -273,6 +280,7 @@ defmodule FleetMint.Identity.Users do
           u.last_login >= ^today_start,
       order_by: [asc: u.role, asc: u.full_name]
     )
+    |> maybe_filter_user_organisation(opts[:organisation_id])
     |> Repo.all()
   end
 

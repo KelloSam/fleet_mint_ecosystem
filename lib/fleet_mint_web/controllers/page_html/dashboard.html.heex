@@ -1,7 +1,7 @@
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-6">
-  <div class="lg:col-span-2 bg-gradient-to-br from-blue-700 to-blue-900 rounded-xl shadow-lg p-6 text-white">
-    <div class="flex items-start gap-5">
-      <div class="h-16 w-16 rounded-2xl bg-white/20 flex items-center justify-center text-2xl font-extrabold flex-shrink-0 tracking-tight">
+  <div class="lg:col-span-2 bg-gradient-to-br from-blue-700 to-blue-900 rounded-xl shadow-lg p-4 text-white">
+    <div class="flex items-center gap-4">
+      <div class="h-12 w-12 rounded-xl bg-white/20 flex items-center justify-center text-lg font-extrabold flex-shrink-0 tracking-tight">
         <%= (@current_user.full_name || @current_user.username || "?")
         |> String.split()
         |> Enum.take(2)
@@ -12,38 +12,37 @@
 
       <div class="flex-1 min-w-0">
         <div class="flex items-center gap-2 flex-wrap">
-          <h2 class="text-xl font-bold truncate"><%= @current_user.full_name %></h2>
+          <h2 class="text-lg font-bold truncate"><%= @current_user.full_name %></h2>
           <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-white/20 capitalize">
             <%= @current_user.role %>
           </span>
+          <span class="flex items-center gap-1.5 text-xs font-semibold text-emerald-300 ml-auto">
+            <span class="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span> ON DUTY
+          </span>
         </div>
 
-        <div class="mt-3 grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
+        <div class="mt-2 grid grid-cols-3 gap-x-4 gap-y-1 text-sm">
           <div>
             <span class="text-blue-200 text-xs uppercase tracking-wider">Staff ID</span>
-            <p class="font-mono font-semibold">
+            <p class="font-mono font-semibold text-sm">
               STAFF-<%= @current_user.id |> Integer.to_string() |> String.pad_leading(4, "0") %>
             </p>
           </div>
           <div>
-            <span class="text-blue-200 text-xs uppercase tracking-wider">Email</span>
-            <p class="truncate text-blue-100"><%= @current_user.email %></p>
-          </div>
-          <div>
             <span class="text-blue-200 text-xs uppercase tracking-wider">Phone</span>
-            <p class="font-semibold">
+            <p class="font-semibold text-sm">
               <%= if @current_user.phone && @current_user.phone != "" do %>
                 <a href={"tel:#{@current_user.phone}"} class="hover:text-blue-200">
                   <%= @current_user.phone %>
                 </a>
               <% else %>
-                <span class="text-blue-300 italic text-xs">Not set — ask admin to update</span>
+                <span class="text-blue-300 italic text-xs">Not set</span>
               <% end %>
             </p>
           </div>
           <div>
             <span class="text-blue-200 text-xs uppercase tracking-wider">On Duty Since</span>
-            <p class="font-semibold">
+            <p class="font-semibold text-sm">
               <%= if @current_user.last_login do %>
                 <%= Calendar.strftime(@current_user.last_login, "%I:%M %p") %>
               <% else %>
@@ -53,15 +52,6 @@
           </div>
         </div>
       </div>
-    </div>
-
-    <div class="mt-5 pt-4 border-t border-white/20 flex items-center justify-between">
-      <span class="text-xs text-blue-200">
-        <%= Date.utc_today() |> Calendar.strftime("%A, %d %B %Y") %>
-      </span>
-      <span class="flex items-center gap-1.5 text-xs font-semibold text-emerald-300">
-        <span class="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span> ON DUTY
-      </span>
     </div>
   </div>
 
@@ -119,73 +109,54 @@
         <p class="text-lg font-bold text-gray-800">ZMW <%= @minibus_revenue_today %></p>
       </div>
     </div>
-  </div>
-</div>
 
-<div class="bg-white rounded-xl shadow mb-6 overflow-hidden">
-  <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-    <div class="flex items-center gap-2">
-      <span class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
-      <h3 class="text-sm font-semibold text-gray-700">Staff On Duty Today</h3>
-    </div>
-    <span class="text-xs text-gray-400">
-      <%= Date.utc_today() |> Calendar.strftime("%d %b %Y") %>
-    </span>
-  </div>
-  <div class="p-5">
-    <%= if @on_duty == [] do %>
-      <p class="text-sm text-gray-400 italic">No staff have signed in today yet.</p>
-    <% else %>
-      <div class="flex flex-wrap gap-3">
-        <%= for u <- @on_duty do %>
-          <div class={[
-            "flex items-center gap-3 rounded-xl px-4 py-3 border",
-            if(u.id == @current_user.id,
-              do: "bg-blue-50 border-blue-200",
-              else: "bg-gray-50 border-gray-200"
-            )
-          ]}>
-            <div class={[
-              "h-9 w-9 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0",
-              if(u.id == @current_user.id,
-                do: "bg-blue-600 text-white",
-                else: "bg-gray-300 text-gray-700"
-              )
-            ]}>
-              <%= (u.full_name || u.username || "?")
-              |> String.split()
-              |> Enum.take(2)
-              |> Enum.map(&String.first/1)
-              |> Enum.join()
-              |> String.upcase() %>
-            </div>
-            <div class="min-w-0">
-              <p class="text-sm font-semibold text-gray-800 truncate">
-                <%= u.full_name %>
-                <%= if u.id == @current_user.id do %>
-                  <span class="text-xs text-blue-500 font-normal">(You)</span>
-                <% end %>
-              </p>
-              <div class="flex items-center gap-2 mt-0.5">
-                <span class="text-xs text-gray-500 capitalize"><%= u.role %></span>
-                <span class="text-gray-300">·</span>
-                <span class="text-xs font-mono text-gray-500">
-                  STAFF-<%= u.id |> Integer.to_string() |> String.pad_leading(4, "0") %>
-                </span>
-              </div>
-              <%= if u.phone && u.phone != "" do %>
-                <a
-                  href={"tel:#{u.phone}"}
-                  class="text-xs text-blue-600 hover:text-blue-800 font-medium"
+    <.link
+      navigate={~p"/staff/on-duty"}
+      class="bg-white rounded-xl shadow p-4 flex items-center gap-3 hover:shadow-md transition-shadow"
+    >
+      <div class="h-10 w-10 rounded-xl bg-teal-100 flex items-center justify-center flex-shrink-0">
+        <svg class="h-5 w-5 text-teal-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 10-4-4 4 4 0 004 4zm6 0a4 4 0 10-4-4"
+          />
+        </svg>
+      </div>
+      <div class="flex-1 min-w-0">
+        <p class="text-xs text-gray-500 uppercase tracking-wider">Staff On Duty</p>
+        <div class="flex items-center justify-between">
+          <p class="text-xl font-bold text-gray-800"><%= length(@on_duty) %></p>
+          <%= if @on_duty != [] do %>
+            <div class="flex items-center">
+              <%= for {u, i} <- @on_duty |> Enum.take(4) |> Enum.with_index() do %>
+                <div
+                  class={[
+                    "h-6 w-6 rounded-full bg-gray-300 text-gray-700 border-2 border-white flex items-center justify-center text-[10px] font-bold",
+                    i > 0 && "-ml-2"
+                  ]}
+                  title={u.full_name}
                 >
-                  📞 <%= u.phone %>
-                </a>
+                  <%= (u.full_name || u.username || "?")
+                  |> String.split()
+                  |> Enum.take(2)
+                  |> Enum.map(&String.first/1)
+                  |> Enum.join()
+                  |> String.upcase() %>
+                </div>
+              <% end %>
+              <%= if length(@on_duty) > 4 do %>
+                <div class="h-6 w-6 rounded-full bg-gray-100 text-gray-500 border-2 border-white -ml-2 flex items-center justify-center text-[10px] font-bold">
+                  +<%= length(@on_duty) - 4 %>
+                </div>
               <% end %>
             </div>
-          </div>
-        <% end %>
+          <% end %>
+        </div>
+        <span class="text-xs text-teal-600 font-medium">View Staff →</span>
       </div>
-    <% end %>
+    </.link>
   </div>
 </div>
 
@@ -355,8 +326,16 @@
   </div>
 
   <div class="bg-white rounded-xl shadow p-5">
-    <h3 class="text-sm font-semibold text-gray-700 mb-4">Quick Actions</h3>
-    <div class="grid grid-cols-2 gap-3">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-sm font-semibold text-gray-700">Quick Actions</h3>
+      <.link
+        navigate={~p"/admin/reports"}
+        class="text-xs text-purple-600 hover:text-purple-800 font-medium"
+      >
+        PDF &amp; report exports →
+      </.link>
+    </div>
+    <div class="grid grid-cols-3 gap-3">
       <.link
         navigate={~p"/bookings/new"}
         class="flex items-center gap-3 p-3 rounded-lg bg-emerald-50 hover:bg-emerald-100 transition-colors"
@@ -404,22 +383,6 @@
           </svg>
         </div>
         <span class="text-xs font-semibold text-orange-900">Expenditure</span>
-      </.link>
-      <.link
-        navigate={~p"/admin/reports"}
-        class="flex items-center gap-3 p-3 rounded-lg bg-purple-50 hover:bg-purple-100 transition-colors"
-      >
-        <div class="h-8 w-8 rounded-lg bg-purple-600 flex items-center justify-center flex-shrink-0">
-          <svg class="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"
-            />
-          </svg>
-        </div>
-        <span class="text-xs font-semibold text-purple-900">Print PDF</span>
       </.link>
     </div>
   </div>
