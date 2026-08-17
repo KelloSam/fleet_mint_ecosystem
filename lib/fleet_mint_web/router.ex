@@ -150,7 +150,6 @@ defmodule FleetMintWeb.Router do
     pipe_through [:browser, :auth]
 
     get "/dashboard", PageController, :dashboard
-    get "/staff/on-duty", StaffController, :on_duty
 
     # Cashier-owned resources — full CRUD
     # Declared before the resources macro below so "unmatched" isn't
@@ -174,7 +173,7 @@ defmodule FleetMintWeb.Router do
     resources "/vehicles", VehicleController, only: [:index, :show]
     resources "/maintenances", VehicleMaintenanceController, only: [:index, :show]
     resources "/drivers", DriverController, only: [:index, :show]
-    resources "/routes", RouteController, only: [:index, :show]
+    resources "/routes", RouteController, only: [:show]
     resources "/schedules", ScheduleController, only: [:index, :show]
     resources "/operators", OperatorController, only: [:index, :show]
     resources "/buses", BusController, only: [:index, :show]
@@ -193,6 +192,18 @@ defmodule FleetMintWeb.Router do
     get "/settings/2fa", TwoFactorController, :setup
     post "/settings/2fa/enable", TwoFactorController, :enable
     delete "/settings/2fa/disable", TwoFactorController, :disable
+  end
+
+  # LiveViews - AuthHooks.on_mount re-authenticates on every live (re)mount,
+  # since the plug pipeline below only runs on the initial HTTP request
+  # that renders the static shell, never on the websocket connect/reconnect.
+  live_session :authenticated, on_mount: [{FleetMintWeb.Live.AuthHooks, :default}] do
+    scope "/", FleetMintWeb do
+      pipe_through [:browser, :auth]
+
+      live "/staff/on-duty", StaffOnDutyLive, :index
+      live "/routes", RoutesLive, :index
+    end
   end
 
   # Platform administrators only - the full, platform-wide audit trail.

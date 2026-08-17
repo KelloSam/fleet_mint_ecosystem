@@ -1,0 +1,136 @@
+defmodule FleetMintWeb.StaffOnDutyLive do
+  use FleetMintWeb, :live_view
+
+  alias FleetMint.Identity.Users
+
+  def mount(_params, _session, socket) do
+    on_duty = Users.list_on_duty_staff(organisation_id: socket.assigns.organisation_scope)
+
+    {:ok,
+     socket
+     |> assign(:page_title, "Staff On Duty")
+     |> assign(:query, "")
+     |> assign(:on_duty, on_duty)
+     |> assign(:filtered, on_duty)}
+  end
+
+  def handle_event("search", %{"q" => query}, socket) do
+    filtered = filter_staff(socket.assigns.on_duty, query)
+
+    {:noreply, socket |> assign(:query, query) |> assign(:filtered, filtered)}
+  end
+
+  defp filter_staff(staff, ""), do: staff
+
+  defp filter_staff(staff, query) do
+    needle = String.downcase(query)
+
+    Enum.filter(staff, fn u ->
+      String.contains?(String.downcase(u.full_name || u.username || ""), needle) ||
+        String.contains?(String.downcase(u.role), needle)
+    end)
+  end
+
+  defp initials(user) do
+    (user.full_name || user.username || "?")
+    |> String.split()
+    |> Enum.take(2)
+    |> Enum.map(&String.first/1)
+    |> Enum.join()
+    |> String.upcase()
+  end
+
+  def render(assigns) do
+    ~H"""
+    <div class="mb-6 flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-gray-900">Staff On Duty</h1>
+        <p class="text-sm text-gray-500 mt-1">
+          <%= Date.utc_today() |> Calendar.strftime("%A, %d %B %Y") %>
+        </p>
+      </div>
+      <.link navigate={~p"/dashboard"} class="text-sm text-blue-600 hover:text-blue-800 font-medium">
+        ← Back to dashboard
+      </.link>
+    </div>
+
+    <div class="bg-white rounded-xl shadow mb-6 overflow-hidden">
+      <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between gap-4 flex-wrap">
+        <div class="flex items-center gap-2">
+          <span class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <h3 class="text-sm font-semibold text-gray-700">
+            <%= length(@on_duty) %> staff currently on duty
+          </h3>
+        </div>
+        <form phx-change="search" class="w-full sm:w-64">
+          <input
+            type="text"
+            name="q"
+            value={@query}
+            placeholder="Search by name or role…"
+            phx-debounce="150"
+            class="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </form>
+      </div>
+      <div class="p-5">
+        <%= cond do %>
+          <% @on_duty == [] -> %>
+            <p class="text-sm text-gray-400 italic">No staff have signed in today yet.</p>
+          <% @filtered == [] -> %>
+            <p class="text-sm text-gray-400 italic">No staff match "<%= @query %>".</p>
+          <% true -> %>
+            <div class="flex flex-wrap gap-3">
+              <div
+                :for={u <- @filtered}
+                class={[
+                  "flex items-center gap-3 rounded-xl px-4 py-3 border",
+                  if(u.id == @current_user.id,
+                    do: "bg-blue-50 border-blue-200",
+                    else: "bg-gray-50 border-gray-200"
+                  )
+                ]}
+              >
+                <div class={[
+                  "h-9 w-9 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0",
+                  if(u.id == @current_user.id,
+                    do: "bg-blue-600 text-white",
+                    else: "bg-gray-300 text-gray-700"
+                  )
+                ]}>
+                  <%= initials(u) %>
+                </div>
+                <div class="min-w-0">
+                  <p class="text-sm font-semibold text-gray-800 truncate">
+                    <%= u.full_name %>
+                    <span :if={u.id == @current_user.id} class="text-xs text-blue-500 font-normal">
+                      (You)
+                    </span>
+                  </p>
+                  <div class="flex items-center gap-2 mt-0.5">
+                    <span class="text-xs text-gray-500 capitalize"><%= u.role %></span>
+                    <span class="text-gray-300">·</span>
+                    <span class="text-xs font-mono text-gray-500">
+                      STAFF-<%= u.id |> Integer.to_string() |> String.pad_leading(4, "0") %>
+                    </span>
+                    <span class="text-gray-300">·</span>
+                    <span class="text-xs text-emerald-600 font-medium">
+                      On duty since <%= Calendar.strftime(u.last_login, "%I:%M %p") %>
+                    </span>
+                  </div>
+                  <a
+                    :if={u.phone && u.phone != ""}
+                    href={"tel:#{u.phone}"}
+                    class="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                  >
+                    📞 <%= u.phone %>
+                  </a>
+                </div>
+              </div>
+            </div>
+        <% end %>
+      </div>
+    </div>
+    """
+  end
+end

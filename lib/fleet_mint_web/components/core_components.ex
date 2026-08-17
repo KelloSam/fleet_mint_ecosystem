@@ -340,12 +340,17 @@ defmodule FleetMintWeb.CoreComponents do
   attr :total_pages, :integer, required: true
   attr :path, :any, required: true, doc: "function from page number to that page's URL"
 
+  attr :patch, :boolean,
+    default: false,
+    doc: "use a LiveView patch instead of a full navigate, for a live-filtered/paginated page"
+
   def pagination(assigns) do
     ~H"""
     <div :if={@total_pages > 1} class="flex items-center justify-center gap-2 py-4">
       <.link
         :if={@page > 1}
-        navigate={@path.(@page - 1)}
+        navigate={if @patch, do: nil, else: @path.(@page - 1)}
+        patch={if @patch, do: @path.(@page - 1), else: nil}
         class="px-3 py-1.5 rounded bg-white border text-sm hover:bg-gray-50"
       >
         ← Prev
@@ -355,7 +360,8 @@ defmodule FleetMintWeb.CoreComponents do
       </span>
       <.link
         :if={@page < @total_pages}
-        navigate={@path.(@page + 1)}
+        navigate={if @patch, do: nil, else: @path.(@page + 1)}
+        patch={if @patch, do: @path.(@page + 1), else: nil}
         class="px-3 py-1.5 rounded bg-white border text-sm hover:bg-gray-50"
       >
         Next →

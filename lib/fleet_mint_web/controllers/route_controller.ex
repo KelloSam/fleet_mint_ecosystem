@@ -21,16 +21,6 @@ defmodule FleetMintWeb.RouteController do
     end
   end
 
-  def index(conn, params) do
-    status = Map.get(params, "status")
-    page = FleetMint.Pagination.parse_page(params)
-
-    paged = Routes.list_routes_paginated(page, status: status)
-    fare_ranges = Routes.fare_ranges_for_routes(Enum.map(paged.entries, & &1.id))
-
-    render(conn, :index, paged: paged, filter_status: status || "", fare_ranges: fare_ranges)
-  end
-
   def new(conn, _params) do
     changeset = Routes.change_route(%Route{})
     render(conn, :new, changeset: changeset)

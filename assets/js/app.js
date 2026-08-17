@@ -33,6 +33,34 @@ topbar.config({barColors: {0: "#29d"}, shadowColor: "rgba(0, 0, 0, .3)"})
 window.addEventListener("phx:page-loading-start", _info => topbar.show(300))
 window.addEventListener("phx:page-loading-stop", _info => topbar.hide())
 
+// The events above fire automatically for `<.link navigate={...}>` clicks
+// and for `phx-submit` forms, live or dead. Most of this app is still
+// classic controller-rendered pages though, so plain `<a href>` clicks
+// (filter pills, "New X" buttons, method="delete" links) and plain
+// `<form>` submits (every create/edit page) never dispatched those events
+// and showed no feedback at all while the server round-trip was in
+// flight. Show the same topbar for those too, so every click gets an
+// immediate visual response regardless of which navigation mechanism the
+// target page happens to use.
+document.addEventListener("click", e => {
+  const link = e.target.closest("a[href]")
+  if (!link || link.hasAttribute("data-phx-link")) return
+  if (e.defaultPrevented || e.button !== 0) return
+  if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
+  if (link.target && link.target !== "_self") return
+  if (link.hasAttribute("download")) return
+  if (link.origin !== window.location.origin) return
+  if (/^(mailto|tel):/.test(link.protocol)) return
+
+  topbar.show(300)
+})
+
+document.addEventListener("submit", e => {
+  if (e.target instanceof HTMLFormElement && !e.target.hasAttribute("phx-submit")) {
+    topbar.show(300)
+  }
+})
+
 // connect if there are any LiveViews on the page
 liveSocket.connect()
 
