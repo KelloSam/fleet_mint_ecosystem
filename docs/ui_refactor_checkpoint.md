@@ -7,13 +7,11 @@ refactor approved as its own controlled stage (UI-1 through UI-6). Written
 because the acceptance review below made explicit that findings like this
 shouldn't survive only in conversation history.
 
-**Status: UI phase NOT yet formally closed.** Automated tests are green
-(§3), but the gate agreed for this phase is *automated tests green +
-browser acceptance review passed + known defects recorded* — the browser
-review is pending on the claude-in-chrome extension being connected in this
-environment. This document will be updated with the review's findings
-(Defect / UX Adjustment / Deferred Enhancement) once it runs, and the
-status line above updated to reflect closure or not.
+**Status: browser acceptance review complete (2026-08-17) — one real
+defect found, not yet fixed. See §7.** One genuine defect (§7.1) was found
+during the review; whether the UI phase can be treated as formally closed
+depends on whether that defect gets fixed or is knowingly deferred — that
+call is recorded in §7, not decided by this document.
 
 ## 1. What each stage shipped
 
@@ -123,13 +121,117 @@ listing/validation UI is a product-roadmap decision, not a UI-polish task.
 
 ## 6. What is explicitly not built / not checked here
 
-- No visual/interactive browser review of any of §1's work — see the
-  status line at the top of this document.
-- No second tenant-account walkthrough of the financial/schedule pages
-  beyond the automated tests in §4 — planned as part of the same browser
-  review.
 - Mobile app (`mobile/` in this repo) not touched or re-checked; same
   caveat phase5's checkpoint already carries.
+
+## 7. Browser acceptance review (2026-08-17)
+
+Done via claude-in-chrome against the running dev server, logged in as
+three real accounts in turn: `admin@kalemba.example` (tenant_admin, org
+Kalemba), `admin@chibolya.example` (tenant_admin, org Chibolya), and
+`platform@miway.example` (platform_admin). Not a curl/HTTP check — actual
+clicks, actual rendered pixels, actual live interactions.
+
+### 7.1 Defect: Operator page's "Scheduled Trips" can silently show nothing despite a real, active schedule existing
+
+The UI-4 "Scheduled Trips" section on the Bus Company show page
+(`operator_html/show.html.heex`) is nested inside the loop over
+`@operator.routes` — which comes from the `operator_routes` join table, a
+*separate* signal from "does this operator have a real `Schedule` on this
+route." These two can disagree, and when they do, the newer one wins
+silently: **Kalemba Coachlines has a real, active schedule** (`SCH-04A033`,
+Lusaka → Livingstone, ZMW 270.00, 64 seats — confirmed present and correct
+on `/schedules`) **but zero rows in `operator_routes`**, so its own Bus
+Company page reads "No routes assigned yet" — the real commercial data is
+invisible on the one page built to show it.
+
+Confirmed this is specifically a data-consistency gap, not a broken
+feature: Baobab Coachways (operator 11), whose `operator_routes` *is*
+populated, renders the identical feature correctly — expanding "Lusaka →
+Chipata" shows "SCHEDULED TRIPS: 11:30, BAO 2004, 65 seats available, ZMW
+387.50, Active" exactly as designed.
+
+**Not fixed yet.** Two honest options, not decided here: (a) have the
+Scheduled Trips section query `Schedule` directly by
+`route_id`+`operator_id` regardless of `operator_routes`, so it can't drift
+from reality — the more correct fix, since `operator_routes` becomes
+redundant for this purpose; or (b) treat the missing `operator_routes` row
+as its own data-integrity bug (a schedule should never exist without its
+operator+route being linked) and backfill/enforce that instead. (a) is
+smaller and doesn't require touching the write path; recommend it if this
+gets picked up.
+
+### 7.2 UX Adjustments (not blocking)
+
+- Role badge on the dashboard hero and elsewhere renders the raw role enum
+  through CSS `capitalize`, so `tenant_admin` displays as "Tenant_admin"
+  (visible underscore) instead of "Tenant Admin". Visible on every login,
+  every account.
+- The hero card has noticeably more empty vertical space than its
+  stat-column neighbor for tenant_admin/manager accounts — not broken, just
+  visually unbalanced now that both were changed independently across
+  UI-1/UI-2.
+- The "Welcome back, {name}!" success flash toast does not auto-dismiss or
+  respond to its close button on plain controller-rendered pages (only
+  LiveView pages get a working `phx-click="lv:clear-flash"`). Pre-existing
+  framework-level behavior, not introduced by UI-1..6, but worth a note
+  since it's visible on every login.
+- Chibolya (tenant_admin `admin@chibolya.example`) has no Bus Company
+  record at all ("No companies yet") and consequently no cashing
+  reports/expenditures/buses either. Not treated as a defect — may be
+  intentional (an org mid-onboarding) — but worth confirming with whoever
+  owns seed data whether that's deliberate.
+
+### 7.3 Confirmed working, live (not just via tests or curl)
+
+- Hero: smaller, no email, ON DUTY badge, Staff ID/Phone/On Duty Since —
+  as designed.
+- Quick Actions: exactly 3 tiles (New Booking, Cashing Report,
+  Expenditure) + a "PDF & report exports →" link; no Print PDF tile.
+- Staff On Duty compact widget → LiveView roster page → live search
+  (typed "zzz", got "No staff match 'zzz'." with no page reload).
+- Sidebar: stays fixed while `<main>` scrolls (scrolled 8 ticks down a
+  16-row table, sidebar didn't move); hover states fire; active-link
+  highlighting persists correctly on the RoutesLive page specifically
+  (confirms the UI-5 `current_path` fix holds under real navigation);
+  consistent card styling across every item, including Maintenance.
+- Routes: status-filter pills patch live (URL changes to
+  `?status=active`, content updates, no full reload) — confirmed for both
+  Active and Inactive.
+- Fare ranges: global Routes page shows the aggregate range (e.g. "ZMW
+  263.50 – 387.50"); a well-linked operator's page shows the real
+  per-schedule fare instead. Both tenant accounts saw identical Routes
+  data, confirming the global-catalogue design is working as intended, not
+  leaking.
+- Tenant isolation: Staff On Duty count differs correctly per tenant (1 vs
+  1, different people); attempting `/operators/1` (Kalemba) as the
+  Chibolya admin was blocked with a real, visible error — "That operator
+  belongs to a different organisation."
+- Role visibility: Audit Log absent from the sidebar for both tenant_admin
+  accounts, present for platform_admin.
+- LiveView loading feedback: topbar progress bar observed firing during
+  full-page navigation between pages.
+
+### 7.4 Not verified this session — tooling limitation, not a pass/fail result
+
+- **Narrow-viewport rendering** (wide-table horizontal scroll, dashboard
+  grid stacking): the `resize_window` browser tool did not change the
+  rendered viewport in this environment — screenshots stayed a fixed width
+  regardless of the requested size. The `overflow-x-auto` fix from UI-6 is
+  confirmed present on the right element by inspection, just not
+  re-verified at an actual narrow width. Needs a different environment or
+  tool to close out.
+- **Routes pagination Prev/Next interaction**: only 16 routes exist in dev
+  seed data against a 25/page size, so pagination controls never render to
+  click. The live status-filter patch (§7.3) exercises the same
+  `patch={true}` mechanism pagination uses, which is reassuring but not
+  the same as clicking Next.
+- **Direct two-tenant financial-listing leak test** (same cashing
+  report/expenditure ID, two tenant sessions): not performable via UI —
+  both demo tenant accounts have sparse/empty financial data (see §7.2).
+  Cross-tenant *blocking* was confirmed live for Operators (§7.3). The
+  UI-6 automated tests remain the primary evidence for Cashing
+  Reports/Expenditures/Schedules isolation specifically.
 
 ---
 
