@@ -78,79 +78,82 @@ defmodule FleetMintWeb.RoutesLive do
         <p class="text-sm mt-1">Add your first route to get started.</p>
       </div>
 
-      <table :if={@paged.entries != []} class="min-w-full divide-y divide-gray-200">
-        <thead class="bg-gray-50">
-          <tr>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Route Name
-            </th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              From → To
-            </th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Distance
-            </th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Duration
-            </th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Fare Range
-            </th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Status
-            </th>
-            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Actions
-            </th>
-          </tr>
-        </thead>
-        <tbody class="bg-white divide-y divide-gray-100">
-          <tr :for={route <- @paged.entries} class="hover:bg-gray-50">
-            <td class="px-6 py-4 text-sm font-semibold text-gray-900">
-              <.link navigate={~p"/routes/#{route}"} class="hover:text-blue-600">
-                <%= route.name %>
-              </.link>
-            </td>
-            <td class="px-6 py-4 text-sm text-gray-700">
-              <span class="text-gray-900"><%= route.start_location || "—" %></span>
-              <span class="mx-2 text-gray-400">→</span>
-              <span class="text-gray-900"><%= route.end_location || "—" %></span>
-            </td>
-            <td class="px-6 py-4 text-sm text-gray-700">
-              <%= RouteHTML.format_distance(route.distance) %>
-            </td>
-            <td class="px-6 py-4 text-sm text-gray-700">
-              <%= RouteHTML.format_duration(route.duration) %>
-            </td>
-            <td class="px-6 py-4 text-sm font-medium text-gray-900">
-              <%= RouteHTML.format_fare_range(@fare_ranges[route.id], route.fare) %>
-            </td>
-            <td class="px-6 py-4">
-              <RouteHTML.status_badge status={route.status} />
-            </td>
-            <td class="px-6 py-4 text-right text-sm">
-              <span :if={@current_user.role in ["platform_admin", "tenant_admin", "manager"]}>
-                <.link
-                  navigate={~p"/routes/#{route}/edit"}
-                  title="Edit"
-                  class="text-gray-400 hover:text-blue-600 mr-3"
-                >
-                  <.icon name="hero-pencil-square" class="h-4 w-4" /> <span class="sr-only">Edit</span>
+      <div :if={@paged.entries != []} class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                Route Name
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                From → To
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                Distance
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                Duration
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                Fare Range
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                Status
+              </th>
+              <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                Actions
+              </th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-100">
+            <tr :for={route <- @paged.entries} class="hover:bg-gray-50">
+              <td class="px-6 py-4 text-sm font-semibold text-gray-900 whitespace-nowrap">
+                <.link navigate={~p"/routes/#{route}"} class="hover:text-blue-600">
+                  <%= route.name %>
                 </.link>
-                <.link
-                  href={~p"/routes/#{route}"}
-                  method="delete"
-                  data-confirm={"Delete route \"#{route.name}\"?"}
-                  title="Delete"
-                  class="text-gray-400 hover:text-red-600"
-                >
-                  <.icon name="hero-trash" class="h-4 w-4" /> <span class="sr-only">Delete</span>
-                </.link>
-              </span>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+              </td>
+              <td class="px-6 py-4 text-sm text-gray-700 whitespace-nowrap">
+                <span class="text-gray-900"><%= route.start_location || "—" %></span>
+                <span class="mx-2 text-gray-400">→</span>
+                <span class="text-gray-900"><%= route.end_location || "—" %></span>
+              </td>
+              <td class="px-6 py-4 text-sm text-gray-700 whitespace-nowrap">
+                <%= RouteHTML.format_distance(route.distance) %>
+              </td>
+              <td class="px-6 py-4 text-sm text-gray-700 whitespace-nowrap">
+                <%= RouteHTML.format_duration(route.duration) %>
+              </td>
+              <td class="px-6 py-4 text-sm font-medium text-gray-900 whitespace-nowrap">
+                <%= RouteHTML.format_fare_range(@fare_ranges[route.id], route.fare) %>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                <RouteHTML.status_badge status={route.status} />
+              </td>
+              <td class="px-6 py-4 text-right text-sm whitespace-nowrap">
+                <span :if={@current_user.role in ["platform_admin", "tenant_admin", "manager"]}>
+                  <.link
+                    navigate={~p"/routes/#{route}/edit"}
+                    title="Edit"
+                    class="text-gray-400 hover:text-blue-600 mr-3"
+                  >
+                    <.icon name="hero-pencil-square" class="h-4 w-4" />
+                    <span class="sr-only">Edit</span>
+                  </.link>
+                  <.link
+                    href={~p"/routes/#{route}"}
+                    method="delete"
+                    data-confirm={"Delete route \"#{route.name}\"?"}
+                    title="Delete"
+                    class="text-gray-400 hover:text-red-600"
+                  >
+                    <.icon name="hero-trash" class="h-4 w-4" /> <span class="sr-only">Delete</span>
+                  </.link>
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
       <div :if={@paged.entries != []} class="px-6 py-3 bg-gray-50 border-t text-xs text-gray-500">
         <%= @paged.total %> route<%= if @paged.total != 1, do: "s" %> total
